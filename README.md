@@ -3,12 +3,12 @@
 Observatoire national expérimental, autonome, conçu pour **GitHub Pages + GitHub Actions**.
 Aucun import de PatriBot, aucun serveur permanent, aucun PC allumé en production.
 
-Dépôt dédié : https://github.com/OverFlo-dev/Presidentielle-2027
+Dépôt dédié : https://github.com/lhermyne/Presidentielle-2027
 
-Publication GitHub Pages : https://overflo-dev.github.io/Presidentielle-2027/
+Publication GitHub Pages : https://lhermyne.github.io/Presidentielle-2027/
 
 La collecte et la publication quotidiennes s’exécutent dans le workflow
-[Actualisation et publication](https://github.com/OverFlo-dev/Presidentielle-2027/actions/workflows/daily-pages.yml).
+[Actualisation et publication](https://github.com/lhermyne/Presidentielle-2027/actions/workflows/daily-pages.yml).
 
 ## Ce qui fonctionne
 
@@ -91,8 +91,8 @@ Une absence de donnée n'est jamais convertie en zéro.
 
 ## Déploiement GitHub et réinstallation
 
-Le dépôt `OverFlo-dev/Presidentielle-2027` et GitHub Pages sont déjà configurés.
-La première collecte et publication GitHub a réussi le 20 octobre 2026.
+Le dépôt `lhermyne/Presidentielle-2027` est la destination choisie.
+La publication y sera vérifiée après connexion du compte lhermyne.
 Voir [le fonctionnement et les commandes de publication](docs/DEPLOIEMENT.md).
 Les étapes suivantes permettent de réinstaller le projet dans un autre dépôt :
 
