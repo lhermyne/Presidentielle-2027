@@ -89,7 +89,12 @@ Pour recalculer sans réseau : `python pipeline/collect.py --offline`, puis `npm
 La collecte affiche alors explicitement des statuts de cache. Aucun secret n'est requis.
 Une absence de donnée n'est jamais convertie en zéro.
 
-## Publier sur GitHub et éteindre le PC
+## Déploiement GitHub et réinstallation
+
+Le dépôt `OverFlo-dev/Presidentielle-2027` et GitHub Pages sont déjà configurés.
+La première collecte et publication GitHub a réussi le 20 octobre 2026.
+Voir [le fonctionnement et les commandes de publication](docs/DEPLOIEMENT.md).
+Les étapes suivantes permettent de réinstaller le projet dans un autre dépôt :
 
 1. Créer un **dépôt dédié**, public si GitHub Free est utilisé, avec `main` comme branche
    par défaut. Mettre **le contenu de ce dossier à sa racine**, pas le dossier PatriBot.

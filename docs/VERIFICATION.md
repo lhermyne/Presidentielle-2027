@@ -55,10 +55,20 @@ avec en-têtes, régions défilantes accessibles au clavier, états d’erreur a
 annonces de calcul, mouvement réduit, ressources locales et icônes décoratives masquées.
 La revue de code et de rendu n’est pas une certification WCAG ou un score Lighthouse.
 
+## Publication GitHub vérifiée
+
+- Dépôt public dédié créé : https://github.com/OverFlo-dev/Presidentielle-2027
+- GitHub Pages en HTTPS, mode workflow, première publication réussie :
+  https://overflo-dev.github.io/Presidentielle-2027/
+- Première exécution GitHub : https://github.com/OverFlo-dev/Presidentielle-2027/actions/runs/39492900873
+  Installation, 30 tests, collecte des sept sources, calcul, archivage, build et déploiement réussis.
+  Les sept collectes ont le statut « ok ». Le flux Google ne fournit pas encore de signal candidat.
+- Contrôle sur l’URL publique : résultats calculés par le Web Worker, portraits chargés,
+  navigation Sources, curseur ×3 → ×5 avec poids 73/20/7 inchangés, retour à la référence.
+- Détails de l’exploitation : voir DEPLOIEMENT.md.
+
 ## Limites restantes
 
-- Aucun dépôt distant créé, aucun workflow exécuté sur GitHub à ce stade.
-  Pages et les permissions doivent être activés dans le futur dépôt dédié.
 - Pas de calibration historique : poids, plafond relatif ±50 %, facteur, erreurs et
   repondération du marché restent des hypothèses de sensibilité.
 - Date de publication des sondages absente du CSV : fin du terrain utilisée
