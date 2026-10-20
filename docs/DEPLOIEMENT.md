@@ -1,12 +1,14 @@
 # Publication autonome sur GitHub
 
 Compte de destination confirmé le 20 octobre 2026 : **lhermyne**.
-La connexion de ce compte et la publication finale restent à vérifier.
+Connexion du compte et publication vérifiées avec succès le 20 octobre 2026.
+Première exécution sur ce compte : https://github.com/lhermyne/Presidentielle-2027/actions/runs/39495393464
 
-- Dépôt cible : https://github.com/lhermyne/Presidentielle-2027
-- Site cible : https://lhermyne.github.io/Presidentielle-2027/
-- Branche prévue : `main`.
-- GitHub Pages : mode **GitHub Actions**.
+- Dépôt : https://github.com/lhermyne/Presidentielle-2027
+- Site : https://lhermyne.github.io/Presidentielle-2027/
+- Branche : `main`.
+- GitHub Pages : mode **GitHub Actions**, HTTPS imposé.
+- Le workflow de collecte quotidienne est actif.
 - Workflow : `.github/workflows/daily-pages.yml`.
 
 Le workflow définit une collecte quotidienne à 05:17 UTC : 06:17 en hiver,
@@ -20,7 +22,7 @@ Les sources sont Sondax, les historiques Instagram/X/TikTok/Facebook,
 Polymarket et le flux Google Trends. Un flux disponible ne signifie pas forcément
 qu’il existe un signal exploitable pour les candidats retenus.
 
-## Après activation
+## Utilisation
 
 Dans Actions, ouvrir **Actualisation et publication** puis **Run workflow** sur `main`
 pour actualiser manuellement. Les dates et statuts figurent sur la page Sources et
@@ -33,3 +35,7 @@ Un push de code déclenche la publication. Les modifications portant uniquement
 sur les données, les documents ou le README ne redéclenchent pas le site.
 
 Le serveur `http://127.0.0.1:4197/` reste un aperçu local de test.
+
+Le premier workflow sur lhermyne a réussi : installation, 30 tests, collecte des sept
+sources (toutes `ok`), calcul, archivage Git, build et publication. Le site public
+répond en HTTPS et charge les observations produites par GitHub.

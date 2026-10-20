@@ -60,7 +60,11 @@ La revue de code et de rendu n’est pas une certification WCAG ou un score Ligh
 - Compte confirmé par l’utilisateur : **lhermyne**, exclusivement.
 - Dépôt cible : https://github.com/lhermyne/Presidentielle-2027
 - Site cible : https://lhermyne.github.io/Presidentielle-2027/
-- La publication sur ce compte reste à vérifier après sa connexion.
+- Publication sur lhermyne vérifiée :
+  https://github.com/lhermyne/Presidentielle-2027/actions/runs/39495393464
+  Installation, 30 tests, sept collectes `ok`, calcul, archivage, build et publication réussis.
+  Page publique et observations : HTTP 200 en HTTPS.
+  Ancienne URL OverFlo : HTTP 404.
 - Les contrôles locaux du modèle et du build restent valides.
 
 ## Limites restantes

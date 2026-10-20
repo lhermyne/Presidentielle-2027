@@ -91,8 +91,8 @@ Une absence de donnée n'est jamais convertie en zéro.
 
 ## Déploiement GitHub et réinstallation
 
-Le dépôt `lhermyne/Presidentielle-2027` est la destination choisie.
-La publication y sera vérifiée après connexion du compte lhermyne.
+Le dépôt `lhermyne/Presidentielle-2027` et GitHub Pages sont configurés sur le compte **lhermyne**.
+La collecte et la publication sur ce compte ont été vérifiées le 20 octobre 2026.
 Voir [le fonctionnement et les commandes de publication](docs/DEPLOIEMENT.md).
 Les étapes suivantes permettent de réinstaller le projet dans un autre dépôt :
 
