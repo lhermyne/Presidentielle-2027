@@ -1,0 +1,21 @@
+{
+  "name": "lhermyne-presidentielle-2027",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "front-end"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "predev": "node scripts/prepare-public.mjs",
+    "dev": "npm run dev --workspace front-end",
+    "build": "node scripts/prepare-public.mjs && npm run build --workspace front-end",
+    "preview": "npm run preview --workspace front-end",
+    "forecast": "node scripts/forecast.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm test && npm run build"
+  }
+}

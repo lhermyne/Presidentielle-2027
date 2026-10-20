@@ -1,0 +1,10 @@
+node_modules/
+dist/
+front-end/dist/
+front-end/public/data/
+__pycache__/
+*.pyc
+.env
+.env.local
+output/
+data/raw/

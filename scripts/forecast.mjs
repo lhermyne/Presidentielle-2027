@@ -1,0 +1,14 @@
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { forecast, listConfigurations, MODEL_VERSION } from '../model/forecast.mjs';
+const root = new URL('../', import.meta.url);
+const data = JSON.parse(await readFile(new URL('data/latest.json', root), 'utf8'));
+const config = listConfigurations(data)[0];
+if (!config) throw new Error('No valid configuration. Publication stopped.');
+const result = forecast(data, config.id);
+if (result.error) throw new Error(result.error);
+const archived = { asOf: data.asOf, generatedAt: data.generatedAt, modelVersion: MODEL_VERSION, ...result };
+await writeFile(new URL('data/forecast.json', root), JSON.stringify(archived) + '\n');
+const directory = new URL(`data/archive/${data.asOf}/`, root);
+await mkdir(directory, { recursive: true });
+await writeFile(new URL('forecast.json', directory), JSON.stringify(archived) + '\n');
+console.log(`${result.baseline.pollCount} enquêtes compatibles ; ${result.settings.simulations} simulations ; ${result.unresolved.toFixed(1)} % de duels non documentés.`);

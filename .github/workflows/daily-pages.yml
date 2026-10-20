@@ -1,0 +1,74 @@
+name: Actualisation et publication
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['data/**', 'README.md', 'BRIEF.md', 'DESIGN.md', 'docs/**']
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: presidentielle-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  collect-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-fund --no-audit
+      - name: Tester les contrôles de données
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Tester le moteur
+        run: npm test
+      - name: Collecter les sources publiques
+        run: python pipeline/collect.py
+      - name: Calculer et archiver la référence
+        run: npm run forecast
+      - name: Construire le site statique
+        run: npm run build
+      - name: Conserver les observations et les prévisions
+        env:
+          DATA_BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Actualise les données et la prévision quotidienne'
+            git push origin "HEAD:$DATA_BRANCH"
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+      - name: Résumer l’actualisation
+        run: node scripts/run-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: collect-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publier sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
