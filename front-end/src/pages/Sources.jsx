@@ -23,7 +23,7 @@ function sourceDescription(source, data) {
     case 'polymarket':
       return 'Prix de victoire finale lus directement dans l’API publique Gamma. Ils repondèrent les trajectoires simulées ; aucun prix n’est transformé en intention de vote.';
     case 'wikipedia':
-      return `Consultations quotidiennes des articles Wikipédia en français, robots exclus, via l’API publique et gratuite de Wikimedia. ${Object.keys(data.wikipedia?.momentum ?? {}).length} personnalité(s) avec une série exploitable ; seule l’évolution sur 7 jours face aux 21 précédents est utilisée.`;
+      return 'Consultations quotidiennes des articles Wikipédia en français, robots exclus, via l’API publique et gratuite de Wikimedia. Comme le baromètre, on mesure la dynamique depuis le dernier sondage : médiane des jours suivants face à la médiane des 28 jours précédents.';
     case 'google-trends':
       return 'L’API officielle de Google Trends reste réservée à quelques testeurs. Le flux public des recherches en forte hausse est archivé chaque jour, mais il ne contient presque jamais de candidat : la source reste à 0 % et ne s’active que si au moins deux candidats y apparaissent.';
     default:

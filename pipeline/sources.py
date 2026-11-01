@@ -330,7 +330,7 @@ def parse_pageviews(raw):
     return views
 
 
-def merge_pageviews(previous, current, keep_days=90):
+def merge_pageviews(previous, current, keep_days=180):
     """Fusionne les séries par candidat et ne conserve que les derniers jours utiles."""
     merged = {candidate: dict(views) for candidate, views in (previous or {}).items()}
     for candidate, views in current.items():
@@ -343,37 +343,51 @@ def merge_pageviews(previous, current, keep_days=90):
             for candidate, views in merged.items()}
 
 
-def _window_mean(views, end: date, first_offset: int, length: int, minimum: int):
-    values = [views.get((end - timedelta(days=offset)).isoformat()) for offset in range(first_offset, first_offset + length)]
-    present = [value for value in values if value is not None]
-    return statistics.fmean(present) if len(present) >= minimum else None
+WIKIPEDIA_REFERENCE_DAYS = 28
+WIKIPEDIA_MINIMUM_DAILY = 30
 
 
-def wikipedia_signals(series, as_of, fetched_at, recent_days=7, baseline_days=21, minimum_daily=30):
-    """Dynamique d'attention : log(moyenne des 7 derniers jours / moyenne des 21 précédents).
+def _views_between(views, first: date, last: date):
+    return [views[day] for day in sorted(views) if first.isoformat() <= day <= last.isoformat()]
 
-    Le niveau brut de consultations favoriserait les personnalités déjà connues ; seule
-    l'évolution est retenue. Une série trop courte ou trop faible n'est pas remplacée par zéro.
+
+def wikipedia_window(series, anchor, as_of):
+    """Dynamique de consultations depuis la fin d'un terrain de sondage, comme le baromètre.
+
+    Référence : médiane des 28 jours qui précèdent la fin du terrain (jour inclus).
+    Actuel : médiane des jours suivants, jusqu'au dernier relevé. Les médianes neutralisent
+    les pics d'un jour. Sans jour postérieur au terrain, la dynamique repart de zéro.
     """
-    momentum, windows, latest_dates = {}, {}, []
+    anchor_date = date.fromisoformat(anchor)
+    as_of_date = date.fromisoformat(as_of)
+    signals = {}
     for candidate, views in (series or {}).items():
         days = sorted(day for day in views if day <= as_of)
-        if not days:
+        if not days or (as_of_date - date.fromisoformat(days[-1])).days > 3:
             continue
-        end = date.fromisoformat(days[-1])
-        if (date.fromisoformat(as_of) - end).days > 3:
+        reference = _views_between(views, anchor_date - timedelta(days=WIKIPEDIA_REFERENCE_DAYS - 1), anchor_date)
+        if len(reference) < WIKIPEDIA_REFERENCE_DAYS - 4:
             continue
-        recent = _window_mean(views, end, 0, recent_days, recent_days - 1)
-        baseline = _window_mean(views, end, recent_days, baseline_days, baseline_days - 3)
-        if recent is None or baseline is None or baseline < minimum_daily or recent <= 0:
+        reference_level = statistics.median(reference)
+        if reference_level < WIKIPEDIA_MINIMUM_DAILY:
             continue
-        momentum[candidate] = math.log(recent / baseline)
-        windows[candidate] = {"through": days[-1], "recentDaily": round(recent, 1), "baselineDaily": round(baseline, 1)}
-        latest_dates.append(days[-1])
-    return {"kind": "wikimedia-pageviews", "project": "fr.wikipedia", "asOf": max(latest_dates, default=None),
-            "fetchedAt": fetched_at, "recentDays": recent_days, "baselineDays": baseline_days,
-            "momentum": momentum, "windows": windows,
-            "note": "Consultations humaines de Wikipédia en français (robots exclus). Évolution sur 7 jours face aux 21 précédents ; une consultation n’est pas une intention de vote."}
+        current = _views_between(views, anchor_date + timedelta(days=1), as_of_date)
+        current_level = statistics.median(current) if current else reference_level
+        if current_level <= 0:
+            continue
+        signals[candidate] = {"dynamic": math.log(current_level / reference_level),
+                              "change": (current_level / reference_level - 1) * 100,
+                              "referenceDaily": round(reference_level, 1), "currentDaily": round(current_level, 1),
+                              "days": len(current), "through": days[-1]}
+    return {"anchor": anchor, "anchorKind": "fieldEnd", "signals": signals}
+
+
+def wikipedia_signals(series, as_of, fetched_at, anchors=()):
+    latest = max((day for views in (series or {}).values() for day in views if day <= as_of), default=None)
+    return {"kind": "wikimedia-pageviews", "project": "fr.wikipedia", "asOf": latest, "fetchedAt": fetched_at,
+            "referenceDays": WIKIPEDIA_REFERENCE_DAYS,
+            "windows": {anchor: wikipedia_window(series, anchor, as_of) for anchor in sorted(set(anchors))},
+            "note": "Consultations humaines de Wikipédia en français (robots exclus). Dynamique depuis la fin du dernier terrain compatible : médiane des jours suivants face à la médiane des 28 jours précédents. Une consultation n’est pas une intention de vote."}
 
 
 def parse_market(raw, captured_at):

@@ -5,12 +5,15 @@ export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
 export const SOURCE_LABELS = Object.freeze({ polls: 'Sondages', barometer: 'Baromètre', polymarket: 'Polymarket', wikipedia: 'Wikipédia', trends: 'Google Trends' });
 // Curseurs indépendants de 0 à 100 ; seule leur proportion compte. Les sondages restent le socle (minimum 1).
-// Avec Google Trends sans signal, la référence donne 48 % sondages, 33 % baromètre (×3,5), 14 % Polymarket, 5 % Wikipédia.
+// Avec Google Trends sans signal, la référence donne 48 % sondages, 33 % baromètre (×3,5), 14 % Polymarket, 5 % Wikipédia (×0,5).
 export const DEFAULT_WEIGHTS = Object.freeze({ polls: 100, barometer: 70, polymarket: 30, wikipedia: 10, trends: 10 });
 export const MIN_POLL_WEIGHT = 1;
-// Le curseur du baromètre est un multiplicateur direct de ×0 à ×5 : chaque unité occupe 20 dans la barre d'influence.
-export const BAROMETER_WEIGHT_PER_UNIT = 20;
-export const barometerMultiplier = weights => normalizeWeights(weights).barometer / BAROMETER_WEIGHT_PER_UNIT;
+// Baromètre et Wikipédia se règlent en multiplicateur direct de ×0 à ×5 : chaque unité occupe 20 dans la barre d'influence.
+export const MULTIPLIER_IDS = Object.freeze(['barometer', 'wikipedia']);
+export const WEIGHT_PER_MULTIPLIER = 20;
+export const sourceMultiplier = (weights, id) => normalizeWeights(weights)[id] / WEIGHT_PER_MULTIPLIER;
+// Une dynamique Wikipédia (log du rapport de consultations, bornée à ±1) vaut 10 % relatifs à ×1.
+export const WIKIPEDIA_UNIT = 0.1;
 // Une correction dynamique ne dépasse jamais ±50 % du propre score sondé du candidat.
 export const RELATIVE_LIMIT = 0.5;
 export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
@@ -148,7 +151,7 @@ export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
     polls: { available: Boolean(poll), latest: poll?.latest, reason: 'Socle électoral : intentions de vote dans une liste exacte de candidats.' },
     barometer: { available: false, reason: 'Deux candidats avec une dynamique mesurable depuis le dernier terrain, sur au moins deux plateformes récentes, sont nécessaires.' },
     polymarket: { available: false, reason: 'Deux candidats cotés et une capture de moins de 7 jours sont nécessaires.' },
-    wikipedia: { available: false, reason: 'Moins de deux candidats avec assez de consultations Wikipédia sur 28 jours, ou relevé de plus de 3 jours.' },
+    wikipedia: { available: false, reason: 'Moins de deux candidats avec assez de consultations Wikipédia autour du dernier terrain, ou relevé de plus de 3 jours.' },
     trends: { available: false, reason: 'aucun candidat de cette liste dans les recherches en forte hausse des 28 derniers jours.' },
   };
   if (recent(data.asOf, data.social?.asOf, 3)) {
@@ -164,11 +167,12 @@ export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
       reason: 'Anticipations de victoire finale. Repondération modérée des trajectoires avec gagnant documenté, sans transformer les prix en scores du premier tour.' };
   }
   if (recent(data.asOf, data.wikipedia?.asOf, 3)) {
-    const momentum = data.wikipedia.momentum ?? {};
-    const observed = ids.filter(id => Number.isFinite(momentum[id]));
-    if (observed.length >= 2) components.wikipedia = { available: true, latest: data.wikipedia.asOf,
-      raw: Object.fromEntries(observed.map(id => [id, momentum[id]])), observed, missing: ids.filter(id => !observed.includes(id)),
-      reason: 'Évolution des consultations Wikipédia : 7 derniers jours comparés aux 21 précédents, appliquée relativement au propre score sondé, comme le baromètre. Une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
+    const window = data.wikipedia.windows?.[poll?.latest];
+    const observed = ids.filter(id => Number.isFinite(window?.signals?.[id]?.dynamic));
+    if (observed.length >= 2) components.wikipedia = { available: true, latest: data.wikipedia.asOf, anchor: window.anchor,
+      periods: window.signals, raw: Object.fromEntries(observed.map(id => [id, window.signals[id].dynamic])),
+      observed, missing: ids.filter(id => !observed.includes(id)),
+      reason: 'Dynamique des consultations Wikipédia depuis la fin du dernier terrain compatible (médianes, pics d’un jour neutralisés), appliquée en bonus ou malus relatif comme le baromètre. Une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
   }
   if (recent(data.asOf, data.trends?.asOf, 3)) {
     const signal = centeredSignal(ids, data.trends.interest ?? {});
@@ -238,11 +242,11 @@ export function forecast(data, configurationId, rawSettings = {}) {
   const shares = sourceShares(settings.weights, available);
   const sourceMix = Object.fromEntries(SOURCE_IDS.map(id => [id, { ...components[id], requested: settings.weights[id], effective: shares[id] }]));
 
-  // Chaque dynamique agit relativement au propre score sondé : multiplicateur direct pour le baromètre,
-  // part d'influence pour Wikipédia et Google Trends.
+  // Chaque dynamique agit relativement au propre score sondé : multiplicateur direct pour le baromètre
+  // et Wikipédia, part d'influence pour Google Trends.
   const scales = {
-    barometer: components.barometer.available ? barometerMultiplier(settings.weights) : 0,
-    wikipedia: shares.wikipedia / 100,
+    barometer: components.barometer.available ? sourceMultiplier(settings.weights, 'barometer') : 0,
+    wikipedia: components.wikipedia.available ? sourceMultiplier(settings.weights, 'wikipedia') * WIKIPEDIA_UNIT : 0,
     trends: shares.trends / 100,
   };
   const signals = {
@@ -312,7 +316,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
       runoff: summarizeRunoff(result.runoffSamples, result.topTwo) };
   }).sort((a, b) => b.score - a.score);
   return { modelVersion: MODEL_VERSION, settings, configuration, baseline, rows, sourceMix,
-    adjustmentLimits: { relative: RELATIVE_LIMIT * 100, barometerScale: scales.barometer, wikipediaScale: scales.wikipedia, trendsScale: scales.trends },
+    adjustmentLimits: { relative: RELATIVE_LIMIT * 100, barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
     marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
     unresolved: unresolved / totalWeight * 100,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null })).sort((a, b) => b.probability - a.probability),

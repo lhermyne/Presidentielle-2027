@@ -45,7 +45,7 @@ function ForecastEffects({ result, names }) {
       </div>
       <p className="source-caption">
         Corrections en points, et en % du score sondé dessous. * Signal manquant : aucune correction, la dynamique n’est pas comptée comme nulle.
-        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesuré depuis la fin du terrain du {dateLabel(mix.barometer.anchor)}.
+        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} et Wikipédia à ×{limits.wikipediaScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesurés depuis la fin du terrain du {dateLabel(mix.barometer.anchor ?? mix.wikipedia.anchor)}.
         Chaque actualisation repart du socle sondé.
       </p>
       <p className="metric-description">
@@ -59,6 +59,39 @@ function ForecastEffects({ result, names }) {
   );
 }
 
+function WikipediaDynamics({ result, data, names }) {
+  const window = data.wikipedia?.windows?.[result?.baseline?.latest];
+  const rows = Object.entries(window?.signals ?? {})
+    .filter(([id]) => result.rows.some(row => row.id === id))
+    .sort((a, b) => b[1].dynamic - a[1].dynamic);
+  if (!rows.length) return null;
+  const daily = value => Math.round(value).toLocaleString('fr-FR');
+  return (
+    <>
+      <h2 className="signal-heading">Dynamique Wikipédia</h2>
+      <p className="metric-description">
+        Consultations quotidiennes depuis la fin du terrain du {dateLabel(window.anchor)}, comparées aux 28 jours précédents.
+        Les médianes neutralisent les pics d’un seul jour. C’est cette évolution qui donne le bonus ou malus.
+      </p>
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Dynamique des consultations Wikipédia">
+        <table>
+          <thead><tr><th scope="col">Personnalité</th><th scope="col">Avant le terrain</th><th scope="col">Depuis le terrain</th><th scope="col">Évolution</th></tr></thead>
+          <tbody>
+            {rows.map(([id, signal]) => (
+              <tr key={id}>
+                <th scope="row">{names[id] ?? id}</th>
+                <td>{daily(signal.referenceDaily)} / jour</td>
+                <td>{signal.days ? `${daily(signal.currentDaily)} / jour` : 'Pas encore de recul'}</td>
+                <td>{signed(signal.change, 0)} %</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 export default function SourceBreakdown({ result, data }) {
   const names = Object.fromEntries(data.candidates.map(candidate => [candidate.id, candidate.name]));
   const dynamics = Object.entries(data.social.signals ?? {})
@@ -67,7 +100,7 @@ export default function SourceBreakdown({ result, data }) {
   return (
     <section className="panel source-breakdown">
       <details key={result?.error ? 'signals' : 'forecast'} open={Boolean(result?.error)}>
-        <summary>Vérifier l’effet de chaque source et consulter la dynamique du baromètre</summary>
+        <summary>Vérifier l’effet de chaque source et consulter les dynamiques</summary>
         {result?.rows?.length > 0 && <ForecastEffects result={result} names={names} />}
         <h2 className="signal-heading">Dynamique du baromètre</h2>
         <p className="metric-description">Repère hebdomadaire en ‰ sur 7 relevés. Être premier de ce classement ne signifie pas être favori à l’élection.</p>
@@ -82,6 +115,7 @@ export default function SourceBreakdown({ result, data }) {
           </table>
         </div>
         {!dynamics.length && <p>Aucune dynamique récente exploitable.</p>}
+        <WikipediaDynamics result={result} data={data} names={names} />
       </details>
     </section>
   );

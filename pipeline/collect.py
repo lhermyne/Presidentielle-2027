@@ -80,7 +80,7 @@ def collect_source(key, title, url, parser, captured_at, offline):
     return None, {**status, "status": "unavailable", "fetchedAt": None}
 
 
-def collect_wikipedia(candidates, as_of, captured_at, offline, pause=1.0):
+def collect_wikipedia(candidates, as_of, captured_at, offline, pause=1.0, history_days=160):
     """Une requête par personnalité ; un échec isolé ne supprime pas les autres séries."""
     path = CACHE / "wikipedia.json"
     previous = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
@@ -90,7 +90,8 @@ def collect_wikipedia(candidates, as_of, captured_at, offline, pause=1.0):
               "documentationUrl": WIKIPEDIA_DOCUMENTATION}
     if not offline:
         end = date.fromisoformat(as_of)
-        start = end - timedelta(days=45)
+        # 120 jours de sondages + 28 jours de référence avant le plus ancien terrain retenu.
+        start = end - timedelta(days=history_days)
         current, errors = {}, []
         for candidate in candidates:
             try:
@@ -164,12 +165,13 @@ def main():
             candidate["photo"] = f"portraits/{candidate['id']}.png"
     pageviews, wikipedia_status = collect_wikipedia(candidates, as_of, captured_at, args.offline)
     statuses.append(wikipedia_status)
+    anchors = [p["fieldEnd"] for p in poll_data["polls"] if p["round"] == 1 and
+               0 <= (date_check.date() - datetime.fromisoformat(p["fieldEnd"]).date()).days <= 120]
     result = {"schemaVersion": 1, "generatedAt": captured_at, "asOf": as_of,
               "candidates": candidates, "polls": poll_data["polls"],
-              "social": social_signals(histories, as_of, [p["fieldEnd"] for p in poll_data["polls"] if p["round"] == 1 and
-                  0 <= (date_check.date() - datetime.fromisoformat(p["fieldEnd"]).date()).days <= 120]), "market": market_data,
+              "social": social_signals(histories, as_of, anchors), "market": market_data,
               "trends": trend_signals(trends_data, candidates, as_of, trends_status.get("fetchedAt")),
-              "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt")),
+              "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt"), anchors),
               "sources": statuses, "rejectedPolls": poll_data.get("rejected", []),
               "limitations": ["Modèle expérimental, paramètres non calibrés historiquement.",
                                "Prévisions conditionnelles aux candidatures de chaque configuration.",

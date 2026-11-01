@@ -1,7 +1,8 @@
 import { ArrowCounterClockwiseIcon, SlidersHorizontalIcon, ArrowUpRightIcon, LockSimpleIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 import {
-  BAROMETER_WEIGHT_PER_UNIT,
+  MULTIPLIER_IDS,
+  WEIGHT_PER_MULTIPLIER,
   DEFAULT_SETTINGS,
   DEFAULT_WEIGHTS,
   MIN_POLL_WEIGHT,
@@ -16,7 +17,7 @@ const SOURCE_ROLES = {
   polls: 'Socle obligatoire des scores',
   barometer: 'Dynamique des abonnés : bonus ou malus relatif',
   polymarket: 'Anticipations de victoire finale',
-  wikipedia: 'Évolution des consultations : bonus ou malus relatif',
+  wikipedia: 'Dynamique des consultations : bonus ou malus relatif',
   trends: 'Recherches en forte hausse : bonus ou malus relatif',
 };
 const POLLS_ONLY = Object.fromEntries(SOURCE_IDS.map(id => [id, id === 'polls' ? 100 : 0]));
@@ -59,7 +60,7 @@ function InfluenceBar({ shares }) {
 }
 
 function multiplierLabel(value) {
-  return `×${(value / BAROMETER_WEIGHT_PER_UNIT).toLocaleString('fr-FR', { maximumFractionDigits: 2 })}`;
+  return `×${(value / WEIGHT_PER_MULTIPLIER).toLocaleString('fr-FR', { maximumFractionDigits: 2 })}`;
 }
 
 function sourceNote(id, share, component) {
@@ -70,7 +71,7 @@ function sourceNote(id, share, component) {
 
 function SourceSlider({ id, value, share, component, onChange }) {
   const locked = id !== 'polls' && !component.available;
-  const isBarometer = id === 'barometer';
+  const isMultiplier = MULTIPLIER_IDS.includes(id);
   const shown = locked ? 0 : value;
   return (
     <div className={`slider-field source-slider source-${id} ${locked ? 'is-locked' : ''}`}>
@@ -80,7 +81,7 @@ function SourceSlider({ id, value, share, component, onChange }) {
           {SOURCE_LABELS[id]}
           {locked && <LockSimpleIcon aria-hidden="true" size={13} weight="bold" />}
         </label>
-        <output htmlFor={`weight-${id}`}>{isBarometer ? multiplierLabel(shown) : shown}</output>
+        <output htmlFor={`weight-${id}`}>{isMultiplier ? multiplierLabel(shown) : shown}</output>
       </div>
       <input
         id={`weight-${id}`}
@@ -88,7 +89,7 @@ function SourceSlider({ id, value, share, component, onChange }) {
         type="range"
         min={id === 'polls' ? MIN_POLL_WEIGHT : 0}
         max="100"
-        step={isBarometer ? BAROMETER_WEIGHT_PER_UNIT / 4 : 1}
+        step={isMultiplier ? WEIGHT_PER_MULTIPLIER / 4 : 1}
         value={shown}
         disabled={locked}
         onChange={event => onChange(id, event.target.value)}
@@ -137,8 +138,8 @@ export default function Laboratory({ configurations, configurationId, setConfigu
           <legend>Influence des sources</legend>
           <InfluenceBar shares={shares} />
           <p className="weight-explainer">
-            Chaque curseur est indépendant : seule leur proportion compte. Le baromètre va de ×0 à ×5
-            (×5 pèse autant que 100). Les sondages restent le socle (minimum 1). Une source sans signal est verrouillée.
+            Chaque curseur est indépendant : seule leur proportion compte. Baromètre et Wikipédia vont
+            de ×0 à ×5 (×5 pèse autant que 100). Les sondages restent le socle (minimum 1). Une source sans signal est verrouillée.
           </p>
           <div className="weight-presets">
             <button type="button" className="button" onClick={() => applyWeights(DEFAULT_WEIGHTS)}>Référence</button>

@@ -55,7 +55,7 @@ const addSignals = data => ({ ...data,
   social: { asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals: { a: {score:1,coverage:4}, b: {score:-2,coverage:4}, c: {score:0,coverage:2}, d: {score:60,coverage:4} } } }, signals: { a: { barometerScore: 1, barometerCoverage: 4 }, b: { barometerScore: -2, barometerCoverage: 4 }, c: { barometerScore: 0, barometerCoverage: 2 }, d: { barometerScore: 100, barometerCoverage: 4 } } },
   market: { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 80 }, { id: 'c', probability: 10 }, { id: 'd', probability: 5 }] },
   trends: { asOf: data.asOf, interest: { a: 100, b: 500 } },
-  wikipedia: { asOf: data.asOf, momentum: { a: 0.6, b: -0.4, d: 0.1 } },
+  wikipedia: { asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals: { a: { dynamic: 0.6 }, b: { dynamic: -0.4 }, d: { dynamic: 0.1 } } } } },
 });
 
 test('independent sliders become shares of 100 percent and polls keep at least 1', () => {
@@ -227,7 +227,7 @@ test('second-round scores come from documented duel polls only', () => {
   assert.ok(undocumented.rows.every(row => row.runoff === null));
 });
 
-test('Wikipedia momentum is a relative boost like the barometer and absent series stay uncorrected', () => {
+test('Wikipedia dynamics since the last poll act like the barometer: x1 turns a log-ratio of 0.6 into +6 percent', () => {
   const data = addSignals(dataset(firstRound));
   const result = forecast(data, key, { weights: { polls: 80, wikipedia: 20 }, simulations: 1000 });
   const row = id => result.rows.find(item => item.id === id);
@@ -236,7 +236,9 @@ test('Wikipedia momentum is a relative boost like the barometer and absent serie
   assert.ok(row('b').corrections.wikipedia < 0);
   assert.equal(row('c').corrections.wikipedia, 0);
   assert.ok(result.sourceMix.wikipedia.missing.includes('c'));
-  for (const item of result.rows) assert.ok(Math.abs(item.corrections.wikipedia) <= item.pollScore * 0.2 + 1e-9);
+  for (const item of result.rows) assert.ok(Math.abs(item.corrections.wikipedia) <= item.pollScore * 0.1 + 1e-9);
+  assert.ok(Math.abs(row('a').corrections.wikipedia - row('a').pollScore * 0.06) < 1e-9);
+  assert.equal(result.adjustmentLimits.wikipediaScale, 1);
   data.wikipedia.asOf = '2026-10-10';
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
 });

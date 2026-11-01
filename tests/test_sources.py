@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import collect
 from sources import normalize_history, parse_market, parse_polls, slug, social_signals, parse_trends, merge_trends, trend_signals, barometer_window
-from sources import parse_pageviews, wikipedia_signals, wikipedia_url
+from sources import parse_pageviews, wikipedia_signals, wikipedia_url, wikipedia_window
 
 HEADER = "sondage_id,institut,terrain_debut,terrain_fin,echantillon,tour,configuration,configuration_principale,echantillon_configuration,candidat,parti,score,url_source\n"
 
@@ -113,20 +113,32 @@ class SourceTests(unittest.TestCase):
             self.assertEqual(status["observedThrough"], "2026-10-18")
             self.assertEqual(status["fetchedAt"], "2026-10-20T12:00:00Z")
 
-    def test_wikipedia_pageviews_parse_and_momentum_window(self):
-        def series(recent, baseline, end="2026-10-30"):
-            last = date.fromisoformat(end)
-            return {(last - timedelta(days=offset)).isoformat(): recent if offset < 7 else baseline for offset in range(28)}
+    def test_wikipedia_dynamic_since_poll_uses_medians_and_resets(self):
+        def series(before, after, spike=None):
+            views = {}
+            for offset in range(40):
+                day = date(2026, 10, 22) - timedelta(days=offset)
+                views[day.isoformat()] = before
+            for offset in range(1, 9):
+                views[(date(2026, 10, 22) + timedelta(days=offset)).isoformat()] = after
+            if spike:
+                views["2026-10-05"] = spike
+            return views
 
         raw = json.dumps({"items": [{"timestamp": "2026102900", "views": 120}, {"timestamp": "bad", "views": 5}]})
         self.assertEqual(parse_pageviews(raw), {"2026-10-29": 120})
-        signal = wikipedia_signals({"a": series(200, 100), "b": series(50, 100), "small": series(10, 10),
-                                    "stale": series(500, 100, end="2026-10-20")}, "2026-11-01", "2026-11-01T06:00:00Z")
-        self.assertAlmostEqual(signal["momentum"]["a"], math.log(2))
-        self.assertAlmostEqual(signal["momentum"]["b"], math.log(0.5))
-        self.assertNotIn("small", signal["momentum"])
-        self.assertNotIn("stale", signal["momentum"])
-        self.assertEqual(signal["asOf"], "2026-10-30")
+        pageviews = {"a": series(100, 200), "b": series(100, 50, spike=167000), "small": series(10, 10)}
+        window = wikipedia_window(pageviews, "2026-10-22", "2026-10-31")
+        self.assertAlmostEqual(window["signals"]["a"]["dynamic"], math.log(2))
+        self.assertAlmostEqual(window["signals"]["b"]["dynamic"], math.log(0.5))
+        self.assertAlmostEqual(window["signals"]["b"]["referenceDaily"], 100)
+        self.assertNotIn("small", window["signals"])
+        reset = wikipedia_window(pageviews, "2026-10-30", "2026-10-30")
+        self.assertEqual(reset["signals"]["a"]["dynamic"], 0)
+        self.assertEqual(reset["signals"]["a"]["days"], 0)
+        signals = wikipedia_signals(pageviews, "2026-10-31", "2026-10-31T06:00:00Z", ["2026-10-22", "2026-10-22"])
+        self.assertEqual(list(signals["windows"]), ["2026-10-22"])
+        self.assertEqual(signals["asOf"], "2026-10-30")
         self.assertIn("Jean-Luc_M%C3%A9lenchon", wikipedia_url({"id": "jlm", "name": "Jean-Luc Mélenchon"},
                                                               date(2026, 10, 1), date(2026, 10, 30)))
 
