@@ -12,11 +12,16 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import date, timedelta
 from email.utils import parsedate_to_datetime
+from urllib.parse import quote
 
 BAROMETER_BASE = "https://lhermyne.github.io/L_Hermyne/data"
 POLL_URL = "https://sondax.fr/donnees/sondages-presidentielle-2027.csv"
 MARKET_URL = "https://gamma-api.polymarket.com/events?slug=next-french-presidential-election"
 TRENDS_URL = "https://trends.google.com/trending/rss?geo=FR"
+WIKIPEDIA_API = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/fr.wikipedia/all-access/user"
+WIKIPEDIA_DOCUMENTATION = "https://doc.wikimedia.org/generated-data-platform/aqs/analytics-api/reference/page-views.html"
+# Articles dont le titre diffère du nom affiché dans les sondages (aucun à ce jour).
+WIKIPEDIA_TITLES: dict[str, str] = {}
 PLATFORMS = ("instagram", "twitter", "tiktok", "facebook")
 ATTRIBUTION = "Sondax, d’après Wikipédia"
 
@@ -298,6 +303,77 @@ def trend_signals(raw, candidates, as_of, fetched_at):
     return {"kind": "trending-now-rss", "asOf": fetched_at[:10] if fetched_at else None,
             "windowDays": 28, "interest": dict(scores), "matched": matched,
             "note": "Recherches en forte hausse en France ; volumes minimums, pas l’ensemble des recherches. Absence du flux ≠ absence d’intérêt."}
+
+
+def wikipedia_title(candidate) -> str:
+    return WIKIPEDIA_TITLES.get(candidate["id"], candidate["name"].replace(" ", "_"))
+
+
+def wikipedia_url(candidate, start: date, end: date) -> str:
+    title = quote(wikipedia_title(candidate), safe="")
+    return f"{WIKIPEDIA_API}/{title}/daily/{start:%Y%m%d}/{end:%Y%m%d}"
+
+
+def parse_pageviews(raw):
+    """Réponse Wikimedia Pageviews : consultations humaines quotidiennes, indexées par date ISO."""
+    payload = json.loads(raw)
+    items = payload.get("items") if isinstance(payload, dict) else None
+    if not isinstance(items, list):
+        raise ValueError("Réponse Wikimedia inattendue.")
+    views = {}
+    for item in items:
+        stamp = str(item.get("timestamp", ""))
+        count = number(item.get("views"))
+        if len(stamp) < 8 or count is None or count < 0:
+            continue
+        views[f"{stamp[:4]}-{stamp[4:6]}-{stamp[6:8]}"] = int(count)
+    return views
+
+
+def merge_pageviews(previous, current, keep_days=90):
+    """Fusionne les séries par candidat et ne conserve que les derniers jours utiles."""
+    merged = {candidate: dict(views) for candidate, views in (previous or {}).items()}
+    for candidate, views in current.items():
+        merged.setdefault(candidate, {}).update(views)
+    latest = max((day for views in merged.values() for day in views), default=None)
+    if not latest:
+        return merged
+    keep_after = (date.fromisoformat(latest) - timedelta(days=keep_days)).isoformat()
+    return {candidate: {day: count for day, count in sorted(views.items()) if day >= keep_after}
+            for candidate, views in merged.items()}
+
+
+def _window_mean(views, end: date, first_offset: int, length: int, minimum: int):
+    values = [views.get((end - timedelta(days=offset)).isoformat()) for offset in range(first_offset, first_offset + length)]
+    present = [value for value in values if value is not None]
+    return statistics.fmean(present) if len(present) >= minimum else None
+
+
+def wikipedia_signals(series, as_of, fetched_at, recent_days=7, baseline_days=21, minimum_daily=30):
+    """Dynamique d'attention : log(moyenne des 7 derniers jours / moyenne des 21 précédents).
+
+    Le niveau brut de consultations favoriserait les personnalités déjà connues ; seule
+    l'évolution est retenue. Une série trop courte ou trop faible n'est pas remplacée par zéro.
+    """
+    momentum, windows, latest_dates = {}, {}, []
+    for candidate, views in (series or {}).items():
+        days = sorted(day for day in views if day <= as_of)
+        if not days:
+            continue
+        end = date.fromisoformat(days[-1])
+        if (date.fromisoformat(as_of) - end).days > 3:
+            continue
+        recent = _window_mean(views, end, 0, recent_days, recent_days - 1)
+        baseline = _window_mean(views, end, recent_days, baseline_days, baseline_days - 3)
+        if recent is None or baseline is None or baseline < minimum_daily or recent <= 0:
+            continue
+        momentum[candidate] = math.log(recent / baseline)
+        windows[candidate] = {"through": days[-1], "recentDaily": round(recent, 1), "baselineDaily": round(baseline, 1)}
+        latest_dates.append(days[-1])
+    return {"kind": "wikimedia-pageviews", "project": "fr.wikipedia", "asOf": max(latest_dates, default=None),
+            "fetchedAt": fetched_at, "recentDays": recent_days, "baselineDays": baseline_days,
+            "momentum": momentum, "windows": windows,
+            "note": "Consultations humaines de Wikipédia en français (robots exclus). Évolution sur 7 jours face aux 21 précédents ; une consultation n’est pas une intention de vote."}
 
 
 def parse_market(raw, captured_at):

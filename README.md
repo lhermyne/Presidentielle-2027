@@ -16,13 +16,15 @@ La collecte et la publication quotidiennes s’exécutent dans le workflow
 - Collecte des quatre historiques publics du baromètre et conservation des observations.
 - Collecte directe des prix, spreads et liquidités publics de Polymarket.
 - Collecte du flux public Google Trends France, dédoublonnage et archivage quotidien.
+- Collecte des consultations Wikipédia (API Wikimedia gratuite, sans clé) de chaque personnalité.
 - Simulation reproductible du premier tour, fréquence de présence parmi les deux premiers,
   duels sondés et bornes de victoire lorsqu'un duel manque.
-- Laboratoire : trois curseurs d’influence totalisant exactement 100 %, redistribution
-  proportionnelle, répartition de base, 100 % sondages, configuration, mémoire et incertitude.
+- Laboratoire : quatre curseurs d’influence totalisant exactement 100 %, source sans signal
+  verrouillée à 0 %, redistribution proportionnelle, répartition de base, 100 % sondages, configuration, mémoire et incertitude.
 - Baromètre indépendant des 100 % : un seul curseur de multiplicateur ×0 à ×5.
 - Effet de chaque source vérifiable par candidat, dynamique brute, calcul dans un Web Worker.
 - Liens de scénarios partageables, export JSON, pages Sources et Méthode.
+- Thème sombre par défaut, thème clair au choix ; bloc « L’essentiel » en tête de page.
 - Workflow quotidien : collecte, contrôles, archivage Git, build et publication Pages.
 
 **Le modèle n'est pas encore calibré sur les campagnes précédentes.** Ses probabilités
@@ -147,15 +149,17 @@ Fenêtre de 120 jours, décroissance exponentielle (demi-vie 21 jours), poids d'
 en racine carrée plafonné et atténuation de la fréquence d'un même institut.
 Pas de correction de biais d'institut prétendument apprise.
 
-Le réglage initial est **73 % sondages, 20 % Polymarket, 7 % Google Trends**.
-Ces trois poids seuls totalisent 100 %. Le baromètre reste **hors de cette répartition** :
+Le réglage initial est **73 % sondages, 20 % Polymarket, 4 % Wikipédia, 3 % Google Trends** :
+la référence 73/20/7 est conservée, les 7 % d’attention étant partagés (1er novembre 2026).
+Ces quatre poids seuls totalisent 100 %. Une source sans signal exploitable pour la liste
+choisie est **verrouillée à 0 %** dans le laboratoire et les autres se partagent les 100 %. Le baromètre reste **hors de cette répartition** :
 son unique curseur règle directement le multiplicateur, ×3 par défaut, de ×0 à ×5.
 Le changement d’un poids, d’un multiplicateur ou de disponibilité d’une source ne crée
 aucun couplage entre le multiplicateur et les trois pourcentages.
-À la collecte du 20 octobre 2026, le flux Google ne contient aucun candidat exploitable :
-poids retenus **78,49 / 21,51 / 0 %**. Le baromètre reste exactement à **×3**.
-Les anciens liens à quatre poids ignorent désormais le poids social et renormalisent
-les trois autres à 100 % ; le multiplicateur enregistré reste inchangé.
+À la collecte du 1er novembre 2026, le flux Google ne contient aucun candidat exploitable :
+poids retenus **75,26 / 20,62 / 4,12 / 0 %**. Le baromètre reste exactement à **×3**.
+Les anciens liens sans poids Wikipédia lui attribuent 0 % ; ceux qui contenaient un poids
+social l’ignorent et renormalisent les autres à 100 % ; le multiplicateur enregistré reste inchangé.
 Le bouton « 100 % sondages » conserve le boost indépendant ; choisir aussi ×0 pour
 une projection sans boost. La répartition est expérimentale, pas optimisée historiquement.
 
@@ -177,12 +181,18 @@ socle sondé ; les boosts quotidiens ne sont pas composés plusieurs fois. Une d
 manquante n’entraîne aucune correction propre. Être premier en dynamique n’est pas
 être favori électoral. Fenêtre, facteur et plafond restent des hypothèses à calibrer.
 
+Wikipédia : API publique Wikimedia Pageviews, consultations humaines quotidiennes de
+l’article en français de chaque personnalité. Seule l’évolution compte :
+`log(moyenne 7 derniers jours / moyenne des 21 précédents)`, au moins 30 vues/jour en
+référence, série de moins de trois jours. Signal centré, borné à ±1, plafonné à
+`4 × poids utilisé / 100` points. Une consultation n’est pas une intention de vote.
+
 Google Trends : RSS public France, titres contenant le nom complet d’un candidat,
 volumes minimums, dédoublonnage titre/date, fenêtre 28 jours et demi-vie 7 jours.
 Au moins deux candidats identifiés et une collecte de moins de trois jours sont requis.
 La correction d’attention est bornée à `4 × poids utilisé / 100` points. Elle ne mesure pas
 l’adhésion. L’accès public de comparaison a renvoyé HTTP 429 ; l’API comparative officielle
-reste en alpha sur candidature. Aucun contournement n’est implémenté.
+reste en alpha sur invitation (vérifié le 1er novembre 2026). Aucun contournement n’est implémenté.
 
 16 000 trajectoires reproductibles avec une graine fixe : premier tour autour du socle
 corrigé (scores positifs, total 100 %), puis sondages de second tour par paire exacte.
@@ -223,6 +233,8 @@ un export JSON inclut les observations exactes et les réglages du scénario.
 - **Google Trends** : https://trends.google.com/trending/rss?geo=FR ; flux public
   « Trending Now », distinct de l’API comparative alpha. Les observations quotidiennes
   sont conservées dans `data/cache/google-trends.json` et les archives.
+- **Wikipédia** : https://wikimedia.org/api/rest_v1/metrics/pageviews/ ; API Pageviews de la
+  Wikimedia Foundation, gratuite et sans clé, données CC0. Séries dans `data/cache/wikipedia.json`.
 - **Portraits** : ressources existantes du baromètre fournies dans le projet utilisateur ;
   leur réutilisation publique reste soumise aux droits des images d'origine.
 
@@ -233,7 +245,8 @@ un export JSON inclut les observations exactes et les réglages du scénario.
 3. Tester prospectivement si le baromètre anticipe des variations au-delà des sondages.
 4. Intégrer participation, solidité du choix et reports publiés lorsqu'ils sont disponibles.
 5. Obtenir un accès comparatif Google Trends officiel et comparer au signal Wikipédia.
-6. Évaluer les tendances X et les vues YouTube avec des accès automatisables, avant
-   d’introduire de nouveaux poids et de doubler des signaux d’attention corrélés.
+6. Évaluer YouTube Data API (gratuite avec clé en secret GitHub). X est payant à l’usage,
+   la recherche Bluesky refuse les appels anonymes et GDELT a renvoyé des réponses vides
+   (essais du 1er novembre 2026). Éviter de doubler des signaux d’attention corrélés.
 
 Avant ces vérifications, conserver la mention expérimentale et ne pas présenter le mélange de référence comme validé.

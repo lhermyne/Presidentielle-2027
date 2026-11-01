@@ -1,13 +1,16 @@
 import json
+import math
 import sys
 import tempfile
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import collect
 from sources import normalize_history, parse_market, parse_polls, slug, social_signals, parse_trends, merge_trends, trend_signals, barometer_window
+from sources import parse_pageviews, wikipedia_signals, wikipedia_url
 
 HEADER = "sondage_id,institut,terrain_debut,terrain_fin,echantillon,tour,configuration,configuration_principale,echantillon_configuration,candidat,parti,score,url_source\n"
 
@@ -109,6 +112,39 @@ class SourceTests(unittest.TestCase):
             self.assertEqual([row["date"] for row in value], ["2026-05-17", "2026-10-18"])
             self.assertEqual(status["observedThrough"], "2026-10-18")
             self.assertEqual(status["fetchedAt"], "2026-10-20T12:00:00Z")
+
+    def test_wikipedia_pageviews_parse_and_momentum_window(self):
+        def series(recent, baseline, end="2026-10-30"):
+            last = date.fromisoformat(end)
+            return {(last - timedelta(days=offset)).isoformat(): recent if offset < 7 else baseline for offset in range(28)}
+
+        raw = json.dumps({"items": [{"timestamp": "2026102900", "views": 120}, {"timestamp": "bad", "views": 5}]})
+        self.assertEqual(parse_pageviews(raw), {"2026-10-29": 120})
+        signal = wikipedia_signals({"a": series(200, 100), "b": series(50, 100), "small": series(10, 10),
+                                    "stale": series(500, 100, end="2026-10-20")}, "2026-11-01", "2026-11-01T06:00:00Z")
+        self.assertAlmostEqual(signal["momentum"]["a"], math.log(2))
+        self.assertAlmostEqual(signal["momentum"]["b"], math.log(0.5))
+        self.assertNotIn("small", signal["momentum"])
+        self.assertNotIn("stale", signal["momentum"])
+        self.assertEqual(signal["asOf"], "2026-10-30")
+        self.assertIn("Jean-Luc_M%C3%A9lenchon", wikipedia_url({"id": "jlm", "name": "Jean-Luc Mélenchon"},
+                                                              date(2026, 10, 1), date(2026, 10, 30)))
+
+    def test_wikipedia_partial_failure_keeps_other_series_and_cache(self):
+        temporary_root = Path(__file__).resolve().parents[1] / "output"
+        temporary_root.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temporary_root) as directory:
+            cache = Path(directory)
+            previous = {"data": {"b": {"2026-10-01": 40}}, "fetchedAt": "2026-10-19T12:00:00Z", "sha256": "old"}
+            (cache / "wikipedia.json").write_text(json.dumps(previous), encoding="utf-8")
+            answers = [json.dumps({"items": [{"timestamp": "2026103000", "views": 80}]}).encode(), RuntimeError("HTTP 429")]
+            candidates = [{"id": "a", "name": "Alice A"}, {"id": "b", "name": "Bob B"}]
+            with patch.object(collect, "CACHE", cache), patch.object(collect, "fetch", side_effect=answers):
+                value, status = collect.collect_wikipedia(candidates, "2026-10-31", "2026-10-31T06:00:00Z", False, pause=0)
+            self.assertEqual(value["a"], {"2026-10-30": 80})
+            self.assertEqual(value["b"], {"2026-10-01": 40})
+            self.assertEqual(status["status"], "ok")
+            self.assertIn("1 article(s) non lus", status["error"])
 
 
 if __name__ == "__main__":

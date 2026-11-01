@@ -75,3 +75,12 @@ Plafond de sensibilité ±50 % relatif, facteur réglable de ×0 à ×5, méthod
 Retirer le poids social du budget de 100 %. Conserver un seul curseur pour le baromètre,
 réglant directement ×0 à ×5, défaut ×3. Formule : score en ‰ / 1 000 × multiplicateur,
 sans facteur de poids ni effet des indisponibilités des autres sources.
+
+## Demandes de l'utilisateur, 1er novembre 2026
+- Thème sombre par défaut ; site plus présentable et plus intuitif.
+- Une source non branchée ou sans signal (Google Trends) est verrouillée à 0 % ;
+  les autres curseurs se partagent les 100 %.
+- Élargir les signaux avec des API gratuites. Retenu : consultations Wikipédia (Wikimedia,
+  sans clé). Écartés après essai : X (payant), Bluesky (403 anonyme), GDELT (réponses vides).
+  Google Trends comparatif reste en alpha sur invitation.
+- Référence conservée 73/20/7 : sondages / Polymarket / attention (Wikipédia 4, Trends 3).

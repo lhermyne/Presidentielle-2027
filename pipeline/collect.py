@@ -6,14 +6,15 @@ import hashlib
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 from sources import (ATTRIBUTION, BAROMETER_BASE, MARKET_URL, PLATFORMS, POLL_URL, TRENDS_URL,
-                     normalize_history, parse_market, parse_polls, social_signals,
-                     parse_trends, merge_trends, trend_signals)
+                     WIKIPEDIA_DOCUMENTATION, normalize_history, parse_market, parse_polls, social_signals,
+                     parse_trends, merge_trends, trend_signals,
+                     merge_pageviews, parse_pageviews, wikipedia_signals, wikipedia_url)
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -31,7 +32,7 @@ def fetch(url):
     error = None
     for attempt in range(3):
         try:
-            request = Request(url, headers={"User-Agent": "LHermynePresidentielle2027/0.1 (public research dashboard)", "Accept": "application/json,text/csv;q=0.9,*/*;q=0.5"})
+            request = Request(url, headers={"User-Agent": "LHermynePresidentielle2027/0.1 (https://lhermyne.github.io/Presidentielle-2027/; public research dashboard)", "Accept": "application/json,text/csv;q=0.9,*/*;q=0.5"})
             with urlopen(request, timeout=25) as response:
                 return response.read(30_000_001)
         except Exception as exception:
@@ -76,6 +77,41 @@ def collect_source(key, title, url, parser, captured_at, offline):
             status["error"] = str(error)[:300]
     if previous:
         return previous["data"], {**status, "status": "cached", "fetchedAt": previous["fetchedAt"], "observedThrough": observation_date(key, previous["data"]), "sha256": previous["sha256"]}
+    return None, {**status, "status": "unavailable", "fetchedAt": None}
+
+
+def collect_wikipedia(candidates, as_of, captured_at, offline, pause=1.0):
+    """Une requête par personnalité ; un échec isolé ne supprime pas les autres séries."""
+    path = CACHE / "wikipedia.json"
+    previous = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    status = {"id": "wikipedia", "title": "Wikipédia · consultations", "url": WIKIPEDIA_DOCUMENTATION,
+              "attemptedAt": captured_at, "license": "CC0 1.0",
+              "attribution": "Wikimedia Foundation, API Pageviews", "attributionUrl": "https://wikimediafoundation.org/",
+              "documentationUrl": WIKIPEDIA_DOCUMENTATION}
+    if not offline:
+        end = date.fromisoformat(as_of)
+        start = end - timedelta(days=45)
+        current, errors = {}, []
+        for candidate in candidates:
+            try:
+                current[candidate["id"]] = parse_pageviews(fetch(wikipedia_url(candidate, start, end)))
+            except Exception as error:
+                errors.append(f"{candidate['id']} : {str(error)[:80]}")
+            time.sleep(pause)
+        if current:
+            series = merge_pageviews(previous["data"] if previous else None, current)
+            record = {"data": series, "fetchedAt": captured_at,
+                      "sha256": hashlib.sha256(json.dumps(series, sort_keys=True).encode()).hexdigest()}
+            write_json(path, record)
+            observed = max((day for views in series.values() for day in views), default=None)
+            partial = {"error": f"{len(errors)} article(s) non lus : " + " ; ".join(errors)[:250]} if errors else {}
+            return series, {**status, **partial, "status": "ok", "fetchedAt": captured_at,
+                            "observedThrough": observed, "sha256": record["sha256"]}
+        status["error"] = " ; ".join(errors)[:300] or "Aucune personnalité à interroger."
+    if previous:
+        observed = max((day for views in previous["data"].values() for day in views), default=None)
+        return previous["data"], {**status, "status": "cached", "fetchedAt": previous["fetchedAt"],
+                                  "observedThrough": observed, "sha256": previous["sha256"]}
     return None, {**status, "status": "unavailable", "fetchedAt": None}
 
 
@@ -126,11 +162,14 @@ def main():
         photo = ROOT / "front-end" / "public" / "portraits" / f"{candidate['id']}.png"
         if photo.exists():
             candidate["photo"] = f"portraits/{candidate['id']}.png"
+    pageviews, wikipedia_status = collect_wikipedia(candidates, as_of, captured_at, args.offline)
+    statuses.append(wikipedia_status)
     result = {"schemaVersion": 1, "generatedAt": captured_at, "asOf": as_of,
               "candidates": candidates, "polls": poll_data["polls"],
               "social": social_signals(histories, as_of, [p["fieldEnd"] for p in poll_data["polls"] if p["round"] == 1 and
                   0 <= (date_check.date() - datetime.fromisoformat(p["fieldEnd"]).date()).days <= 120]), "market": market_data,
               "trends": trend_signals(trends_data, candidates, as_of, trends_status.get("fetchedAt")),
+              "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt")),
               "sources": statuses, "rejectedPolls": poll_data.get("rejected", []),
               "limitations": ["Modèle expérimental, paramètres non calibrés historiquement.",
                                "Prévisions conditionnelles aux candidatures de chaque configuration.",

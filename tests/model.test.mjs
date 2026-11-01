@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, redistributeWeights, SOURCE_IDS } from '../model/forecast.mjs';
+import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, redistributeWeights, availableWeights, SOURCE_IDS } from '../model/forecast.mjs';
 
 const poll = (id, scores, extra = {}) => ({ id, institute: 'Institut A', fieldStart: '2026-10-17', fieldEnd: '2026-10-19', sampleSize: 1000, round: 1, scores, ...extra });
 const dataset = (polls = []) => ({ asOf: '2026-10-20', candidates: ['a', 'b', 'c', 'd'].map(id => ({ id, name: id, family: id })), polls, social: { asOf: '2026-10-20', signals: {} }, market: null });
@@ -55,6 +55,7 @@ const addSignals = data => ({ ...data,
   social: { asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals: { a: {score:1,coverage:4}, b: {score:-2,coverage:4}, c: {score:0,coverage:2}, d: {score:60,coverage:4} } } }, signals: { a: { barometerScore: 1, barometerCoverage: 4 }, b: { barometerScore: -2, barometerCoverage: 4 }, c: { barometerScore: 0, barometerCoverage: 2 }, d: { barometerScore: 100, barometerCoverage: 4 } } },
   market: { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 80 }, { id: 'c', probability: 10 }, { id: 'd', probability: 5 }] },
   trends: { asOf: data.asOf, interest: { a: 100, b: 500 } },
+  wikipedia: { asOf: data.asOf, momentum: { a: 0.6, b: -0.4, d: 0.1 } },
 });
 
 test('sliders always sum to exactly 100 and allow source extremes', () => {
@@ -66,7 +67,7 @@ test('sliders always sum to exactly 100 and allow source extremes', () => {
     assert.ok(Object.values(weights).every(Number.isInteger));
   }
   assert.deepEqual(normalizeWeights({ polls: NaN, barometer: -10 }), DEFAULT_WEIGHTS);
-  assert.deepEqual(redistributeWeights({ polls: 100 }, 'polls', 0), { polymarket: 74, trends: 26, polls: 0 });
+  assert.deepEqual(redistributeWeights({ polls: 100 }, 'polls', 0), { polls: 0, polymarket: 74, wikipedia: 15, trends: 11 });
 });
 
 test('100 percent polls with boost disabled excludes every complementary signal from outcomes', () => {
@@ -139,7 +140,7 @@ test('market prices cannot invent a missing runoff or a simulated winner', () =>
 
 test('source-only attention or speculation does not fabricate electoral scores', () => {
   const data = addSignals(dataset(firstRound));
-  for (const source of ['polymarket', 'trends']) {
+  for (const source of ['polymarket', 'wikipedia', 'trends']) {
     const result = forecast(data, key, { weights: { [source]: 100 }, simulations: 1000 });
     assert.ok(result.error);
     assert.equal(result.rows.length, 0);
@@ -218,7 +219,37 @@ test('barometer multiplication is independent of weights and source outages', ()
 
 test('old four-source settings migrate to a three-source budget without affecting the multiplier', () => {
   const settings=settingsFrom({weights:{polls:55,barometer:25,polymarket:15,trends:5},barometerMultiplier:4});
-  assert.deepEqual(settings.weights,{polls:73,polymarket:20,trends:7});
+  assert.deepEqual(settings.weights,{polls:73,polymarket:20,wikipedia:0,trends:7});
   assert.equal(settings.barometerMultiplier,4);
   assert.deepEqual(redistributeWeights(settings.weights,'barometer',100),settings.weights);
+});
+
+test('an unavailable source is locked at zero and the others share 100 percent', () => {
+  const locked = ['trends'];
+  const shown = availableWeights(DEFAULT_WEIGHTS, locked);
+  assert.equal(shown.trends, 0);
+  assert.equal(Object.values(shown).reduce((a, b) => a + b), 100);
+  assert.ok(shown.polls > DEFAULT_WEIGHTS.polls && shown.polymarket >= DEFAULT_WEIGHTS.polymarket);
+  for (const value of [0, 37, 100]) {
+    const weights = redistributeWeights(shown, 'polymarket', value, locked);
+    assert.equal(weights.polymarket, value);
+    assert.equal(weights.trends, 0);
+    assert.equal(Object.values(weights).reduce((a, b) => a + b), 100);
+  }
+  assert.deepEqual(redistributeWeights(shown, 'trends', 50, locked), shown);
+  assert.deepEqual(redistributeWeights({ polls: 60, trends: 40 }, 'polls', 10, ['polymarket', 'wikipedia', 'trends']), { polls: 100, polymarket: 0, wikipedia: 0, trends: 0 });
+});
+
+test('Wikipedia attention momentum is a bounded correction and absent series stay uncorrected', () => {
+  const data = addSignals(dataset(firstRound));
+  const result = forecast(data, key, { weights: { polls: 80, wikipedia: 20 }, barometerMultiplier: 0, simulations: 1000 });
+  const row = id => result.rows.find(item => item.id === id);
+  assert.ok(result.sourceMix.wikipedia.available);
+  assert.ok(row('a').corrections.wikipedia > 0);
+  assert.ok(row('b').corrections.wikipedia < 0);
+  assert.equal(row('c').corrections.wikipedia, 0);
+  assert.ok(result.sourceMix.wikipedia.missing.includes('c'));
+  for (const item of result.rows) assert.ok(Math.abs(item.corrections.wikipedia) <= result.adjustmentLimits.wikipedia + 1e-9);
+  data.wikipedia.asOf = '2026-10-10';
+  assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
 });

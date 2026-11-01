@@ -17,8 +17,13 @@ Commit du catalogue non vérifiable dans le sandbox ; pas de révision inventée
 Ces analyses ne constituent pas une inspection visuelle des sites originaux.
 
 ## Tokens
-Fond #f5f6f2 ; surface #ffffff ; texte #182b29 ; secondaire #5a6863 ; filet #dce2dc.
-Accent #17634e ; fond accent #e9f1e9 ; avertissement #8a4a16 sur #fff3e6.
+Thème sombre par défaut (demande de l'utilisateur, 1er novembre 2026) :
+fond #0c1312 ; surface #121b19 ; texte #e4ebe7 ; secondaire #98a7a0 ; filet #24312d.
+Accent #5cc9a1 (texte) et #1f7d5f (fonds pleins) ; avertissement #f0b47c sur #2f2112.
+Thème clair sur choix du visiteur : fond #f5f6f2 ; surface #ffffff ; texte #182b29 ;
+secondaire #5a6863 ; filet #dce2dc ; accent #17634e ; avertissement #84501c sur #fff0dc.
+Toutes les couleurs passent par les variables CSS de styles.css, jamais en dur.
+En sombre, les couleurs de candidats sont éclaircies de 30 % (color-mix) pour le contraste.
 Couleurs de candidats réservées aux séries et à leurs repères, avec noms et valeurs.
 Manrope auto-hébergée ; chiffres tabulaires ; IBM Plex Mono pour métadonnées rares.
 Titre 48–56px desktop, environ 28–32px mobile ; contenu explicatif 13–16px,
@@ -40,4 +45,6 @@ Le simulateur est un formulaire natif ; mises à jour annoncées avec modératio
 Sur tablette : laboratoire sous les résultats. Sur mobile : colonnes réduites,
 tableau consultable sans débordement global, légendes accessibles.
 Transitions de 120ms pour commandes ; désactivées avec prefers-reduced-motion.
-Une seule apparence claire cohérente, sans bascule automatique.
+Sombre par défaut ; bouton soleil/lune dans l'en-tête, choix conservé en localStorage
+et appliqué avant le premier rendu. Pas de bascule automatique selon le système.
+Texte minimal 11px, sauf repères d'axe à 10px.

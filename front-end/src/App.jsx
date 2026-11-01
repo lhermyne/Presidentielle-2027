@@ -4,6 +4,7 @@ import { ArrowUpRightIcon, ChartLineUpIcon, ArrowClockwiseIcon } from '@phosphor
 import Overview from './pages/Overview.jsx';
 import Sources from './pages/Sources.jsx';
 import Method from './pages/Method.jsx';
+import ThemeToggle from './components/ThemeToggle.jsx';
 import { dateLabel } from './lib/format.js';
 
 export default function App() {
@@ -36,7 +37,10 @@ export default function App() {
         <nav aria-label="Navigation principale">
           <NavLink to="/" end>Vue d’ensemble</NavLink><NavLink to="/sources">Les sources</NavLink><NavLink to="/methode">La méthode</NavLink>
         </nav>
-        <a className="barometer-link" href="https://lhermyne.github.io/L_Hermyne/monitor_dashboard.html" target="_blank" rel="noreferrer">Le baromètre <ArrowUpRightIcon aria-hidden="true" size={16} /></a>
+        <div className="header-actions">
+          <a className="barometer-link" href="https://lhermyne.github.io/L_Hermyne/monitor_dashboard.html" target="_blank" rel="noreferrer">Le baromètre <ArrowUpRightIcon aria-hidden="true" size={16} /></a>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
     <main id="main-content" tabIndex={-1}>
@@ -52,6 +56,6 @@ export default function App() {
         </Routes>
       </>}
     </main>
-    <footer className="site-footer"><span><strong>L’Hermyne</strong> · Comprendre les dynamiques politiques.</span><span>{data ? `Données du ${dateLabel(data.asOf)}` : 'Présidentielle 2027'}<Link to="/methode">Modèle expérimental</Link></span></footer>
+    <footer className="site-footer"><span><strong>L’Hermyne</strong> · Comprendre les dynamiques politiques.</span><span>{data ? `Données du ${dateLabel(data.asOf)}` : 'Présidentielle 2027'}<a href="https://lhermyne.github.io/L_Hermyne/monitor_dashboard.html" target="_blank" rel="noreferrer">Le baromètre</a><Link to="/methode">Modèle expérimental</Link></span></footer>
   </>;
 }

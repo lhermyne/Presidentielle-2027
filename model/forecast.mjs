@@ -1,9 +1,11 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.3.0-independent-barometer-experimental';
-export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'trends']);
-export const SIGNAL_IDS = Object.freeze(['polls', 'barometer', 'polymarket', 'trends']);
-export const SOURCE_LABELS = Object.freeze({ polls: 'Sondages', barometer: 'Baromètre', polymarket: 'Polymarket', trends: 'Google Trends' });
-export const DEFAULT_WEIGHTS = Object.freeze({ polls: 73, polymarket: 20, trends: 7 });
+export const MODEL_VERSION = '0.4.0-wikipedia-attention-experimental';
+export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'wikipedia', 'trends']);
+export const SIGNAL_IDS = Object.freeze(['polls', 'barometer', 'polymarket', 'wikipedia', 'trends']);
+export const ATTENTION_IDS = Object.freeze(['wikipedia', 'trends']);
+export const SOURCE_LABELS = Object.freeze({ polls: 'Sondages', barometer: 'Baromètre', polymarket: 'Polymarket', wikipedia: 'Wikipédia', trends: 'Google Trends' });
+// Référence 73/20/7 conservée : les 7 % d'attention sont partagés entre Wikipédia et Google Trends.
+export const DEFAULT_WEIGHTS = Object.freeze({ polls: 73, polymarket: 20, wikipedia: 4, trends: 3 });
 export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, barometerMultiplier: 3, uncertainty: 4, simulations: 16000 });
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
@@ -27,13 +29,24 @@ export function normalizeWeights(input = DEFAULT_WEIGHTS) {
   return allocate(100, SOURCE_IDS, sum(Object.values(ratios)) > 0 ? ratios : DEFAULT_WEIGHTS);
 }
 
-export function redistributeWeights(current, changed, value) {
-  const weights = normalizeWeights(current);
-  if (!SOURCE_IDS.includes(changed)) return weights;
-  const target = Number.isFinite(Number(value)) ? Math.round(clamp(Number(value), 0, 100)) : weights[changed];
-  const others = SOURCE_IDS.filter(key => key !== changed);
+// Les sources verrouillées (sans signal exploitable) restent à 0 ; les autres se partagent 100 %.
+export function availableWeights(input, locked = []) {
+  const weights = normalizeWeights(input);
+  const free = SOURCE_IDS.filter(key => !locked.includes(key));
+  if (!free.length) return weights;
+  const ratios = sum(free.map(key => weights[key])) > 0 ? weights : DEFAULT_WEIGHTS;
+  const zeros = Object.fromEntries(SOURCE_IDS.filter(key => locked.includes(key)).map(key => [key, 0]));
+  return { ...zeros, ...allocate(100, free, ratios) };
+}
+
+export function redistributeWeights(current, changed, value, locked = []) {
+  const weights = availableWeights(current, locked);
+  if (!SOURCE_IDS.includes(changed) || locked.includes(changed)) return weights;
+  const others = SOURCE_IDS.filter(key => key !== changed && !locked.includes(key));
+  const requested = Number.isFinite(Number(value)) ? Math.round(clamp(Number(value), 0, 100)) : weights[changed];
+  const target = others.length ? requested : 100;
   const ratios = sum(others.map(key => weights[key])) > 0 ? weights : DEFAULT_WEIGHTS;
-  return { ...allocate(100 - target, others, ratios), [changed]: target };
+  return { ...weights, ...allocate(100 - target, others, ratios), [changed]: target };
 }
 
 export function settingsFrom(input = {}) {
@@ -148,7 +161,8 @@ export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
     polls: { available: Boolean(poll), latest: poll?.latest, reason: 'Socle électoral : intentions de vote dans une liste exacte de candidats.' },
     barometer: { available: false, reason: 'Deux candidats avec une dynamique mesurable depuis le dernier terrain, sur au moins deux plateformes récentes, sont nécessaires.' },
     polymarket: { available: false, reason: 'Deux candidats cotés et une capture de moins de 7 jours sont nécessaires.' },
-    trends: { available: false, reason: 'Moins de deux candidats identifiés dans les recherches en hausse sur 28 jours, ou collecte de plus de 3 jours.' },
+    wikipedia: { available: false, reason: 'Moins de deux candidats avec assez de consultations Wikipédia sur 28 jours, ou relevé de plus de 3 jours.' },
+    trends: { available: false, reason: 'aucun candidat de cette liste dans les recherches en forte hausse des 28 derniers jours.' },
   };
   if (recent(data.asOf, data.social?.asOf, 3)) {
     const window = data.social.windows?.[poll?.latest];
@@ -161,6 +175,11 @@ export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
     const prices = Object.fromEntries((data.market.markets ?? []).filter(m => ids.includes(m.id) && Number.isFinite(m.probability) && m.probability >= 0 && m.probability <= 100).map(m => [m.id, m.probability]));
     if (Object.keys(prices).length >= 2 && sum(Object.values(prices)) > 0) components.polymarket = { available: true, prices, latest: data.market.capturedAt.slice(0, 10),
       reason: 'Anticipations de victoire finale. Repondération modérée des trajectoires avec gagnant documenté, sans transformer les prix en scores du premier tour.' };
+  }
+  if (recent(data.asOf, data.wikipedia?.asOf, 3)) {
+    const signal = centeredSignal(ids, data.wikipedia.momentum ?? {});
+    if (signal) components.wikipedia = { ...signal, available: true, latest: data.wikipedia.asOf,
+      reason: 'Évolution des consultations Wikipédia : 7 derniers jours comparés aux 21 précédents. Correction d’attention bornée ; une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
   }
   if (recent(data.asOf, data.trends?.asOf, 3)) {
     const signal = centeredSignal(ids, data.trends.interest ?? {});
@@ -234,12 +253,16 @@ export function forecast(data, configurationId, rawSettings = {}) {
   // Weight is an influence budget: it does not make unlike quantities additive.
   const socialScale = sourceMix.barometer.effectiveMultiplier;
   const relativeLimit = 0.5;
-  const trendsLimit = 4 * sourceMix.trends.effective / 100;
+  // Chaque signal d'attention est borné à 4 points × son poids utilisé.
+  const attentionLimits = Object.fromEntries(ATTENTION_IDS.map(source => [source, 4 * sourceMix[source].effective / 100]));
+  const attentionCorrection = (source, id) => attentionLimits[source] ? (components[source].values?.[id] ?? 0) * attentionLimits[source] : 0;
   const corrections = Object.fromEntries(ids.map(id => [id, {
     barometer: socialScale ? baseline.scores[id] * clamp((components.barometer.raw?.[id] ?? 0) / 1000 * socialScale, -relativeLimit, relativeLimit) : 0,
-    trends: trendsLimit ? (components.trends.values?.[id] ?? 0) * trendsLimit : 0,
+    wikipedia: attentionCorrection('wikipedia', id),
+    trends: attentionCorrection('trends', id),
   }]));
-  const rawCenters = ids.map(id => Math.max(0.05, baseline.scores[id] + corrections[id].barometer + corrections[id].trends));
+  const totalCorrection = id => corrections[id].barometer + corrections[id].wikipedia + corrections[id].trends;
+  const rawCenters = ids.map(id => Math.max(0.05, baseline.scores[id] + totalCorrection(id)));
   const centers = rawCenters.map(value => value * 100 / sum(rawCenters));
   const duels = runoffEstimates(data, ids, settings);
   const normal = normalGenerator(makeRandom());
@@ -282,12 +305,12 @@ export function forecast(data, configurationId, rawSettings = {}) {
     const result = counts[index];
     result.samples.sort((a, b) => a[0] - b[0]);
     return { id, name: meta[id]?.name ?? id, party: meta[id]?.party ?? '', color: meta[id]?.color ?? '#687b81', photo: meta[id]?.photo ?? null,
-      pollScore: baseline.scores[id], center: centers[index], corrections: corrections[id], renormalization: centers[index] - baseline.scores[id] - corrections[id].barometer - corrections[id].trends,
+      pollScore: baseline.scores[id], center: centers[index], corrections: corrections[id], renormalization: centers[index] - baseline.scores[id] - totalCorrection(id),
       score: result.total / totalWeight, lower: weightedQuantile(result.samples, 0.05, totalWeight), upper: weightedQuantile(result.samples, 0.95, totalWeight),
       qualification: result.topTwo / totalWeight * 100, winLower: result.wins / totalWeight * 100, winUpper: (result.wins + result.unknown) / totalWeight * 100 };
   }).sort((a, b) => b.score - a.score);
   return { modelVersion: MODEL_VERSION, settings, configuration, baseline, rows, sourceMix,
-    adjustmentLimits: { barometerRelative: relativeLimit * 100, barometerScale: socialScale, trends: trendsLimit }, marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
+    adjustmentLimits: { barometerRelative: relativeLimit * 100, barometerScale: socialScale, ...attentionLimits }, marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
     unresolved: unresolved / totalWeight * 100,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null })).sort((a, b) => b.probability - a.probability),
     isPersonal: settings.halfLife !== 21 || settings.barometerMultiplier !== 3 || settings.uncertainty !== 4 || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };

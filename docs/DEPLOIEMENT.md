@@ -13,7 +13,7 @@ Première exécution sur ce compte : https://github.com/lhermyne/Presidentielle-
 
 Le workflow définit une collecte quotidienne à 05:17 UTC : 06:17 en hiver,
 07:17 en été à Paris. GitHub peut retarder le démarrage.
-Il installe les dépendances, exécute les 30 tests, récupère les sources publiques,
+Il installe les dépendances, exécute les tests (34 au 1er novembre 2026), récupère les sources publiques,
 recalcule la référence, archive les données dans Git et publie le site statique.
 Aucun PC, bot Discord, modèle d’IA ou token personnel stocké dans le dépôt n’est requis.
 Les permissions déclarées utilisent le `GITHUB_TOKEN` éphémère de GitHub Actions.

@@ -13,8 +13,17 @@ export default function HistoryChart({ data, result }) {
   const y = score => height - pad.bottom - score / max * (height - pad.top - pad.bottom);
   return <section className="panel history-panel"><div className="panel-heading"><div><span className="section-label">DANS LE TEMPS</span><h2>La tendance, avec du recul.</h2></div></div><p className="metric-description">Moyenne des sondages compatibles, recalculée aux dates de terrain. Les réglages de mémoire s’appliquent à cette courbe.</p>
     {history.length ? <><div className="history-chart"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Évolution des moyennes de sondages du ${dateLabel(history[0].date)} au ${dateLabel(history.at(-1).date)}. Les valeurs actuelles figurent dans le tableau précédent.`}>
-      {[0, max / 4, max / 2, max * 3 / 4, max].map(value => <g key={value}><line x1={pad.left} x2={width - pad.right} y1={y(value)} y2={y(value)} stroke="#e4e9e3" strokeDasharray="3 5" /><text x={pad.left - 9} y={y(value) + 4} textAnchor="end">{value}</text></g>)}
-      {leaders.filter(row => !hidden.includes(row.id)).map(row => <g key={row.id}><polyline fill="none" stroke={row.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" points={history.map(point => `${x(point.date)},${y(point.scores[row.id])}`).join(' ')} />{history.map(point => <circle key={point.date} cx={x(point.date)} cy={y(point.scores[row.id])} r="3" fill="white" stroke={row.color} strokeWidth="2"><title>{row.name} : {point.scores[row.id].toFixed(1)} % au {dateLabel(point.date)}</title></circle>)}</g>)}
+      {[0, max / 4, max / 2, max * 3 / 4, max].map(value => <g key={value}><line className="chart-grid" x1={pad.left} x2={width - pad.right} y1={y(value)} y2={y(value)} strokeDasharray="3 5" /><text x={pad.left - 9} y={y(value) + 4} textAnchor="end">{value}</text></g>)}
+      {leaders.filter(row => !hidden.includes(row.id)).map(row => (
+        <g key={row.id} style={{ '--candidate': row.color }}>
+          <polyline className="series-line" fill="none" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" points={history.map(point => `${x(point.date)},${y(point.scores[row.id])}`).join(' ')} />
+          {history.map(point => (
+            <circle key={point.date} className="series-ring" cx={x(point.date)} cy={y(point.scores[row.id])} r="3" strokeWidth="2">
+              <title>{row.name} : {point.scores[row.id].toFixed(1)} % au {dateLabel(point.date)}</title>
+            </circle>
+          ))}
+        </g>
+      ))}
       {history.filter((_, index) => index === 0 || index === history.length - 1 || index === Math.floor(history.length / 2)).map(point => <text key={point.date} x={x(point.date)} y={height - 7} textAnchor="middle">{dateLabel(point.date, true)}</text>)}
     </svg></div><div className="chart-legend" role="group" aria-label="Afficher ou masquer une courbe">{leaders.map(row => <button key={row.id} aria-pressed={!hidden.includes(row.id)} style={{ '--candidate': row.color }} onClick={() => setHidden(previous => previous.includes(row.id) ? previous.filter(id => id !== row.id) : [...previous, row.id])}><span />{shortName(row.name)}</button>)}</div>{history.length === 1 && <p className="field-help">Une seule date disponible pour cette configuration : aucun historique de tendance n’est interpolé.</p>}</> : <p className="empty-inline">Historique insuffisant pour cette configuration.</p>}
     <p className="source-caption">Source : Sondax, d’après Wikipédia · Configurations identiques uniquement · Une courbe de sondages, sans ajout du baromètre.</p>
