@@ -1,11 +1,88 @@
-import { SIGNAL_IDS as SOURCE_IDS, SOURCE_LABELS } from '../../../model/forecast.mjs';
+import { SOURCE_IDS, SOURCE_LABELS } from '../../../model/forecast.mjs';
 import { percent, dateLabel } from '../lib/format.js';
-const points = value => `${value > 0 ? '+' : ''}${value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const signed = (value, digits = 2) => `${value > 0 ? '+' : ''}${value.toLocaleString('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+const relative = (correction, base) => `${signed(base > 0 ? correction / base * 100 : 0, 1)} %`;
+
+function CorrectionCell({ correction, base, missing }) {
+  return <td>{signed(correction)}{missing ? ' *' : ''}<small className="cell-detail">{relative(correction, base)}</small></td>;
+}
+
+function ForecastEffects({ result, names }) {
+  const mix = result.sourceMix;
+  const limits = result.adjustmentLimits;
+  return (
+    <>
+      <p className="metric-description">
+        Socle des sondages, puis bonus ou malus relatifs (baromètre, Wikipédia, Google Trends), chacun proportionnel à sa part d’influence
+        et plafonné à ±{limits.relative} % du propre score. Les scores sont ensuite ramenés à 100 %. Polymarket repondère après coup les
+        simulations selon leur gagnant final, sans être converti en points de vote.
+      </p>
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Effets des sources par candidat">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Candidat</th><th scope="col">Socle sondages</th><th scope="col">Baromètre</th>
+              <th scope="col">Wikipédia</th><th scope="col">Google Trends</th><th scope="col">Renormalisation</th>
+              <th scope="col">Centre ajusté</th><th scope="col">Projection simulée</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.rows.map(row => (
+              <tr key={row.id}>
+                <th scope="row">{row.name}</th>
+                <td>{percent(row.pollScore)}</td>
+                <CorrectionCell correction={row.corrections.barometer} base={row.pollScore} missing={mix.barometer.missing?.includes(row.id)} />
+                <CorrectionCell correction={row.corrections.wikipedia} base={row.pollScore} missing={mix.wikipedia.missing?.includes(row.id)} />
+                <CorrectionCell correction={row.corrections.trends} base={row.pollScore} missing={mix.trends.missing?.includes(row.id)} />
+                <td>{signed(row.renormalization)}</td>
+                <td>{percent(row.center)}</td>
+                <td><strong>{percent(row.score)}</strong></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="source-caption">
+        Corrections en points, et en % du score sondé dessous. * Signal manquant : aucune correction, la dynamique n’est pas comptée comme nulle.
+        Baromètre équivalent à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesuré depuis la fin du terrain du {dateLabel(mix.barometer.anchor)}.
+        Chaque actualisation repart du socle sondé.
+      </p>
+      <p className="metric-description">
+        <strong>Polymarket : {result.marketFusion.active ? 'effet actif' : 'sans effet sur ce scénario'}.</strong> {result.marketFusion.reason}
+        {result.marketFusion.active && ` Candidats comparés : ${result.marketFusion.compared.map(id => names[id] ?? id).join(', ')}.`}
+      </p>
+      <div className="component-methods">
+        {SOURCE_IDS.map(id => <p key={id}><strong>{SOURCE_LABELS[id]} · {percent(mix[id].effective)}.</strong> {mix[id].reason}</p>)}
+      </div>
+    </>
+  );
+}
+
 export default function SourceBreakdown({ result, data }) {
   const names = Object.fromEntries(data.candidates.map(candidate => [candidate.id, candidate.name]));
-  const dynamics = Object.entries(data.social.signals ?? {}).filter(([id, value]) => names[id] && Number.isFinite(value.barometerScore)).sort((a, b) => b[1].barometerScore - a[1].barometerScore);
-  return <section className="panel source-breakdown"><details key={result?.error ? 'signals' : 'forecast'} open={Boolean(result?.error)}><summary>Vérifier l’effet des sources et consulter la dynamique</summary>
-    {result?.rows?.length > 0 && <><p className="metric-description">Sondages × boost relatif de dynamique, plus corrections d’attention (Wikipédia, Google Trends), puis renormalisation à 100 %. Polymarket repondère ensuite les trajectoires selon leur gagnant final : son effet passe par la simulation, sans être converti en points de vote.</p><div className="table-scroll" tabIndex={0} role="region" aria-label="Effets des sources par candidat"><table><thead><tr><th scope="col">Candidat</th><th scope="col">Socle sondages</th><th scope="col">Dynamique depuis le terrain</th><th scope="col">Boost relatif</th><th scope="col">Effet en points</th><th scope="col">Wikipédia</th><th scope="col">Recherches</th><th scope="col">Renormalisation</th><th scope="col">Centre ajusté</th><th scope="col">Projection simulée</th></tr></thead><tbody>{result.rows.map(row => <tr key={row.id}><th scope="row">{row.name}</th><td>{percent(row.pollScore)}</td><td>{Number.isFinite(result.sourceMix.barometer.raw?.[row.id]) ? `${points(result.sourceMix.barometer.raw[row.id])} ‰` : '—'}</td><td>{points(row.pollScore > 0 ? row.corrections.barometer / row.pollScore * 100 : 0)} %</td><td>{points(row.corrections.barometer)}{result.sourceMix.barometer.missing?.includes(row.id) ? ' *' : ''}</td><td>{points(row.corrections.wikipedia)}{result.sourceMix.wikipedia.missing?.includes(row.id) ? ' *' : ''}</td><td>{points(row.corrections.trends)}{result.sourceMix.trends.missing?.includes(row.id) ? ' *' : ''}</td><td>{points(row.renormalization)}</td><td>{percent(row.center)}</td><td><strong>{percent(row.score)}</strong></td></tr>)}</tbody></table></div><p className="source-caption">* Signal manquant : aucune correction pour ce candidat ; sa dynamique n’a pas été mesurée à zéro. Point de départ : fin du terrain du {dateLabel(result.sourceMix.barometer.anchor)} (publication non renseignée). Facteur effectif ×{result.adjustmentLimits.barometerScale.toFixed(2)} ; boost plafonné à ±{result.adjustmentLimits.barometerRelative} % du propre score, avant renormalisation. Wikipédia : ±{result.adjustmentLimits.wikipedia.toFixed(2)} points ; recherches : ±{result.adjustmentLimits.trends.toFixed(2)} points. Chaque actualisation repart du socle sondé ; les boosts quotidiens ne sont pas cumulés une seconde fois.</p><p className="metric-description"><strong>Polymarket : {result.marketFusion.active ? 'effet actif' : 'sans effet sur ce scénario'}.</strong> {result.marketFusion.reason} {result.marketFusion.active && `Candidats comparés : ${result.marketFusion.compared.map(id => names[id] ?? id).join(', ')}. Taille effective : ${Math.round(result.marketFusion.effectiveSampleSize).toLocaleString('fr-FR')} tirages.`}</p><div className="component-methods">{SOURCE_IDS.map(id => <p key={id}><strong>{SOURCE_LABELS[id]}.</strong> {result.sourceMix[id].reason}</p>)}</div></>}
-    <h2 className="signal-heading">Dynamique du baromètre</h2><p className="metric-description">Repère hebdomadaire en ‰ sur 7 relevés ; le calcul électoral utilise la période depuis le dernier terrain, indiquée au-dessus. Le premier de ce classement n’est pas nécessairement favori à l’élection. Les plateformes trop anciennes sont exclues.</p><div className="table-scroll" tabIndex={0} role="region" aria-label="Dynamique brute du baromètre"><table><thead><tr><th scope="col">Personnalité</th><th scope="col">Dynamique pondérée</th><th scope="col">Plateformes</th></tr></thead><tbody>{dynamics.map(([id, signal]) => <tr key={id}><th scope="row">{names[id] ?? id}</th><td>{points(signal.barometerScore)} ‰</td><td>{signal.barometerCoverage}/4</td></tr>)}</tbody></table></div>{!dynamics.length && <p>Aucune dynamique récente exploitable.</p>}
-  </details></section>;
+  const dynamics = Object.entries(data.social.signals ?? {})
+    .filter(([id, value]) => names[id] && Number.isFinite(value.barometerScore))
+    .sort((a, b) => b[1].barometerScore - a[1].barometerScore);
+  return (
+    <section className="panel source-breakdown">
+      <details key={result?.error ? 'signals' : 'forecast'} open={Boolean(result?.error)}>
+        <summary>Vérifier l’effet de chaque source et consulter la dynamique du baromètre</summary>
+        {result?.rows?.length > 0 && <ForecastEffects result={result} names={names} />}
+        <h2 className="signal-heading">Dynamique du baromètre</h2>
+        <p className="metric-description">Repère hebdomadaire en ‰ sur 7 relevés. Être premier de ce classement ne signifie pas être favori à l’élection.</p>
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="Dynamique brute du baromètre">
+          <table>
+            <thead><tr><th scope="col">Personnalité</th><th scope="col">Dynamique pondérée</th><th scope="col">Plateformes</th></tr></thead>
+            <tbody>
+              {dynamics.map(([id, signal]) => (
+                <tr key={id}><th scope="row">{names[id] ?? id}</th><td>{signed(signal.barometerScore)} ‰</td><td>{signal.barometerCoverage}/4</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {!dynamics.length && <p>Aucune dynamique récente exploitable.</p>}
+      </details>
+    </section>
+  );
 }

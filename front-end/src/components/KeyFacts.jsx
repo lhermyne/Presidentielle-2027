@@ -33,6 +33,12 @@ function victoryLabel(row) {
     : percent(row.winLower);
 }
 
+function duelDetail(duel, rows) {
+  if (!duel.estimate || rows.length !== 2) return 'des simulations aboutissent à ce duel, non sondé';
+  const [first, second] = rows;
+  return `des simulations · sondages : ${percent(duel.estimate.scores[first.id])} contre ${percent(duel.estimate.scores[second.id])}`;
+}
+
 export default function KeyFacts({ result }) {
   if (!result?.rows?.length) {
     return <div className="key-facts is-loading" aria-hidden="true"><div className="fact" /><div className="fact" /><div className="fact" /></div>;
@@ -60,7 +66,7 @@ export default function KeyFacts({ result }) {
           rows={duelRows}
           title={duelRows.map(row => shortName(row.name)).join(' / ')}
           value={percent(duel.probability)}
-          detail="des simulations aboutissent à ce duel"
+          detail={duelDetail(duel, duelRows)}
         />
       )}
       <Fact

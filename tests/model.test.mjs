@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, redistributeWeights, availableWeights, SOURCE_IDS } from '../model/forecast.mjs';
+import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS } from '../model/forecast.mjs';
 
 const poll = (id, scores, extra = {}) => ({ id, institute: 'Institut A', fieldStart: '2026-10-17', fieldEnd: '2026-10-19', sampleSize: 1000, round: 1, scores, ...extra });
 const dataset = (polls = []) => ({ asOf: '2026-10-20', candidates: ['a', 'b', 'c', 'd'].map(id => ({ id, name: id, family: id })), polls, social: { asOf: '2026-10-20', signals: {} }, market: null });
@@ -58,21 +58,21 @@ const addSignals = data => ({ ...data,
   wikipedia: { asOf: data.asOf, momentum: { a: 0.6, b: -0.4, d: 0.1 } },
 });
 
-test('sliders always sum to exactly 100 and allow source extremes', () => {
-  let weights = DEFAULT_WEIGHTS;
-  for (let value = 0; value <= 100; value++) for (const id of SOURCE_IDS) {
-    weights = redistributeWeights(weights, id, value);
-    assert.equal(weights[id], value);
-    assert.equal(Object.values(weights).reduce((a, b) => a + b), 100);
-    assert.ok(Object.values(weights).every(Number.isInteger));
+test('independent sliders become shares of 100 percent and polls keep at least 1', () => {
+  assert.deepEqual(normalizeWeights({ polls: 0, polymarket: 150, wikipedia: -3, trends: NaN }), { polls: 1, barometer: 0, polymarket: 100, wikipedia: 0, trends: 0 });
+  const shares = sourceShares({ polls: 100, polymarket: 100 });
+  assert.equal(shares.polls, 50);
+  assert.equal(shares.polymarket, 50);
+  assert.equal(sourceShares({ polls: 100 }).polls, 100);
+  for (const weights of [DEFAULT_WEIGHTS, { polls: 1, barometer: 100, polymarket: 37 }, { polls: 100 }]) {
+    const total = Object.values(sourceShares(weights)).reduce((a, b) => a + b, 0);
+    assert.ok(Math.abs(total - 100) < 1e-9);
   }
-  assert.deepEqual(normalizeWeights({ polls: NaN, barometer: -10 }), DEFAULT_WEIGHTS);
-  assert.deepEqual(redistributeWeights({ polls: 100 }, 'polls', 0), { polls: 0, polymarket: 74, wikipedia: 15, trends: 11 });
 });
 
 test('100 percent polls with boost disabled excludes every complementary signal from outcomes', () => {
   const plain = dataset([...firstRound, ...completeDuels()]);
-  const settings = { weights: { polls: 100 }, barometerMultiplier: 0, simulations: 3000 };
+  const settings = { weights: { polls: 100 }, simulations: 3000 };
   assert.deepEqual(forecast(plain, key, settings).rows, forecast(addSignals(plain), key, settings).rows);
 });
 
@@ -83,8 +83,8 @@ test('the barometer is active by default as a bounded correction, never a vote-s
   assert.ok(small.corrections.barometer > 0);
   assert.ok(small.center < 5 && small.score < 5);
   assert.notEqual(result.rows[0].id, 'd');
-  for (const row of result.rows) assert.ok(Math.abs(row.corrections.barometer) <= row.pollScore * result.adjustmentLimits.barometerRelative / 100 + 1e-9);
-  const extreme = forecast(data, key, { weights: { polls: 100 }, barometerMultiplier: 5, simulations: 1000 });
+  for (const row of result.rows) assert.ok(Math.abs(row.corrections.barometer) <= row.pollScore * result.adjustmentLimits.relative / 100 + 1e-9);
+  const extreme = forecast(data, key, { weights: { polls: 1, barometer: 100 }, simulations: 1000 });
   assert.ok(extreme.rows.find(row => row.id === 'd').center < 10);
 });
 
@@ -138,13 +138,14 @@ test('market prices cannot invent a missing runoff or a simulated winner', () =>
   assert.ok(result.rows.every(row => row.winLower === 0));
 });
 
-test('source-only attention or speculation does not fabricate electoral scores', () => {
+test('polls stay the base: their weight never drops below 1 and signals only adjust it', () => {
   const data = addSignals(dataset(firstRound));
-  for (const source of ['polymarket', 'wikipedia', 'trends']) {
-    const result = forecast(data, key, { weights: { [source]: 100 }, simulations: 1000 });
-    assert.ok(result.error);
-    assert.equal(result.rows.length, 0);
-    assert.equal(result.sourceMix[source].requested, 100);
+  for (const source of ['polymarket', 'wikipedia', 'trends', 'barometer']) {
+    const result = forecast(data, key, { weights: { polls: 0, [source]: 100 }, simulations: 1000 });
+    assert.equal(result.settings.weights.polls, 1);
+    assert.ok(!result.error);
+    assert.ok(result.sourceMix.polls.effective > 0);
+    for (const row of result.rows) assert.ok(Math.abs(row.center - row.pollScore) <= row.pollScore * 1.5 + 1);
   }
 });
 
@@ -168,12 +169,12 @@ test('historical polling averages do not use later observations', () => {
 });
 
 test('query settings are finite and constrained', () => {
-  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, barometerMultiplier: 3, uncertainty: 2, simulations: 1000 });
+  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 1000 });
 });
 
 test('60 per mille with x2 gives a 12 percent relative boost, not twelve points', () => {
   const data = addSignals(dataset([poll('p', {a: 40, b: 30, c: 20, d: 10})]));
-  const result = forecast(data, key, { weights: { polls: 100 }, barometerMultiplier: 2, simulations: 1000 });
+  const result = forecast(data, key, { weights: { polls: 80, barometer: 20 }, simulations: 1000 });
   const row = result.rows.find(row => row.id === 'd');
   assert.ok(Math.abs(row.corrections.barometer - 1.2) < 1e-10);
   assert.equal(result.adjustmentLimits.barometerScale, 2);
@@ -181,75 +182,58 @@ test('60 per mille with x2 gives a 12 percent relative boost, not twelve points'
   // A new survey at the same date resets the measurement window.
   data.polls[0].fieldEnd = '2026-10-20';
   data.social.windows['2026-10-20'] = {anchor:'2026-10-20', signals:{a:{score:0,coverage:4},b:{score:0,coverage:4},c:{score:0,coverage:4},d:{score:0,coverage:4}}};
-  const reset = forecast(data, key, { weights: { polls:100 }, simulations:1000 });
+  const reset = forecast(data, key, { weights: { polls: 80, barometer: 20 }, simulations: 1000 });
   assert.ok(reset.rows.every(row => row.corrections.barometer === 0));
   assert.equal(reset.sourceMix.barometer.anchor, '2026-10-20');
 });
 
-test('the boost slider accepts zero through five, defaults to three and scales the same window', () => {
+test('the barometer share sets its multiplier: 30 percent gives x3 and 50 percent gives x5', () => {
   const data = addSignals(dataset(firstRound));
-  assert.equal(settingsFrom().barometerMultiplier, 3);
-  assert.equal(settingsFrom({barometerMultiplier:999}).barometerMultiplier, 5);
-  assert.equal(settingsFrom({barometerMultiplier:-1}).barometerMultiplier, 0);
-  const settings = {weights:{polls:100},simulations:1000};
-  const zero = forecast(data,key,{...settings,barometerMultiplier:0});
-  assert.ok(zero.rows.every(row=>row.corrections.barometer===0));
-  const one = forecast(data,key,{...settings,barometerMultiplier:1});
-  const five = forecast(data,key,{...settings,barometerMultiplier:5});
-  const small = result=>result.rows.find(row=>row.id==='d').corrections.barometer;
-  assert.ok(Math.abs(small(five)-5*small(one))<1e-9);
+  const run = weights => forecast(data, key, { weights, simulations: 1000 });
+  const small = result => result.rows.find(row => row.id === 'd').corrections.barometer;
+  assert.equal(run({ polls: 100 }).adjustmentLimits.barometerScale, 0);
+  assert.ok(run({ polls: 100 }).rows.every(row => row.corrections.barometer === 0));
+  const one = run({ polls: 90, barometer: 10 });
+  const five = run({ polls: 100, barometer: 100 });
+  assert.ok(Math.abs(one.adjustmentLimits.barometerScale - 1) < 1e-9);
+  assert.ok(Math.abs(five.adjustmentLimits.barometerScale - 5) < 1e-9);
+  assert.ok(Math.abs(small(five) - 5 * small(one)) < 1e-9);
 });
 
-test('barometer multiplication is independent of weights and source outages', () => {
-  const data = addSignals(dataset([...firstRound,...completeDuels()]));
-  const settings = {simulations:1000,barometerMultiplier:3};
-  const pollingOnly = forecast(data,key,{...settings,weights:{polls:100}});
-  const otherMix = forecast(data,key,{...settings,weights:{polls:40,polymarket:50,trends:10}});
-  const unavailable = structuredClone(data);unavailable.market=null;unavailable.trends=null;
-  const offline = forecast(unavailable,key,settings);
-  const corrections = result => result.rows.map(row=>[row.id,row.corrections.barometer]).sort();
-  assert.deepEqual(corrections(pollingOnly),corrections(otherMix));
-  assert.deepEqual(corrections(pollingOnly),corrections(offline));
-  assert.ok(pollingOnly.rows.find(row=>row.id==='d').corrections.barometer>0);
-  assert.equal(pollingOnly.adjustmentLimits.barometerScale,3);
-  assert.deepEqual(settingsFrom({...settings,barometerMultiplier:0}).weights,settingsFrom({...settings,barometerMultiplier:5}).weights);
-  assert.equal(Object.values(otherMix.settings.weights).reduce((a,b)=>a+b),100);
-  assert.ok(!Object.hasOwn(otherMix.settings.weights,'barometer'));
+test('an unavailable source is excluded from the shares instead of counting as zero', () => {
+  const data = addSignals(dataset([...firstRound, ...completeDuels()]));
+  const offline = structuredClone(data);
+  offline.market = null;
+  offline.trends = null;
+  const online = forecast(data, key, { simulations: 1000 });
+  const result = forecast(offline, key, { simulations: 1000 });
+  assert.equal(result.sourceMix.polymarket.effective, 0);
+  assert.equal(result.sourceMix.trends.effective, 0);
+  assert.ok(result.sourceMix.polls.effective > online.sourceMix.polls.effective);
+  const total = Object.values(result.sourceMix).reduce((sum, source) => sum + source.effective, 0);
+  assert.ok(Math.abs(total - 100) < 1e-9);
 });
 
-test('old four-source settings migrate to a three-source budget without affecting the multiplier', () => {
-  const settings=settingsFrom({weights:{polls:55,barometer:25,polymarket:15,trends:5},barometerMultiplier:4});
-  assert.deepEqual(settings.weights,{polls:73,polymarket:20,wikipedia:0,trends:7});
-  assert.equal(settings.barometerMultiplier,4);
-  assert.deepEqual(redistributeWeights(settings.weights,'barometer',100),settings.weights);
+test('second-round scores come from documented duel polls only', () => {
+  const documented = forecast(dataset([...firstRound, ...completeDuels()]), key, { simulations: 3000 });
+  const leader = documented.rows.find(row => row.id === 'a');
+  assert.ok(leader.runoff.score > 45 && leader.runoff.score < 60);
+  assert.ok(leader.runoff.lower <= leader.runoff.score && leader.runoff.score <= leader.runoff.upper);
+  assert.ok(Math.abs(leader.runoff.coverage - 100) < 1e-9);
+  const undocumented = forecast(dataset(firstRound), key, { simulations: 1000 });
+  assert.ok(undocumented.rows.every(row => row.runoff === null));
 });
 
-test('an unavailable source is locked at zero and the others share 100 percent', () => {
-  const locked = ['trends'];
-  const shown = availableWeights(DEFAULT_WEIGHTS, locked);
-  assert.equal(shown.trends, 0);
-  assert.equal(Object.values(shown).reduce((a, b) => a + b), 100);
-  assert.ok(shown.polls > DEFAULT_WEIGHTS.polls && shown.polymarket >= DEFAULT_WEIGHTS.polymarket);
-  for (const value of [0, 37, 100]) {
-    const weights = redistributeWeights(shown, 'polymarket', value, locked);
-    assert.equal(weights.polymarket, value);
-    assert.equal(weights.trends, 0);
-    assert.equal(Object.values(weights).reduce((a, b) => a + b), 100);
-  }
-  assert.deepEqual(redistributeWeights(shown, 'trends', 50, locked), shown);
-  assert.deepEqual(redistributeWeights({ polls: 60, trends: 40 }, 'polls', 10, ['polymarket', 'wikipedia', 'trends']), { polls: 100, polymarket: 0, wikipedia: 0, trends: 0 });
-});
-
-test('Wikipedia attention momentum is a bounded correction and absent series stay uncorrected', () => {
+test('Wikipedia momentum is a relative boost like the barometer and absent series stay uncorrected', () => {
   const data = addSignals(dataset(firstRound));
-  const result = forecast(data, key, { weights: { polls: 80, wikipedia: 20 }, barometerMultiplier: 0, simulations: 1000 });
+  const result = forecast(data, key, { weights: { polls: 80, wikipedia: 20 }, simulations: 1000 });
   const row = id => result.rows.find(item => item.id === id);
   assert.ok(result.sourceMix.wikipedia.available);
   assert.ok(row('a').corrections.wikipedia > 0);
   assert.ok(row('b').corrections.wikipedia < 0);
   assert.equal(row('c').corrections.wikipedia, 0);
   assert.ok(result.sourceMix.wikipedia.missing.includes('c'));
-  for (const item of result.rows) assert.ok(Math.abs(item.corrections.wikipedia) <= result.adjustmentLimits.wikipedia + 1e-9);
+  for (const item of result.rows) assert.ok(Math.abs(item.corrections.wikipedia) <= item.pollScore * 0.2 + 1e-9);
   data.wikipedia.asOf = '2026-10-10';
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
 });

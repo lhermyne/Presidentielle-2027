@@ -84,3 +84,7 @@ sans facteur de poids ni effet des indisponibilités des autres sources.
   sans clé). Écartés après essai : X (payant), Bluesky (403 anonyme), GDELT (réponses vides).
   Google Trends comparatif reste en alpha sur invitation.
 - Référence conservée 73/20/7 : sondages / Polymarket / attention (Wikipédia 4, Trends 3).
+- Curseurs indépendants de 0 à 100, parts d’influence = proportions ; sondages ≥ 1.
+  Le baromètre entre dans la répartition (part de 30 % ≈ ×3, 50 % ≈ ×5).
+  Wikipédia agit comme le baromètre : bonus/malus relatif au propre score.
+- Ajout du score projeté au second tour ; page d’accueil allégée (marché retiré, détail en bas).

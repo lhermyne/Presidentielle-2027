@@ -19,9 +19,9 @@ La collecte et la publication quotidiennes s’exécutent dans le workflow
 - Collecte des consultations Wikipédia (API Wikimedia gratuite, sans clé) de chaque personnalité.
 - Simulation reproductible du premier tour, fréquence de présence parmi les deux premiers,
   duels sondés et bornes de victoire lorsqu'un duel manque.
-- Laboratoire : quatre curseurs d’influence totalisant exactement 100 %, source sans signal
-  verrouillée à 0 %, redistribution proportionnelle, répartition de base, 100 % sondages, configuration, mémoire et incertitude.
-- Baromètre indépendant des 100 % : un seul curseur de multiplicateur ×0 à ×5.
+- Laboratoire : cinq curseurs indépendants (0 à 100, sondages ≥ 1), parts d’influence affichées,
+  source sans signal verrouillée, répartition de base, 100 % sondages, configuration, mémoire et incertitude.
+- Projections : premier tour, qualification, score au second tour et victoire.
 - Effet de chaque source vérifiable par candidat, dynamique brute, calcul dans un Web Worker.
 - Liens de scénarios partageables, export JSON, pages Sources et Méthode.
 - Thème sombre par défaut, thème clair au choix ; bloc « L’essentiel » en tête de page.
@@ -149,19 +149,15 @@ Fenêtre de 120 jours, décroissance exponentielle (demi-vie 21 jours), poids d'
 en racine carrée plafonné et atténuation de la fréquence d'un même institut.
 Pas de correction de biais d'institut prétendument apprise.
 
-Le réglage initial est **73 % sondages, 20 % Polymarket, 4 % Wikipédia, 3 % Google Trends** :
-la référence 73/20/7 est conservée, les 7 % d’attention étant partagés (1er novembre 2026).
-Ces quatre poids seuls totalisent 100 %. Une source sans signal exploitable pour la liste
-choisie est **verrouillée à 0 %** dans le laboratoire et les autres se partagent les 100 %. Le baromètre reste **hors de cette répartition** :
-son unique curseur règle directement le multiplicateur, ×3 par défaut, de ×0 à ×5.
-Le changement d’un poids, d’un multiplicateur ou de disponibilité d’une source ne crée
-aucun couplage entre le multiplicateur et les trois pourcentages.
-À la collecte du 1er novembre 2026, le flux Google ne contient aucun candidat exploitable :
-poids retenus **75,26 / 20,62 / 4,12 / 0 %**. Le baromètre reste exactement à **×3**.
-Les anciens liens sans poids Wikipédia lui attribuent 0 % ; ceux qui contenaient un poids
-social l’ignorent et renormalisent les autres à 100 % ; le multiplicateur enregistré reste inchangé.
-Le bouton « 100 % sondages » conserve le boost indépendant ; choisir aussi ×0 pour
-une projection sans boost. La répartition est expérimentale, pas optimisée historiquement.
+Depuis le 1er novembre 2026, **chaque source a un curseur indépendant de 0 à 100** :
+sondages, baromètre, Polymarket, Wikipédia et Google Trends. Seule leur proportion compte
+(sondages 100 et Polymarket 100 donnent 50 % chacun). Les sondages restent le socle :
+leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour la liste
+choisie est **verrouillée** et sort du calcul des parts.
+Référence : **100 / 60 / 30 / 10 / 10**, soit sans Google Trends **50 % sondages, 30 % baromètre,
+15 % Polymarket, 5 % Wikipédia**. « Sondages seuls » met toutes les autres sources à 0.
+Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
+La répartition est expérimentale, pas optimisée historiquement.
 
 Le signal social reprend la formule autonome de dynamique pondérée du baromètre :
 variation en ‰ × audience/max plateforme, moyenne entre plateformes pondérée par les
@@ -171,8 +167,8 @@ peut précéder le terrain de trois jours au maximum ; les dates réelles sont c
 Au moins deux plateformes récentes par candidat et deux candidats observés sont requis.
 Le score hebdomadaire sur sept relevés reste un repère consultable séparément.
 
-Le boost relatif est `dynamique / 1 000 × multiplicateur`.
-L’amplification par défaut est **×3**, réglable de **×0 à ×5** dans « Boost du baromètre ».
+Le boost relatif est `dynamique / 1 000 × 10 × part du baromètre` : une part de 30 %
+équivaut à l’ancien multiplicateur **×3**, une part de 50 % à **×5**.
 À ×3, 60 ‰ donnent +18 % du propre score : **10 % devient 11,8 %
 avant renormalisation** (11,2 % à ×2).
 Le boost est plafonné à ±50 % du propre score, puis l’ensemble est renormalisé à 100 %.
@@ -184,13 +180,14 @@ manquante n’entraîne aucune correction propre. Être premier en dynamique n�
 Wikipédia : API publique Wikimedia Pageviews, consultations humaines quotidiennes de
 l’article en français de chaque personnalité. Seule l’évolution compte :
 `log(moyenne 7 derniers jours / moyenne des 21 précédents)`, au moins 30 vues/jour en
-référence, série de moins de trois jours. Signal centré, borné à ±1, plafonné à
-`4 × poids utilisé / 100` points. Une consultation n’est pas une intention de vote.
+référence, série de moins de trois jours. Comme le baromètre, c’est un bonus ou malus
+relatif : `évolution bornée à ±1 × part de Wikipédia`, plafonné à ±50 % du propre score.
+Une consultation n’est pas une intention de vote.
 
 Google Trends : RSS public France, titres contenant le nom complet d’un candidat,
 volumes minimums, dédoublonnage titre/date, fenêtre 28 jours et demi-vie 7 jours.
 Au moins deux candidats identifiés et une collecte de moins de trois jours sont requis.
-La correction d’attention est bornée à `4 × poids utilisé / 100` points. Elle ne mesure pas
+La correction est relative : `signal centré borné à ±1 × part de Google Trends`. Elle ne mesure pas
 l’adhésion. L’accès public de comparaison a renvoyé HTTP 429 ; l’API comparative officielle
 reste en alpha sur invitation (vérifié le 1er novembre 2026). Aucun contournement n’est implémenté.
 

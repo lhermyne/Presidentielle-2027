@@ -1,60 +1,46 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.4.0-wikipedia-attention-experimental';
-export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'wikipedia', 'trends']);
-export const SIGNAL_IDS = Object.freeze(['polls', 'barometer', 'polymarket', 'wikipedia', 'trends']);
-export const ATTENTION_IDS = Object.freeze(['wikipedia', 'trends']);
+export const MODEL_VERSION = '0.5.0-independent-weights-experimental';
+export const SOURCE_IDS = Object.freeze(['polls', 'barometer', 'polymarket', 'wikipedia', 'trends']);
+export const SIGNAL_IDS = SOURCE_IDS;
+export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
 export const SOURCE_LABELS = Object.freeze({ polls: 'Sondages', barometer: 'Baromètre', polymarket: 'Polymarket', wikipedia: 'Wikipédia', trends: 'Google Trends' });
-// Référence 73/20/7 conservée : les 7 % d'attention sont partagés entre Wikipédia et Google Trends.
-export const DEFAULT_WEIGHTS = Object.freeze({ polls: 73, polymarket: 20, wikipedia: 4, trends: 3 });
-export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, barometerMultiplier: 3, uncertainty: 4, simulations: 16000 });
+// Curseurs indépendants de 0 à 100 ; seule leur proportion compte. Les sondages restent le socle (minimum 1).
+// Avec Google Trends sans signal, la référence donne 50 % sondages, 30 % baromètre, 15 % Polymarket, 5 % Wikipédia.
+export const DEFAULT_WEIGHTS = Object.freeze({ polls: 100, barometer: 60, polymarket: 30, wikipedia: 10, trends: 10 });
+export const MIN_POLL_WEIGHT = 1;
+// Une part de 50 % du baromètre équivaut à l'ancien multiplicateur ×5.
+export const BAROMETER_SCALE = 10;
+// Une correction dynamique ne dépasse jamais ±50 % du propre score sondé du candidat.
+export const RELATIVE_LIMIT = 0.5;
+export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const daysBetween = (a, b) => (Date.parse(a) - Date.parse(b)) / DAY;
 const sum = values => values.reduce((a, b) => a + b, 0);
 export const candidateKey = ids => [...ids].sort().join('|');
 
-// Largest-remainder rounding keeps integer sliders at exactly 100, including ties.
-function allocate(total, keys, ratios) {
-  const denominator = sum(keys.map(key => ratios[key]));
-  const raw = keys.map(key => ({ key, value: denominator > 0 ? total * ratios[key] / denominator : total / keys.length }));
-  const output = Object.fromEntries(raw.map(({ key, value }) => [key, Math.floor(value)]));
-  const remainder = total - sum(Object.values(output));
-  raw.sort((a, b) => (b.value - Math.floor(b.value)) - (a.value - Math.floor(a.value)) || SOURCE_IDS.indexOf(a.key) - SOURCE_IDS.indexOf(b.key));
-  for (let i = 0; i < remainder; i++) output[raw[i].key]++;
-  return output;
-}
-
 export function normalizeWeights(input = DEFAULT_WEIGHTS) {
-  const ratios = Object.fromEntries(SOURCE_IDS.map(key => [key, Number.isFinite(Number(input?.[key])) ? clamp(Number(input[key]), 0, 100) : 0]));
-  return allocate(100, SOURCE_IDS, sum(Object.values(ratios)) > 0 ? ratios : DEFAULT_WEIGHTS);
+  const weights = Object.fromEntries(SOURCE_IDS.map(key => {
+    const value = Number(input?.[key]);
+    return [key, Number.isFinite(value) ? Math.round(clamp(value, 0, 100)) : 0];
+  }));
+  weights.polls = Math.max(MIN_POLL_WEIGHT, weights.polls);
+  return weights;
 }
 
-// Les sources verrouillées (sans signal exploitable) restent à 0 ; les autres se partagent 100 %.
-export function availableWeights(input, locked = []) {
-  const weights = normalizeWeights(input);
-  const free = SOURCE_IDS.filter(key => !locked.includes(key));
-  if (!free.length) return weights;
-  const ratios = sum(free.map(key => weights[key])) > 0 ? weights : DEFAULT_WEIGHTS;
-  const zeros = Object.fromEntries(SOURCE_IDS.filter(key => locked.includes(key)).map(key => [key, 0]));
-  return { ...zeros, ...allocate(100, free, ratios) };
-}
-
-export function redistributeWeights(current, changed, value, locked = []) {
-  const weights = availableWeights(current, locked);
-  if (!SOURCE_IDS.includes(changed) || locked.includes(changed)) return weights;
-  const others = SOURCE_IDS.filter(key => key !== changed && !locked.includes(key));
-  const requested = Number.isFinite(Number(value)) ? Math.round(clamp(Number(value), 0, 100)) : weights[changed];
-  const target = others.length ? requested : 100;
-  const ratios = sum(others.map(key => weights[key])) > 0 ? weights : DEFAULT_WEIGHTS;
-  return { ...weights, ...allocate(100 - target, others, ratios), [changed]: target };
+// Part de chaque source disponible dans l'influence totale, en pourcentage.
+export function sourceShares(weights, available = SOURCE_IDS) {
+  const normalized = normalizeWeights(weights);
+  const active = SOURCE_IDS.filter(key => key === 'polls' || available.includes(key));
+  const total = sum(active.map(key => normalized[key]));
+  return Object.fromEntries(SOURCE_IDS.map(key => [key, active.includes(key) ? normalized[key] * 100 / total : 0]));
 }
 
 export function settingsFrom(input = {}) {
   const finite = (key, fallback) => Number.isFinite(Number(input[key])) ? Number(input[key]) : fallback;
   return {
     halfLife: clamp(finite('halfLife', 21), 7, 90),
-    weights: normalizeWeights(input.weights),
-    barometerMultiplier: clamp(finite('barometerMultiplier', 3), 0, 5),
+    weights: normalizeWeights(input.weights ?? DEFAULT_WEIGHTS),
     uncertainty: clamp(finite('uncertainty', 4), 2, 8),
     simulations: Math.round(clamp(finite('simulations', 16000), 1000, 50000)),
   };
@@ -177,9 +163,11 @@ export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
       reason: 'Anticipations de victoire finale. Repondération modérée des trajectoires avec gagnant documenté, sans transformer les prix en scores du premier tour.' };
   }
   if (recent(data.asOf, data.wikipedia?.asOf, 3)) {
-    const signal = centeredSignal(ids, data.wikipedia.momentum ?? {});
-    if (signal) components.wikipedia = { ...signal, available: true, latest: data.wikipedia.asOf,
-      reason: 'Évolution des consultations Wikipédia : 7 derniers jours comparés aux 21 précédents. Correction d’attention bornée ; une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
+    const momentum = data.wikipedia.momentum ?? {};
+    const observed = ids.filter(id => Number.isFinite(momentum[id]));
+    if (observed.length >= 2) components.wikipedia = { available: true, latest: data.wikipedia.asOf,
+      raw: Object.fromEntries(observed.map(id => [id, momentum[id]])), observed, missing: ids.filter(id => !observed.includes(id)),
+      reason: 'Évolution des consultations Wikipédia : 7 derniers jours comparés aux 21 précédents, appliquée relativement au propre score sondé, comme le baromètre. Une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
   }
   if (recent(data.asOf, data.trends?.asOf, 3)) {
     const signal = centeredSignal(ids, data.trends.interest ?? {});
@@ -245,25 +233,28 @@ export function forecast(data, configurationId, rawSettings = {}) {
   const baseline = aggregatePolls(selectPolls(data, configuration.id), ids, data.asOf, settings.halfLife);
   if (!baseline) return { error: 'Aucun sondage compatible depuis 120 jours.', rows: [], settings, configuration };
   const components = sourceComponents(data, ids, settings.halfLife, baseline);
-  const availableWeight = sum(SOURCE_IDS.filter(id => components[id].available).map(id => settings.weights[id]));
-  const sourceMix = Object.fromEntries(SOURCE_IDS.map(id => [id, { ...components[id], requested: settings.weights[id], effective: availableWeight > 0 && components[id].available ? settings.weights[id] * 100 / availableWeight : 0 }]));
-  sourceMix.barometer = { ...components.barometer, mode: 'independent-multiplier',
-    multiplier: settings.barometerMultiplier, effectiveMultiplier: components.barometer.available ? settings.barometerMultiplier : 0 };
-  if (!settings.weights.polls || !availableWeight) return { error: 'Une dynamique sociale ou un prix de victoire ne suffit pas à estimer des scores électoraux. Redonnez un poids aux sondages pour projeter le premier tour. Les signaux bruts restent consultables ci-dessous.', rows: [], settings, configuration, baseline, sourceMix };
-  // Weight is an influence budget: it does not make unlike quantities additive.
-  const socialScale = sourceMix.barometer.effectiveMultiplier;
-  const relativeLimit = 0.5;
-  // Chaque signal d'attention est borné à 4 points × son poids utilisé.
-  const attentionLimits = Object.fromEntries(ATTENTION_IDS.map(source => [source, 4 * sourceMix[source].effective / 100]));
-  const attentionCorrection = (source, id) => attentionLimits[source] ? (components[source].values?.[id] ?? 0) * attentionLimits[source] : 0;
-  const corrections = Object.fromEntries(ids.map(id => [id, {
-    barometer: socialScale ? baseline.scores[id] * clamp((components.barometer.raw?.[id] ?? 0) / 1000 * socialScale, -relativeLimit, relativeLimit) : 0,
-    wikipedia: attentionCorrection('wikipedia', id),
-    trends: attentionCorrection('trends', id),
-  }]));
-  const totalCorrection = id => corrections[id].barometer + corrections[id].wikipedia + corrections[id].trends;
+  const available = SOURCE_IDS.filter(id => components[id].available);
+  const shares = sourceShares(settings.weights, available);
+  const sourceMix = Object.fromEntries(SOURCE_IDS.map(id => [id, { ...components[id], requested: settings.weights[id], effective: shares[id] }]));
+
+  // Chaque dynamique agit relativement au propre score sondé, proportionnellement à sa part d'influence.
+  const scales = {
+    barometer: BAROMETER_SCALE * shares.barometer / 100,
+    wikipedia: shares.wikipedia / 100,
+    trends: shares.trends / 100,
+  };
+  const signals = {
+    barometer: id => (components.barometer.raw?.[id] ?? 0) / 1000,
+    wikipedia: id => clamp(components.wikipedia.raw?.[id] ?? 0, -1, 1),
+    trends: id => components.trends.values?.[id] ?? 0,
+  };
+  const relativeBoost = (source, id) => scales[source] ? clamp(signals[source](id) * scales[source], -RELATIVE_LIMIT, RELATIVE_LIMIT) : 0;
+  const corrections = Object.fromEntries(ids.map(id => [id,
+    Object.fromEntries(DYNAMIC_IDS.map(source => [source, baseline.scores[id] * relativeBoost(source, id)]))]));
+  const totalCorrection = id => sum(DYNAMIC_IDS.map(source => corrections[id][source]));
   const rawCenters = ids.map(id => Math.max(0.05, baseline.scores[id] + totalCorrection(id)));
   const centers = rawCenters.map(value => value * 100 / sum(rawCenters));
+
   const duels = runoffEstimates(data, ids, settings);
   const normal = normalGenerator(makeRandom());
   const meta = Object.fromEntries((data.candidates ?? []).map(c => [c.id, c]));
@@ -282,14 +273,18 @@ export function forecast(data, configurationId, rawSettings = {}) {
     const key = scores[first] > 50 ? null : candidateKey([ids[first], ids[second]]);
     const duel = key ? duels[key] : null;
     let winner = key ? null : first;
+    let runoff = null;
     if (duel) {
       const age = Math.min(3, Math.max(0, daysBetween(data.asOf, duel.latest)) / 30);
-      winner = duel.scores[ids[first]] + normal() * (settings.uncertainty + age) > 50 ? first : second;
+      // Score simulé du premier qualifié au second tour, tiré autour de la moyenne des sondages du duel.
+      runoff = clamp(duel.scores[ids[first]] + normal() * (settings.uncertainty + age), 0, 100);
+      winner = runoff > 50 ? first : second;
     }
-    trajectories.push({ scores, first, second, winner, key });
+    trajectories.push({ scores, first, second, winner, key, runoff });
   }
-  const marketFusion = marketLikelihood(ids, trajectories, components.polymarket, sourceMix.polymarket.effective / 100);
-  const counts = ids.map(() => ({ topTwo: 0, wins: 0, unknown: 0, total: 0, samples: [] }));
+
+  const marketFusion = marketLikelihood(ids, trajectories, components.polymarket, shares.polymarket / 100);
+  const counts = ids.map(() => ({ topTwo: 0, wins: 0, unknown: 0, total: 0, samples: [], runoffSamples: [] }));
   const pairCounts = new Map();
   let totalWeight = 0, squaredWeight = 0, unresolved = 0;
   for (const draw of trajectories) {
@@ -298,6 +293,10 @@ export function forecast(data, configurationId, rawSettings = {}) {
     draw.scores.forEach((value, index) => { counts[index].samples.push([value, weight]); counts[index].total += value * weight; });
     counts[draw.first].topTwo += weight; counts[draw.second].topTwo += weight;
     if (draw.key) pairCounts.set(draw.key, (pairCounts.get(draw.key) ?? 0) + weight);
+    if (draw.runoff !== null) {
+      counts[draw.first].runoffSamples.push([draw.runoff, weight]);
+      counts[draw.second].runoffSamples.push([100 - draw.runoff, weight]);
+    }
     if (draw.winner === null) { unresolved += weight; counts[draw.first].unknown += weight; counts[draw.second].unknown += weight; }
     else counts[draw.winner].wins += weight;
   }
@@ -307,13 +306,28 @@ export function forecast(data, configurationId, rawSettings = {}) {
     return { id, name: meta[id]?.name ?? id, party: meta[id]?.party ?? '', color: meta[id]?.color ?? '#687b81', photo: meta[id]?.photo ?? null,
       pollScore: baseline.scores[id], center: centers[index], corrections: corrections[id], renormalization: centers[index] - baseline.scores[id] - totalCorrection(id),
       score: result.total / totalWeight, lower: weightedQuantile(result.samples, 0.05, totalWeight), upper: weightedQuantile(result.samples, 0.95, totalWeight),
-      qualification: result.topTwo / totalWeight * 100, winLower: result.wins / totalWeight * 100, winUpper: (result.wins + result.unknown) / totalWeight * 100 };
+      qualification: result.topTwo / totalWeight * 100, winLower: result.wins / totalWeight * 100, winUpper: (result.wins + result.unknown) / totalWeight * 100,
+      runoff: summarizeRunoff(result.runoffSamples, result.topTwo) };
   }).sort((a, b) => b.score - a.score);
   return { modelVersion: MODEL_VERSION, settings, configuration, baseline, rows, sourceMix,
-    adjustmentLimits: { barometerRelative: relativeLimit * 100, barometerScale: socialScale, ...attentionLimits }, marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
+    adjustmentLimits: { relative: RELATIVE_LIMIT * 100, barometerScale: scales.barometer, wikipediaScale: scales.wikipedia, trendsScale: scales.trends },
+    marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
     unresolved: unresolved / totalWeight * 100,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null })).sort((a, b) => b.probability - a.probability),
-    isPersonal: settings.halfLife !== 21 || settings.barometerMultiplier !== 3 || settings.uncertainty !== 4 || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };
+    isPersonal: settings.halfLife !== 21 || settings.uncertainty !== 4 || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };
+}
+
+// Score moyen au second tour lorsque le candidat est qualifié dans un duel sondé.
+function summarizeRunoff(samples, qualifiedWeight) {
+  const weight = sum(samples.map(([, sampleWeight]) => sampleWeight));
+  if (!weight) return null;
+  samples.sort((a, b) => a[0] - b[0]);
+  return {
+    score: sum(samples.map(([value, sampleWeight]) => value * sampleWeight)) / weight,
+    lower: weightedQuantile(samples, 0.05, weight),
+    upper: weightedQuantile(samples, 0.95, weight),
+    coverage: qualifiedWeight > 0 ? weight / qualifiedWeight * 100 : 0,
+  };
 }
 
 export function pollingHistory(data, configurationId, halfLife = 21) {
