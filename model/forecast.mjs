@@ -5,11 +5,12 @@ export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
 export const SOURCE_LABELS = Object.freeze({ polls: 'Sondages', barometer: 'Baromètre', polymarket: 'Polymarket', wikipedia: 'Wikipédia', trends: 'Google Trends' });
 // Curseurs indépendants de 0 à 100 ; seule leur proportion compte. Les sondages restent le socle (minimum 1).
-// Avec Google Trends sans signal, la référence donne 50 % sondages, 30 % baromètre, 15 % Polymarket, 5 % Wikipédia.
-export const DEFAULT_WEIGHTS = Object.freeze({ polls: 100, barometer: 60, polymarket: 30, wikipedia: 10, trends: 10 });
+// Avec Google Trends sans signal, la référence donne 48 % sondages, 33 % baromètre (×3,5), 14 % Polymarket, 5 % Wikipédia.
+export const DEFAULT_WEIGHTS = Object.freeze({ polls: 100, barometer: 70, polymarket: 30, wikipedia: 10, trends: 10 });
 export const MIN_POLL_WEIGHT = 1;
-// Une part de 50 % du baromètre équivaut à l'ancien multiplicateur ×5.
-export const BAROMETER_SCALE = 10;
+// Le curseur du baromètre est un multiplicateur direct de ×0 à ×5 : chaque unité occupe 20 dans la barre d'influence.
+export const BAROMETER_WEIGHT_PER_UNIT = 20;
+export const barometerMultiplier = weights => normalizeWeights(weights).barometer / BAROMETER_WEIGHT_PER_UNIT;
 // Une correction dynamique ne dépasse jamais ±50 % du propre score sondé du candidat.
 export const RELATIVE_LIMIT = 0.5;
 export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
@@ -237,9 +238,10 @@ export function forecast(data, configurationId, rawSettings = {}) {
   const shares = sourceShares(settings.weights, available);
   const sourceMix = Object.fromEntries(SOURCE_IDS.map(id => [id, { ...components[id], requested: settings.weights[id], effective: shares[id] }]));
 
-  // Chaque dynamique agit relativement au propre score sondé, proportionnellement à sa part d'influence.
+  // Chaque dynamique agit relativement au propre score sondé : multiplicateur direct pour le baromètre,
+  // part d'influence pour Wikipédia et Google Trends.
   const scales = {
-    barometer: BAROMETER_SCALE * shares.barometer / 100,
+    barometer: components.barometer.available ? barometerMultiplier(settings.weights) : 0,
     wikipedia: shares.wikipedia / 100,
     trends: shares.trends / 100,
   };

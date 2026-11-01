@@ -174,7 +174,7 @@ test('query settings are finite and constrained', () => {
 
 test('60 per mille with x2 gives a 12 percent relative boost, not twelve points', () => {
   const data = addSignals(dataset([poll('p', {a: 40, b: 30, c: 20, d: 10})]));
-  const result = forecast(data, key, { weights: { polls: 80, barometer: 20 }, simulations: 1000 });
+  const result = forecast(data, key, { weights: { polls: 100, barometer: 40 }, simulations: 1000 });
   const row = result.rows.find(row => row.id === 'd');
   assert.ok(Math.abs(row.corrections.barometer - 1.2) < 1e-10);
   assert.equal(result.adjustmentLimits.barometerScale, 2);
@@ -182,22 +182,25 @@ test('60 per mille with x2 gives a 12 percent relative boost, not twelve points'
   // A new survey at the same date resets the measurement window.
   data.polls[0].fieldEnd = '2026-10-20';
   data.social.windows['2026-10-20'] = {anchor:'2026-10-20', signals:{a:{score:0,coverage:4},b:{score:0,coverage:4},c:{score:0,coverage:4},d:{score:0,coverage:4}}};
-  const reset = forecast(data, key, { weights: { polls: 80, barometer: 20 }, simulations: 1000 });
+  const reset = forecast(data, key, { weights: { polls: 100, barometer: 40 }, simulations: 1000 });
   assert.ok(reset.rows.every(row => row.corrections.barometer === 0));
   assert.equal(reset.sourceMix.barometer.anchor, '2026-10-20');
 });
 
-test('the barometer share sets its multiplier: 30 percent gives x3 and 50 percent gives x5', () => {
+test('the barometer slider is a direct x0 to x5 multiplier that also takes room in the influence bar', () => {
   const data = addSignals(dataset(firstRound));
   const run = weights => forecast(data, key, { weights, simulations: 1000 });
   const small = result => result.rows.find(row => row.id === 'd').corrections.barometer;
   assert.equal(run({ polls: 100 }).adjustmentLimits.barometerScale, 0);
   assert.ok(run({ polls: 100 }).rows.every(row => row.corrections.barometer === 0));
-  const one = run({ polls: 90, barometer: 10 });
+  const one = run({ polls: 100, barometer: 20 });
   const five = run({ polls: 100, barometer: 100 });
-  assert.ok(Math.abs(one.adjustmentLimits.barometerScale - 1) < 1e-9);
-  assert.ok(Math.abs(five.adjustmentLimits.barometerScale - 5) < 1e-9);
+  const fiveAlone = run({ polls: 1, barometer: 100, polymarket: 100 });
+  assert.equal(one.adjustmentLimits.barometerScale, 1);
+  assert.equal(five.adjustmentLimits.barometerScale, 5);
+  assert.equal(fiveAlone.adjustmentLimits.barometerScale, 5);
   assert.ok(Math.abs(small(five) - 5 * small(one)) < 1e-9);
+  assert.equal(five.sourceMix.barometer.effective, 50);
 });
 
 test('an unavailable source is excluded from the shares instead of counting as zero', () => {

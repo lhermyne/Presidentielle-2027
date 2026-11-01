@@ -1,7 +1,7 @@
 import { ArrowCounterClockwiseIcon, SlidersHorizontalIcon, ArrowUpRightIcon, LockSimpleIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 import {
-  BAROMETER_SCALE,
+  BAROMETER_WEIGHT_PER_UNIT,
   DEFAULT_SETTINGS,
   DEFAULT_WEIGHTS,
   MIN_POLL_WEIGHT,
@@ -58,17 +58,20 @@ function InfluenceBar({ shares }) {
   );
 }
 
+function multiplierLabel(value) {
+  return `×${(value / BAROMETER_WEIGHT_PER_UNIT).toLocaleString('fr-FR', { maximumFractionDigits: 2 })}`;
+}
+
 function sourceNote(id, share, component) {
   if (id !== 'polls' && !component.available) return `Verrouillé à 0 : ${lowerFirst(component.reason)}`;
-  if (id === 'barometer' && share > 0) {
-    const multiplier = (BAROMETER_SCALE * share / 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
-    return `${SOURCE_ROLES[id]} · équivaut à ×${multiplier}`;
-  }
+  if (share > 0 && id !== 'polls') return `${SOURCE_ROLES[id]} · ${shareLabel(share)} de l’influence`;
   return SOURCE_ROLES[id];
 }
 
 function SourceSlider({ id, value, share, component, onChange }) {
   const locked = id !== 'polls' && !component.available;
+  const isBarometer = id === 'barometer';
+  const shown = locked ? 0 : value;
   return (
     <div className={`slider-field source-slider source-${id} ${locked ? 'is-locked' : ''}`}>
       <div>
@@ -77,7 +80,7 @@ function SourceSlider({ id, value, share, component, onChange }) {
           {SOURCE_LABELS[id]}
           {locked && <LockSimpleIcon aria-hidden="true" size={13} weight="bold" />}
         </label>
-        <output htmlFor={`weight-${id}`}>{locked ? 0 : value}</output>
+        <output htmlFor={`weight-${id}`}>{isBarometer ? multiplierLabel(shown) : shown}</output>
       </div>
       <input
         id={`weight-${id}`}
@@ -85,8 +88,8 @@ function SourceSlider({ id, value, share, component, onChange }) {
         type="range"
         min={id === 'polls' ? MIN_POLL_WEIGHT : 0}
         max="100"
-        step="1"
-        value={locked ? 0 : value}
+        step={isBarometer ? BAROMETER_WEIGHT_PER_UNIT / 4 : 1}
+        value={shown}
         disabled={locked}
         onChange={event => onChange(id, event.target.value)}
         aria-describedby={`weight-note-${id}`}
@@ -134,8 +137,8 @@ export default function Laboratory({ configurations, configurationId, setConfigu
           <legend>Influence des sources</legend>
           <InfluenceBar shares={shares} />
           <p className="weight-explainer">
-            Chaque curseur va de 0 à 100, indépendamment des autres : seule leur proportion compte.
-            Les sondages restent le socle (minimum 1). Une source sans signal est verrouillée.
+            Chaque curseur est indépendant : seule leur proportion compte. Le baromètre va de ×0 à ×5
+            (×5 pèse autant que 100). Les sondages restent le socle (minimum 1). Une source sans signal est verrouillée.
           </p>
           <div className="weight-presets">
             <button type="button" className="button" onClick={() => applyWeights(DEFAULT_WEIGHTS)}>Référence</button>

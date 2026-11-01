@@ -45,7 +45,7 @@ function ForecastEffects({ result, names }) {
       </div>
       <p className="source-caption">
         Corrections en points, et en % du score sondé dessous. * Signal manquant : aucune correction, la dynamique n’est pas comptée comme nulle.
-        Baromètre équivalent à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesuré depuis la fin du terrain du {dateLabel(mix.barometer.anchor)}.
+        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesuré depuis la fin du terrain du {dateLabel(mix.barometer.anchor)}.
         Chaque actualisation repart du socle sondé.
       </p>
       <p className="metric-description">

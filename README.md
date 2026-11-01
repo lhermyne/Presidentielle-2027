@@ -149,13 +149,13 @@ Fenêtre de 120 jours, décroissance exponentielle (demi-vie 21 jours), poids d'
 en racine carrée plafonné et atténuation de la fréquence d'un même institut.
 Pas de correction de biais d'institut prétendument apprise.
 
-Depuis le 1er novembre 2026, **chaque source a un curseur indépendant de 0 à 100** :
+Depuis le 1er novembre 2026, **chaque source a un curseur indépendant** (0 à 100, baromètre de ×0 à ×5) :
 sondages, baromètre, Polymarket, Wikipédia et Google Trends. Seule leur proportion compte
 (sondages 100 et Polymarket 100 donnent 50 % chacun). Les sondages restent le socle :
 leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour la liste
 choisie est **verrouillée** et sort du calcul des parts.
-Référence : **100 / 60 / 30 / 10 / 10**, soit sans Google Trends **50 % sondages, 30 % baromètre,
-15 % Polymarket, 5 % Wikipédia**. « Sondages seuls » met toutes les autres sources à 0.
+Référence : **sondages 100, baromètre ×3,5, Polymarket 30, Wikipédia 10, Trends 10**, soit sans
+Google Trends environ **48 % sondages, 33 % baromètre, 14 % Polymarket, 5 % Wikipédia**. « Sondages seuls » met toutes les autres sources à 0.
 Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
 La répartition est expérimentale, pas optimisée historiquement.
 
@@ -167,8 +167,8 @@ peut précéder le terrain de trois jours au maximum ; les dates réelles sont c
 Au moins deux plateformes récentes par candidat et deux candidats observés sont requis.
 Le score hebdomadaire sur sept relevés reste un repère consultable séparément.
 
-Le boost relatif est `dynamique / 1 000 × 10 × part du baromètre` : une part de 30 %
-équivaut à l’ancien multiplicateur **×3**, une part de 50 % à **×5**.
+Le boost relatif est `dynamique / 1 000 × multiplicateur`, réglé directement de **×0 à ×5**
+(×3,5 par défaut). Dans la barre d’influence, ×5 pèse autant qu’un curseur à 100.
 À ×3, 60 ‰ donnent +18 % du propre score : **10 % devient 11,8 %
 avant renormalisation** (11,2 % à ×2).
 Le boost est plafonné à ±50 % du propre score, puis l’ensemble est renormalisé à 100 %.

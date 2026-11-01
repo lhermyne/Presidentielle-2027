@@ -88,3 +88,4 @@ sans facteur de poids ni effet des indisponibilités des autres sources.
   Le baromètre entre dans la répartition (part de 30 % ≈ ×3, 50 % ≈ ×5).
   Wikipédia agit comme le baromètre : bonus/malus relatif au propre score.
 - Ajout du score projeté au second tour ; page d’accueil allégée (marché retiré, détail en bas).
+- Baromètre ramené à un curseur ×0 à ×5 direct (×3,5 par défaut, environ 33 % de la barre).
