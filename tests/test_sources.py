@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import collect
 from sources import normalize_history, parse_market, parse_polls, slug, social_signals, parse_trends, merge_trends, trend_signals, barometer_window
-from sources import parse_pageviews, wikipedia_signals, wikipedia_url, wikipedia_window
+from sources import parse_pageviews, wikipedia_signals, wikipedia_url, wikipedia_window, barometer_daily, market_history, recent_series
 
 HEADER = "sondage_id,institut,terrain_debut,terrain_fin,echantillon,tour,configuration,configuration_principale,echantillon_configuration,candidat,parti,score,url_source\n"
 
@@ -141,6 +141,15 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(signals["asOf"], "2026-10-30")
         self.assertIn("Jean-Luc_M%C3%A9lenchon", wikipedia_url({"id": "jlm", "name": "Jean-Luc Mélenchon"},
                                                               date(2026, 10, 1), date(2026, 10, 30)))
+
+    def test_history_series_cover_the_recent_window_only(self):
+        snapshots = {"2026-01-01": [{"id": "a", "probability": 10}], "2026-10-30": [{"id": "a", "probability": 40.123}], "2026-11-01": [{"id": "a", "probability": 45}]}
+        self.assertEqual(market_history(snapshots, "2026-10-31"), {"a": {"2026-10-30": 40.12}})
+        self.assertEqual(recent_series({"a": {"2026-01-01": 5, "2026-10-30": 7}}, "2026-10-31"), {"a": {"2026-10-30": 7}})
+        rows = [{"date": f"2026-10-{day}", "accounts": {"a": 1000 + day, "b": 2000}} for day in range(20, 26)]
+        daily = barometer_daily({"instagram": rows, "twitter": rows}, "2026-10-25", days=4)
+        self.assertEqual(sorted(daily["a"]), ["2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"])
+        self.assertGreater(daily["a"]["2026-10-25"], 0)
 
     def test_market_event_drops_placeholder_rows(self):
         event = [{"slug": "event", "title": "Event", "endDate": "2027-04-18T23:59:00Z", "markets": [

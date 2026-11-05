@@ -401,6 +401,42 @@ def wikipedia_signals(series, as_of, fetched_at, anchors=()):
             "note": "Consultations humaines de Wikipédia en français (robots exclus). Dynamique depuis la fin du dernier terrain compatible : médiane des jours suivants face à la médiane des 28 jours précédents. Une consultation n’est pas une intention de vote."}
 
 
+HISTORY_DAYS = 90
+
+
+def _history_dates(as_of, days=HISTORY_DAYS):
+    end = date.fromisoformat(as_of)
+    return [(end - timedelta(days=offset)).isoformat() for offset in range(days, -1, -1)]
+
+
+def barometer_daily(histories, as_of, days=HISTORY_DAYS):
+    """Dynamique quotidienne en ‰ par candidat : mesure l'agitation du baromètre sur la mémoire des sondages."""
+    series = defaultdict(dict)
+    dates = _history_dates(as_of, days)
+    for previous, day in zip(dates, dates[1:]):
+        for candidate, signal in barometer_window(histories, previous, day)["signals"].items():
+            if signal["coverage"] >= 2:
+                series[candidate][day] = round(signal["score"], 3)
+    return dict(series)
+
+
+def recent_series(series, as_of, days=HISTORY_DAYS):
+    first = _history_dates(as_of, days)[0]
+    return {candidate: {day: count for day, count in sorted(values.items()) if first <= day <= as_of}
+            for candidate, values in (series or {}).items()}
+
+
+def market_history(snapshots, as_of, days=HISTORY_DAYS):
+    """Prix de victoire par candidat et par jour, à partir de relevés {date: [marchés]}."""
+    first = _history_dates(as_of, days)[0]
+    series = defaultdict(dict)
+    for day, markets in sorted(snapshots.items()):
+        if first <= day <= as_of:
+            for market in markets:
+                series[market["id"]][day] = round(market["probability"], 2)
+    return dict(series)
+
+
 def parse_market(raw, captured_at, title=None):
     events = raw if isinstance(raw, list) else [raw]
     if not events or not isinstance(events[0], dict) or not events[0].get("markets"):

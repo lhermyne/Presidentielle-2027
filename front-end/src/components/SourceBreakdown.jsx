@@ -8,6 +8,34 @@ function CorrectionCell({ correction, base, missing }) {
   return <td>{signed(correction)}{missing ? ' *' : ''}<small className="cell-detail">{relative(correction, base)}</small></td>;
 }
 
+function UncertaintyTable({ rows }) {
+  const points = value => value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return (
+    <>
+      <h2 className="signal-heading">Incertitude de base</h2>
+      <p className="metric-description">
+        Écart-type en points de chaque candidat : écarts entre sondages, puis agitation de chaque source sur la mémoire des sondages.
+        Ces parts se combinent en somme quadratique, et l’intervalle à 90 % en découle.
+      </p>
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Incertitude de base par candidat">
+        <table>
+          <thead><tr><th scope="col">Candidat</th><th scope="col">Sondages</th><th scope="col">Polymarket</th><th scope="col">Baromètre</th><th scope="col">Wikipédia</th><th scope="col">Base</th></tr></thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.id}>
+                <th scope="row">{row.name}</th>
+                <td>{points(row.uncertainty.polls)}</td><td>{points(row.uncertainty.polymarket)}</td>
+                <td>{points(row.uncertainty.barometer)}</td><td>{points(row.uncertainty.wikipedia)}</td>
+                <td><strong>{points(row.uncertainty.base)}</strong></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 function ForecastEffects({ result, names }) {
   const mix = result.sourceMix;
   const limits = result.adjustmentLimits;
@@ -100,7 +128,7 @@ export default function SourceBreakdown({ result, data }) {
     <section className="panel source-breakdown">
       <details key={result?.error ? 'signals' : 'forecast'} open={Boolean(result?.error)}>
         <summary>Vérifier l’effet de chaque source et consulter les dynamiques</summary>
-        {result?.rows?.length > 0 && <ForecastEffects result={result} names={names} />}
+        {result?.rows?.length > 0 && <><ForecastEffects result={result} names={names} /><UncertaintyTable rows={result.rows} /></>}
         <h2 className="signal-heading">Dynamique du baromètre</h2>
         <p className="metric-description">Repère hebdomadaire en ‰ sur 7 relevés. Être premier de ce classement ne signifie pas être favori à l’élection.</p>
         <div className="table-scroll" tabIndex={0} role="region" aria-label="Dynamique brute du baromètre">

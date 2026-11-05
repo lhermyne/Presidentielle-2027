@@ -158,7 +158,8 @@ leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour 
 choisie est **verrouillée** et sort du calcul des parts.
 Référence : **sondages 100, Polymarket 50, baromètre ×2, Wikipédia ×1, Trends 10**, soit sans
 Google Trends environ **48 % sondages, 24 % Polymarket, 19 % baromètre, 10 % Wikipédia**.
-Incertitude de campagne 2 points, mémoire des sondages 7 jours. « Sondages seuls » met toutes les autres sources à 0.
+Mémoire des sondages 7 jours. L'incertitude de base est calculée par candidat (écarts entre sondages et
+agitation des sources sur la mémoire, en somme quadratique) ; un curseur permet seulement de l'élargir. « Sondages seuls » met toutes les autres sources à 0.
 Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
 La répartition est expérimentale, pas optimisée historiquement.
 

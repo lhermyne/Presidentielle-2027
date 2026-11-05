@@ -14,7 +14,8 @@ from zoneinfo import ZoneInfo
 from sources import (ATTRIBUTION, BAROMETER_BASE, GAMMA_EVENTS, MARKET_EVENTS, MARKET_URL, PLATFORMS, POLL_URL, TRENDS_URL,
                      WIKIPEDIA_DOCUMENTATION, normalize_history, parse_market, parse_polls, social_signals,
                      parse_trends, merge_trends, trend_signals,
-                     merge_pageviews, parse_pageviews, wikipedia_signals, wikipedia_url)
+                     merge_pageviews, parse_pageviews, wikipedia_signals, wikipedia_url,
+                     barometer_daily, market_history, recent_series)
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -78,6 +79,19 @@ def collect_source(key, title, url, parser, captured_at, offline):
     if previous:
         return previous["data"], {**status, "status": "cached", "fetchedAt": previous["fetchedAt"], "observedThrough": observation_date(key, previous["data"]), "sha256": previous["sha256"]}
     return None, {**status, "status": "unavailable", "fetchedAt": None}
+
+
+def archived_market_snapshots(as_of, current):
+    """Prix de victoire déjà archivés chaque jour, complétés par le relevé du jour."""
+    snapshots = {}
+    for path in sorted((DATA / "archive").glob("*/observations.json")):
+        try:
+            snapshots[path.parent.name] = (json.loads(path.read_text(encoding="utf-8")).get("market") or {}).get("markets", [])
+        except (OSError, ValueError):
+            continue
+    if current:
+        snapshots[as_of] = current.get("markets", [])
+    return snapshots
 
 
 def collect_market_events(captured_at, offline):
@@ -184,6 +198,8 @@ def main():
               "social": social_signals(histories, as_of, anchors), "market": market_data, "marketEvents": market_events,
               "trends": trend_signals(trends_data, candidates, as_of, trends_status.get("fetchedAt")),
               "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt"), anchors),
+              "history": {"polymarket": market_history(archived_market_snapshots(as_of, market_data), as_of),
+                          "barometer": barometer_daily(histories, as_of), "wikipedia": recent_series(pageviews, as_of)},
               "sources": statuses, "rejectedPolls": poll_data.get("rejected", []),
               "limitations": ["Modèle expérimental, paramètres non calibrés historiquement.",
                                "Prévisions conditionnelles aux candidatures de chaque configuration.",
@@ -191,7 +207,7 @@ def main():
     write_json(DATA / "latest.json", result)
     archive = DATA / "archive" / as_of
     # Exact normalized inputs used on this day, not a rolling cache or Actions artifact.
-    write_json(archive / "observations.json", result)
+    write_json(archive / "observations.json", {key: value for key, value in result.items() if key != "history"})
     for status in statuses:
         print(f"{status['title']}: {status['status']}")
     print(f"{len(result['polls'])} configurations-sondages ; {len(candidates)} personnalités ; {len(poll_data.get('rejected', []))} groupes/lignes rejetés.")

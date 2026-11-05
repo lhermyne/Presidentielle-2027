@@ -165,11 +165,11 @@ export default function Laboratory({ configurations, configurationId, setConfigu
           </div>
           <div className="slider-field">
             <div>
-              <label htmlFor="uncertainty">Incertitude de campagne</label>
-              <output htmlFor="uncertainty">{settings.uncertainty.toLocaleString('fr-FR')} points</output>
+              <label htmlFor="uncertainty">Incertitude ajoutée</label>
+              <output htmlFor="uncertainty">+{settings.uncertainty.toLocaleString('fr-FR')} point{settings.uncertainty > 1 ? 's' : ''}</output>
             </div>
-            <input name="uncertainty" id="uncertainty" type="range" min="1" max="8" step="0.5" value={settings.uncertainty} onChange={event => setNumber('uncertainty', event.target.value)} />
-            <p>Écart-type pour un candidat à 25 %, plus faible pour les petits scores. Hypothèse à calibrer.</p>
+            <input name="uncertainty" id="uncertainty" type="range" min="0" max="8" step="0.5" value={settings.uncertainty} onChange={event => setNumber('uncertainty', event.target.value)} />
+            <p>L’incertitude de base est calculée à partir des sondages et des sources. Ce curseur ne peut que l’élargir.</p>
           </div>
         </details>
 

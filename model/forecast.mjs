@@ -1,5 +1,5 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.7.0-market-base-experimental';
+export const MODEL_VERSION = '0.8.0-dynamic-uncertainty-experimental';
 export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'barometer', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
@@ -56,10 +56,13 @@ const POST_SIMULATION_BOARDS = Object.freeze(['president', 'advance']);
 const MARKET_FLOOR = 0.02;
 // Force de l'écart entre le marché et les sondages, multipliée par la part de Polymarket.
 export const MARKET_UNIT = 2;
+// Incertitude de base : écarts réels entre sondages, avec au moins l'aléa d'un échantillon de 1 000 personnes.
+const REFERENCE_SAMPLE = 1000;
+const MIN_POLLS_FOR_SPREAD = 3;
 const POLL_WINDOW_DAYS = 120;
 const FIT_MAX_ITERATIONS = 400;
 const FIT_TOLERANCE = 1e-7;
-export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 16000 });
+export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 0, simulations: 16000 });
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const daysBetween = (a, b) => (Date.parse(a) - Date.parse(b)) / DAY;
@@ -110,7 +113,7 @@ export function settingsFrom(input = {}) {
   return {
     halfLife: clamp(finite('halfLife', DEFAULT_SETTINGS.halfLife), 3, 90),
     weights: normalizeWeights(input.weights ?? DEFAULT_WEIGHTS),
-    uncertainty: clamp(finite('uncertainty', DEFAULT_SETTINGS.uncertainty), 1, 8),
+    uncertainty: clamp(finite('uncertainty', DEFAULT_SETTINGS.uncertainty), 0, 8),
     simulations: Math.round(clamp(finite('simulations', 16000), 1000, 50000)),
   };
 }
@@ -248,7 +251,7 @@ export function fitSupport(data, asOf = data.asOf, halfLife = DEFAULT_SETTINGS.h
   const candidates = Object.keys(within);
   const surveysById = {};
   for (const id of candidates) surveysById[id] = new Set(polls.filter(poll => id in poll.scores).map(poll => poll.id)).size;
-  return { support: Object.fromEntries(candidates.map(id => [id, blocSupport[blocOf(id)] * within[id]])), blocSupport, within, blocOf, surveysById,
+  return { support: Object.fromEntries(candidates.map(id => [id, blocSupport[blocOf(id)] * within[id]])), blocSupport, within, blocOf, surveysById, observations,
     pollCount: new Set(polls.map(poll => poll.id)).size, instituteCount: new Set(polls.map(poll => poll.institute)).size,
     latest: polls.map(poll => poll.fieldEnd).sort().at(-1) };
 }
@@ -262,6 +265,72 @@ function scoresForList(fit, ids) {
   return Object.fromEntries(known.map(id => {
     const bloc = fit.blocOf(id);
     return [id, 100 * fit.blocSupport[bloc] / blocTotal * fit.within[id] / withinTotals[bloc]];
+  }));
+}
+
+const standardDeviation = values => {
+  const mean = sum(values) / values.length;
+  return Math.sqrt(sum(values.map(value => (value - mean) ** 2)) / values.length);
+};
+
+function samplingSpread(score) {
+  const share = clamp(score / 100, 0, 1);
+  return 100 * Math.sqrt(share * (1 - share) / REFERENCE_SAMPLE);
+}
+
+// Écart de chaque liste testée à ce que le modèle prévoit pour elle, ramené au score du candidat.
+function pollSpreads(fit, ids, scores) {
+  const predictions = fit.observations.map(item => scoresForList(fit, item.ids));
+  return Object.fromEntries(ids.map(id => {
+    let weight = 0;
+    let squared = 0;
+    let count = 0;
+    fit.observations.forEach((item, index) => {
+      const predicted = predictions[index]?.[id];
+      if (!item.ids.includes(id) || !(predicted > 0)) return;
+      weight += item.weight;
+      squared += item.weight * ((item.shares[id] * 100 - predicted) / predicted) ** 2;
+      count++;
+    });
+    const observed = count >= MIN_POLLS_FOR_SPREAD && weight > 0 ? Math.sqrt(squared / weight) * scores[id] : 0;
+    return [id, Math.max(observed, samplingSpread(scores[id]))];
+  }));
+}
+
+function valuesOverMemory(series, asOf, days) {
+  const first = new Date(Date.parse(asOf) - days * DAY).toISOString().slice(0, 10);
+  return Object.entries(series ?? {}).filter(([day]) => day >= first && day <= asOf).map(([, value]) => value);
+}
+
+// Prix de victoire du titulaire et des candidats de son parti, additionnés jour par jour.
+function reportedMarketSeries(history, id) {
+  const series = {};
+  for (const [candidate, values] of Object.entries(history ?? {})) {
+    if (titularOf(candidate) !== id) continue;
+    for (const [day, price] of Object.entries(values)) series[day] = (series[day] ?? 0) + price;
+  }
+  return series;
+}
+
+// Incertitude de base en points, par candidat : sondages et agitation de chaque source sur la mémoire des sondages.
+// Les sources sont indépendantes les unes des autres : elles se combinent en somme quadratique.
+function campaignUncertainty(data, ids, fit, scores, halfLife, strengths) {
+  const days = Math.max(2, Math.round(halfLife));
+  const spreadOf = values => values.length >= 2 ? standardDeviation(values) : 0;
+  const polls = pollSpreads(fit, ids, scores);
+  return Object.fromEntries(ids.map(id => {
+    const marketValues = valuesOverMemory(reportedMarketSeries(data.history?.polymarket, id), data.asOf, days).map(price => Math.log(price / 100 + MARKET_FLOOR));
+    const barometerValues = valuesOverMemory(data.history?.barometer?.[id], data.asOf, days);
+    const wikipediaValues = valuesOverMemory(data.history?.wikipedia?.[id], data.asOf, days).filter(views => views > 0).map(Math.log);
+    const parts = {
+      polls: polls[id],
+      // La victoire finale compte pour moitié dans l'écart de marché.
+      polymarket: scores[id] * spreadOf(marketValues) * 0.5 * strengths.polymarket,
+      // Les variations quotidiennes s'accumulent sur la période.
+      barometer: scores[id] * spreadOf(barometerValues) * Math.sqrt(days) / 1000 * strengths.barometer,
+      wikipedia: scores[id] * spreadOf(wikipediaValues) * strengths.wikipedia,
+    };
+    return [id, { ...parts, base: Math.hypot(...Object.values(parts)) }];
   }));
 }
 
@@ -463,9 +532,12 @@ export function runoffEstimates(data, ids, settings = DEFAULT_SETTINGS) {
     records.push(poll);
     groups.set(key, records);
   }
-  return Object.fromEntries([...groups].map(([key, polls]) => [key, {
-    ...aggregatePolls(polls, key.split('|'), data.asOf, settings.halfLife), candidateIds: key.split('|'),
-  }]));
+  return Object.fromEntries([...groups].map(([key, polls]) => {
+    const candidateIds = key.split('|');
+    const estimate = aggregatePolls(polls, candidateIds, data.asOf, settings.halfLife);
+    const observed = polls.length >= MIN_POLLS_FOR_SPREAD ? standardDeviation(polls.map(poll => poll.scores[candidateIds[0]])) : 0;
+    return [key, { ...estimate, candidateIds, spread: Math.max(observed, samplingSpread(estimate.scores[candidateIds[0]])) }];
+  }));
 }
 
 // Écart entre le marché et les sondages, candidat par candidat : positif si le marché le place plus haut.
@@ -526,7 +598,11 @@ export function forecast(data, configurationId, rawSettings = {}) {
     Object.fromEntries(DYNAMIC_IDS.map(source => [source, baseline.scores[id] * relativeBoost(source, id)]))]));
   const duels = runoffEstimates(data, ids, settings);
   const meta = Object.fromEntries((data.candidates ?? []).map(c => [c.id, c]));
-  const sigma = settings.uncertainty + Math.min(3, Math.max(0, daysBetween(data.asOf, baseline.latest)) / 30);
+  // Polymarket avant les simulations : bonus ou malus selon l'écart entre ses prix et les sondages.
+  const marketScale = components.polymarket.available ? MARKET_UNIT * shares.polymarket / 100 : 0;
+  const uncertainty = campaignUncertainty(data, ids, fit, baseline.scores, settings.halfLife,
+    { polymarket: marketScale, barometer: scales.barometer, wikipedia: scales.wikipedia });
+  const pollAge = Math.min(3, Math.max(0, daysBetween(data.asOf, baseline.latest)) / 30);
   const simulate = (centerValues, count) => {
     const normal = normalGenerator(makeRandom());
     const draws = [];
@@ -535,7 +611,9 @@ export function forecast(data, configurationId, rawSettings = {}) {
       const raw = centerValues.map((center, index) => {
         const family = meta[ids[index]]?.family ?? ids[index];
         if (!families.has(family)) families.set(family, normal());
-        return Math.max(0.02, center + sigma * Math.sqrt(Math.max(center, 1) / 25) * (0.55 * families.get(family) + Math.sqrt(1 - 0.55 ** 2) * normal()));
+        const added = (settings.uncertainty + pollAge) * Math.sqrt(Math.max(center, 1) / 25);
+        const spread = Math.hypot(uncertainty[ids[index]].base, added);
+        return Math.max(0.02, center + spread * (0.55 * families.get(family) + Math.sqrt(1 - 0.55 ** 2) * normal()));
       });
       const total = sum(raw);
       const scores = raw.map(x => x * 100 / total);
@@ -547,7 +625,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
       if (duel) {
         const age = Math.min(3, Math.max(0, daysBetween(data.asOf, duel.latest)) / 30);
         // Score simulé du premier qualifié au second tour, tiré autour de la moyenne des sondages du duel.
-        runoff = clamp(duel.scores[ids[first]] + normal() * (settings.uncertainty + age), 0, 100);
+        runoff = clamp(duel.scores[ids[first]] + normal() * Math.hypot(duel.spread, settings.uncertainty, age), 0, 100);
         winner = runoff > 50 ? first : second;
       }
       draws.push({ scores, first, second, third, winner, key, runoff });
@@ -560,8 +638,6 @@ export function forecast(data, configurationId, rawSettings = {}) {
     return raw.map(value => value * 100 / sum(raw));
   };
 
-  // Polymarket avant les simulations : bonus ou malus selon l'écart entre ses prix et les sondages.
-  const marketScale = components.polymarket.available ? MARKET_UNIT * shares.polymarket / 100 : 0;
   const marketBonus = marketScale
     ? marketGaps(ids, baseline.scores, components.polymarket)
     : { boards: [], gaps: Object.fromEntries(ids.map(id => [id, 0])) };
@@ -592,7 +668,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
     return { id, name: meta[id]?.name ?? id, party: meta[id]?.party ?? '', color: meta[id]?.color ?? '#687b81', photo: meta[id]?.photo ?? null,
       pollScore: baseline.scores[id], center: centers[index], corrections: corrections[id], renormalization: centers[index] - baseline.scores[id] - totalCorrection(id),
       score: result.total / totalWeight, lower: weightedQuantile(result.samples, 0.05, totalWeight), upper: weightedQuantile(result.samples, 0.95, totalWeight),
-      qualification: result.topTwo / totalWeight * 100, winLower: result.wins / totalWeight * 100, winUpper: (result.wins + result.unknown) / totalWeight * 100,
+      uncertainty: uncertainty[id], qualification: result.topTwo / totalWeight * 100, winLower: result.wins / totalWeight * 100, winUpper: (result.wins + result.unknown) / totalWeight * 100,
       runoff: summarizeRunoff(result.runoffSamples, result.topTwo) };
   }).sort((a, b) => b.score - a.score);
   return { modelVersion: MODEL_VERSION, settings, configuration, baseline, rows, sourceMix,
