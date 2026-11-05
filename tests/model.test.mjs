@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS } from '../model/forecast.mjs';
+import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS, allConfigurations, fitSupport, FIELD_ID, DYNAMIC_SATURATION } from '../model/forecast.mjs';
+
+const effect = value => Math.exp(DYNAMIC_SATURATION * Math.tanh(value / DYNAMIC_SATURATION)) - 1;
 
 const poll = (id, scores, extra = {}) => ({ id, institute: 'Institut A', fieldStart: '2026-10-17', fieldEnd: '2026-10-19', sampleSize: 1000, round: 1, scores, ...extra });
 const dataset = (polls = []) => ({ asOf: '2026-10-20', candidates: ['a', 'b', 'c', 'd'].map(id => ({ id, name: id, family: id })), polls, social: { asOf: '2026-10-20', signals: {} }, market: null });
@@ -83,7 +85,7 @@ test('the barometer is active by default as a bounded correction, never a vote-s
   assert.ok(small.corrections.barometer > 0);
   assert.ok(small.center < 5 && small.score < 5);
   assert.notEqual(result.rows[0].id, 'd');
-  for (const row of result.rows) assert.ok(Math.abs(row.corrections.barometer) <= row.pollScore * result.adjustmentLimits.relative / 100 + 1e-9);
+  for (const row of result.rows) assert.ok(Math.abs(row.corrections.barometer) <= row.pollScore * (Math.exp(DYNAMIC_SATURATION) - 1) + 1e-9);
   const extreme = forecast(data, key, { weights: { polls: 1, barometer: 100 }, simulations: 1000 });
   assert.ok(extreme.rows.find(row => row.id === 'd').center < 10);
 });
@@ -164,7 +166,7 @@ test('a first-round majority is counted as a victory without a second-round poll
 test('historical polling averages do not use later observations', () => {
   const data = dataset([poll('early', { a: 30, b: 70 }, { fieldEnd: '2026-10-01' }), poll('late', { a: 60, b: 40 })]);
   const history = pollingHistory(data, 'a|b');
-  assert.equal(history[0].scores.a, 30);
+  assert.ok(Math.abs(history[0].scores.a - 30) < 1e-6);
   assert.ok(history[1].scores.a > 30);
 });
 
@@ -172,11 +174,11 @@ test('query settings are finite and constrained', () => {
   assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 1000 });
 });
 
-test('60 per mille with x2 gives a 12 percent relative boost, not twelve points', () => {
+test('60 per mille with x2 gives about a 12 percent relative boost, not twelve points', () => {
   const data = addSignals(dataset([poll('p', {a: 40, b: 30, c: 20, d: 10})]));
   const result = forecast(data, key, { weights: { polls: 100, barometer: 40 }, simulations: 1000 });
   const row = result.rows.find(row => row.id === 'd');
-  assert.ok(Math.abs(row.corrections.barometer - 1.2) < 1e-10);
+  assert.ok(Math.abs(row.corrections.barometer - 10 * effect(0.058 * 2)) < 1e-10);
   assert.equal(result.adjustmentLimits.barometerScale, 2);
   assert.ok(row.center < 11.3);
   // A new survey at the same date resets the measurement window.
@@ -199,7 +201,7 @@ test('the barometer slider is a direct x0 to x5 multiplier that also takes room 
   assert.equal(one.adjustmentLimits.barometerScale, 1);
   assert.equal(five.adjustmentLimits.barometerScale, 5);
   assert.equal(fiveAlone.adjustmentLimits.barometerScale, 5);
-  assert.ok(Math.abs(small(five) - 5 * small(one)) < 1e-9);
+  assert.ok(small(five) > 4 * small(one) && small(five) < 6 * small(one));
   assert.equal(five.sourceMix.barometer.effective, 50);
 });
 
@@ -227,7 +229,7 @@ test('second-round scores come from documented duel polls only', () => {
   assert.ok(undocumented.rows.every(row => row.runoff === null));
 });
 
-test('Wikipedia dynamics since the last poll act like the barometer: x1 turns a log-ratio of 0.6 into +6 percent', () => {
+test('Wikipedia dynamics since the last poll act like the barometer', () => {
   const data = addSignals(dataset(firstRound));
   const result = forecast(data, key, { weights: { polls: 80, wikipedia: 20 }, simulations: 1000 });
   const row = id => result.rows.find(item => item.id === id);
@@ -237,7 +239,7 @@ test('Wikipedia dynamics since the last poll act like the barometer: x1 turns a 
   assert.equal(row('c').corrections.wikipedia, 0);
   assert.ok(result.sourceMix.wikipedia.missing.includes('c'));
   for (const item of result.rows) assert.ok(Math.abs(item.corrections.wikipedia) <= item.pollScore * 0.1 + 1e-9);
-  assert.ok(Math.abs(row('a').corrections.wikipedia - row('a').pollScore * 0.06) < 1e-9);
+  assert.ok(Math.abs(row('a').corrections.wikipedia - row('a').pollScore * effect(0.055)) < 1e-9);
   assert.equal(result.adjustmentLimits.wikipediaScale, 1);
   data.wikipedia.asOf = '2026-10-10';
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
@@ -263,4 +265,62 @@ test('extra Polymarket boards (qualification, first place) reweight trajectories
   assert.ok(result.marketFusion.effectiveSampleSize > 1000);
   const silent = forecast(data, key, { weights: { polls: 100 }, simulations: 6000 });
   assert.equal(silent.marketFusion.active, false);
+});
+
+const trueSupport = { a: 40, b: 30, c: 20, d: 10 };
+const listPoll = (id, ids) => {
+  const total = ids.reduce((sum, candidate) => sum + trueSupport[candidate], 0);
+  return poll(id, Object.fromEntries(ids.map(candidate => [candidate, 100 * trueSupport[candidate] / total])));
+};
+
+test('all lists are combined into one coherent support, with absent candidates reported pro rata', () => {
+  const data = dataset([listPoll('p1', ['a', 'b', 'c']), listPoll('p2', ['b', 'c', 'd']), listPoll('p3', ['a', 'd'])]);
+  const { support } = fitSupport(data);
+  assert.ok(Math.abs(support.a / support.d - 4) < 1e-3);
+  assert.ok(Math.abs(support.b / support.c - 1.5) < 1e-3);
+  const full = forecast(data, 'a|b|c|d', { weights: { polls: 100 }, simulations: 1000 });
+  assert.equal(full.error, undefined);
+  const narrow = forecast(data, 'a|d', { weights: { polls: 100 }, simulations: 1000 });
+  assert.ok(Math.abs(narrow.rows.find(row => row.id === 'a').pollScore - 80) < 1e-2);
+  assert.equal(narrow.baseline.pollCount, 3);
+});
+
+test('the coherent field keeps candidates backed by the ballot or victory markets', () => {
+  const data = dataset([listPoll('p1', ['a', 'b', 'c']), listPoll('p2', ['b', 'c', 'd'])]);
+  const stamp = `${data.asOf}T12:00:00Z`;
+  data.market = { capturedAt: stamp, markets: [{ id: 'a', probability: 40 }, { id: 'd', probability: 0.1 }] };
+  data.marketEvents = { ballot: { capturedAt: stamp, markets: [{ id: 'b', probability: 80 }, { id: 'c', probability: 5 }, { id: 'd', probability: 5 }] } };
+  const [field] = allConfigurations(data);
+  assert.equal(field.id, FIELD_ID);
+  assert.deepEqual(field.candidateIds, ['a', 'b']);
+  const result = forecast(data, FIELD_ID, { weights: { polls: 100 }, simulations: 1000 });
+  assert.ok(Math.abs(result.rows.reduce((total, row) => total + row.pollScore, 0) - 100) < 1e-9);
+  assert.deepEqual(pollingHistory(data, FIELD_ID).length, 1);
+  data.market = null;
+  data.marketEvents = null;
+  assert.notEqual(allConfigurations(data)[0].id, FIELD_ID);
+});
+
+test('near-zero dynamics have no effect, losses pull down, and strong dynamics are not clipped', () => {
+  const data = addSignals(dataset(firstRound));
+  const window = data.social.windows['2026-10-19'].signals;
+  Object.assign(window, { a: { score: 1.5, coverage: 4 }, b: { score: -40, coverage: 4 }, c: { score: 400, coverage: 4 }, d: { score: -1, coverage: 4 } });
+  const result = forecast(data, key, { weights: { polls: 100, barometer: 100 }, simulations: 1000 });
+  const row = id => result.rows.find(item => item.id === id);
+  assert.equal(row('a').corrections.barometer, 0);
+  assert.equal(row('d').corrections.barometer, 0);
+  assert.ok(row('b').corrections.barometer < 0);
+  assert.ok(row('c').corrections.barometer > row('c').pollScore * 1.5);
+});
+
+test('an extra candidate splits its own political bloc instead of diluting every other camp', () => {
+  const data = dataset([poll('p1', { a: 40, b: 60 }), poll('p2', { a: 40, b: 40, c: 20 })]);
+  data.candidates = [{ id: 'a', name: 'a', party: 'RN', family: 'RN' }, { id: 'b', name: 'b', party: 'LFI', family: 'LFI' }, { id: 'c', name: 'c', party: 'PS', family: 'PS' }];
+  const result = forecast(data, 'a|b|c', { weights: { polls: 100 }, simulations: 1000 });
+  const narrow = forecast(data, 'a|b', { weights: { polls: 100 }, simulations: 1000 });
+  const score = (output, id) => output.rows.find(row => row.id === id).pollScore;
+  assert.ok(Math.abs(score(result, 'a') - 40) < 1e-6);
+  assert.ok(Math.abs(score(narrow, 'a') - 40) < 1e-6);
+  assert.ok(Math.abs(score(result, 'b') - 40) < 1e-3);
+  assert.ok(Math.abs(score(result, 'c') - 20) < 1e-3);
 });

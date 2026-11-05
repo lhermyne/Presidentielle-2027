@@ -14,9 +14,9 @@ function ForecastEffects({ result, names }) {
   return (
     <>
       <p className="metric-description">
-        Socle des sondages, puis bonus ou malus relatifs (baromètre, Wikipédia, Google Trends), chacun proportionnel à sa part d’influence
-        et plafonné à ±{limits.relative} % du propre score. Les scores sont ensuite ramenés à 100 %. Polymarket repondère après coup les
-        simulations selon leur gagnant final, sans être converti en points de vote.
+        Socle issu de tous les sondages, puis bonus ou malus relatifs (baromètre, Wikipédia, Google Trends). Une dynamique proche de zéro
+        n’a pas d’effet et les très fortes variations sont comprimées en douceur. Les scores sont ensuite ramenés à 100 %. Polymarket
+        repondère après coup les simulations, sans être converti en points de vote.
       </p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Effets des sources par candidat">
         <table>
@@ -45,7 +45,7 @@ function ForecastEffects({ result, names }) {
       </div>
       <p className="source-caption">
         Corrections en points, et en % du score sondé dessous. * Signal manquant : aucune correction, la dynamique n’est pas comptée comme nulle.
-        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} et Wikipédia à ×{limits.wikipediaScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesurés depuis la fin du terrain du {dateLabel(mix.barometer.anchor ?? mix.wikipedia.anchor)}.
+        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} et Wikipédia à ×{limits.wikipediaScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesurés depuis le dernier sondage de chaque candidat.
         Chaque actualisation repart du socle sondé.
       </p>
       <p className="metric-description">
@@ -59,18 +59,16 @@ function ForecastEffects({ result, names }) {
   );
 }
 
-function WikipediaDynamics({ result, data, names }) {
-  const window = data.wikipedia?.windows?.[result?.baseline?.latest];
-  const rows = Object.entries(window?.signals ?? {})
-    .filter(([id]) => result.rows.some(row => row.id === id))
-    .sort((a, b) => b[1].dynamic - a[1].dynamic);
+function WikipediaDynamics({ result, names }) {
+  const periods = result?.sourceMix?.wikipedia?.periods ?? {};
+  const rows = Object.entries(periods).sort((a, b) => b[1].dynamic - a[1].dynamic);
   if (!rows.length) return null;
   const daily = value => Math.round(value).toLocaleString('fr-FR');
   return (
     <>
       <h2 className="signal-heading">Dynamique Wikipédia</h2>
       <p className="metric-description">
-        Consultations quotidiennes depuis la fin du terrain du {dateLabel(window.anchor)}, comparées aux 28 jours précédents.
+        Consultations quotidiennes depuis le dernier sondage de chaque candidat, comparées aux 28 jours précédents.
         Les médianes neutralisent les pics d’un seul jour. C’est cette évolution qui donne le bonus ou malus.
       </p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Dynamique des consultations Wikipédia">
@@ -115,7 +113,7 @@ export default function SourceBreakdown({ result, data }) {
           </table>
         </div>
         {!dynamics.length && <p>Aucune dynamique récente exploitable.</p>}
-        <WikipediaDynamics result={result} data={data} names={names} />
+        <WikipediaDynamics result={result} names={names} />
       </details>
     </section>
   );

@@ -90,3 +90,10 @@ sans facteur de poids ni effet des indisponibilités des autres sources.
 - Ajout du score projeté au second tour ; page d’accueil allégée (marché retiré, détail en bas).
 - Baromètre ramené à un curseur ×0 à ×5 direct (×3,5 par défaut, environ 33 % de la barre).
 - 5 marchés Polymarket suivis en plus (1er tour, 2e/3e place, qualification, bulletin), sans critère de liquidité ; ils corrigent premier tour, qualification et victoire. Google Trends : candidature à l'alpha à faire par l'utilisateur.
+
+## Demande de l'utilisateur, 5 novembre 2026
+- Remplace la séparation stricte des listes : tous les sondages de premier tour sont réunis en une
+  liste cohérente avec reports de voix ; les listes réellement testées restent consultables.
+- Candidats retenus : testés récemment et appuyés par Polymarket (bulletin ≥ 15 % ou victoire ≥ 1 %).
+- Baromètre et Wikipédia : petits bonus/malus, nuls près de zéro, sans plafond brutal.
+- Rôle de Polymarket sur le score de base : encore en discussion, non implémenté.

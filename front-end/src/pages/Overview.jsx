@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowDownIcon, ArrowUpRightIcon, DownloadSimpleIcon, ShareNetworkIcon, FlaskIcon } from '@phosphor-icons/react';
-import { forecast, listConfigurations, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
+import { allConfigurations, forecast, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
 import { dateLabel, downloadJson } from '../lib/format.js';
 import Results from '../components/Results.jsx';
 import Laboratory from '../components/Laboratory.jsx';
@@ -37,7 +37,7 @@ function scrollToId(event, id) {
 }
 
 export default function Overview({ data }) {
-  const configurations = useMemo(() => listConfigurations(data), [data]);
+  const configurations = useMemo(() => allConfigurations(data), [data]);
   const [configurationId, setConfigurationId] = useState(() => {
     const requested = new URLSearchParams(window.location.search).get('candidats');
     return configurations.some(c => c.id === requested) ? requested : configurations[0]?.id;
@@ -120,14 +120,14 @@ export default function Overview({ data }) {
       <KeyFacts result={result} />
 
       <div className="data-strip">
-        <div><span className="stat-number">{result?.baseline?.pollCount ?? '…'}</span><span>enquêtes compatibles<small>dans la configuration sélectionnée</small></span></div>
+        <div><span className="stat-number">{result?.baseline?.pollCount ?? '…'}</span><span>enquêtes utilisées<small>toutes listes de candidats confondues</small></span></div>
         <div><span className="stat-number">{data.social.platforms.length}<span>/4</span></span><span>réseaux du baromètre<small>historique depuis {dateLabel(data.social.historyStart, true)}</small></span></div>
         <div><span className="stat-number date-stat">{result ? dateLabel(lastPoll, true) : '…'}</span><span>dernier terrain<small>la date de mesure de l’opinion</small></span></div>
         <a className="jump-link" href="#explorer" onClick={event => scrollToId(event, 'explorer')}>Explorer les résultats <ArrowDownIcon aria-hidden="true" size={17} /></a>
       </div>
 
       <div className="workspace-heading" id="explorer">
-        <span className="workspace-description">Une prévision conditionnelle à une liste de candidats.</span>
+        <span className="workspace-description">Tous les sondages réunis en une projection cohérente.</span>
         <a className="mobile-lab-link" href="#laboratoire" onClick={event => scrollToId(event, 'laboratoire')}>Les réglages <ArrowDownIcon aria-hidden="true" size={15} /></a>
         <div className="action-group">
           <button className="button" onClick={exportScenario} disabled={!result || result.error || pending}><DownloadSimpleIcon aria-hidden="true" size={17} />Exporter</button>

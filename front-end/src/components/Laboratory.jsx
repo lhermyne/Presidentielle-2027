@@ -31,13 +31,14 @@ function shareLabel(share) {
 }
 
 function configurationLabel(item, index, names) {
+  if (item.isField) return `Tous les candidats retenus · ${item.candidateIds.length} candidats · ${item.pollCount} enquêtes`;
   const leaders = Object.entries(item.example.scores)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
     .map(([id]) => shortName(names[id] ?? id))
     .join(' / ');
   const surveys = `${item.pollCount} enquête${item.pollCount > 1 ? 's' : ''}`;
-  const prefix = index === 0 ? 'La plus récente · ' : '';
+  const prefix = index <= 1 ? 'La plus récente · ' : '';
   return `${prefix}${leaders} · ${item.candidateIds.length} candidats · ${surveys} · ${dateLabel(item.latest, true)}`;
 }
 
@@ -103,7 +104,7 @@ function SourceSlider({ id, value, share, component, onChange }) {
 export default function Laboratory({ configurations, configurationId, setConfigurationId, settings, setSettings, data }) {
   const names = Object.fromEntries(data.candidates.map(candidate => [candidate.id, candidate.name]));
   const configuration = configurations.find(item => item.id === configurationId);
-  const components = sourceComponents(data, configuration?.candidateIds ?? [], settings.halfLife);
+  const components = sourceComponents(data, configuration?.candidateIds ?? []);
   const available = SOURCE_IDS.filter(id => components[id].available);
   const shares = sourceShares(settings.weights, available);
 
@@ -126,13 +127,15 @@ export default function Laboratory({ configurations, configurationId, setConfigu
       </div>
 
       <div className="lab-body">
-        <label className="field-label" htmlFor="configuration">Liste de candidats testée</label>
+        <label className="field-label" htmlFor="configuration">Candidats</label>
         <select id="configuration" name="configuration" value={configurationId} onChange={event => setConfigurationId(event.target.value)}>
           {configurations.map((item, index) => (
             <option key={item.id} value={item.id}>{configurationLabel(item, index, names)}</option>
           ))}
         </select>
-        <p className="field-help">{configuration?.candidateIds.length} personnalités testées ensemble par les instituts.</p>
+        <p className="field-help">{configuration?.isField
+          ? 'Tous les sondages sont réunis ; les voix des absents se reportent au prorata.'
+          : `Liste testée par les instituts, ${configuration?.candidateIds.length} personnalités.`}</p>
 
         <fieldset className="source-weights">
           <legend>Influence des sources</legend>

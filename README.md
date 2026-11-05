@@ -144,10 +144,12 @@ fusionnent les dates pour conserver l'historique même si la source le raccourci
 
 ## Méthode et reproductibilité
 
-Les sondages sont regroupés par **ensemble exact de candidats**, puis par enquête.
-Fenêtre de 120 jours, décroissance exponentielle (demi-vie 21 jours), poids d'échantillon
-en racine carrée plafonné et atténuation de la fréquence d'un même institut.
-Pas de correction de biais d'institut prétendument apprise.
+**Tous les sondages de premier tour** (120 jours, toutes listes) alimentent un modèle de choix
+à deux niveaux (`fitSupport`) : poids de chaque camp politique, puis répartition dans le camp.
+Un absent reporte ses voix d'abord dans son camp, au prorata. La liste par défaut (`field`) réunit
+les candidats testés avec au moins 15 % sur le bulletin ou 1 % de victoire sur Polymarket ; chaque
+liste réellement testée reste choisissable. Décroissance exponentielle (demi-vie 21 jours), poids
+d'échantillon en racine carrée et atténuation des instituts fréquents. Pas de biais d'institut appris.
 
 Depuis le 1er novembre 2026, **chaque source a un curseur indépendant** (0 à 100, baromètre de ×0 à ×5) :
 sondages, baromètre, Polymarket, Wikipédia et Google Trends. Seule leur proportion compte
@@ -161,7 +163,7 @@ La répartition est expérimentale, pas optimisée historiquement.
 
 Le signal social reprend la formule autonome de dynamique pondérée du baromètre :
 variation en ‰ × audience/max plateforme, moyenne entre plateformes pondérée par les
-audiences relatives du candidat. **La fenêtre part de la fin du dernier terrain compatible**,
+audiences relatives du candidat. **La fenêtre part du dernier sondage de chaque candidat**,
 faute de date de publication dans le CSV, jusqu’au dernier relevé. Le relevé de départ
 peut précéder le terrain de trois jours au maximum ; les dates réelles sont conservées.
 Au moins deux plateformes récentes par candidat et deux candidats observés sont requis.
@@ -171,7 +173,8 @@ Le boost relatif est `dynamique / 1 000 × multiplicateur`, réglé directement 
 (×3,5 par défaut). Dans la barre d’influence, ×5 pèse autant qu’un curseur à 100.
 À ×3, 60 ‰ donnent +18 % du propre score : **10 % devient 11,8 %
 avant renormalisation** (11,2 % à ×2).
-Le boost est plafonné à ±50 % du propre score, puis l’ensemble est renormalisé à 100 %.
+Sous 2 ‰ (5 % environ pour Wikipédia), une dynamique n'a pas d'effet. Pas de plafond brutal : les très
+fortes variations sont comprimées en douceur, puis l’ensemble est renormalisé à 100 %.
 Un nouveau terrain compatible réinitialise le point de départ. Chaque calcul repart du
 socle sondé ; les boosts quotidiens ne sont pas composés plusieurs fois. Une dynamique
 manquante n’entraîne aucune correction propre. Être premier en dynamique n’est pas

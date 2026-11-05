@@ -1,5 +1,5 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.5.0-independent-weights-experimental';
+export const MODEL_VERSION = '0.6.0-coherent-field-experimental';
 export const SOURCE_IDS = Object.freeze(['polls', 'barometer', 'polymarket', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
@@ -14,8 +14,28 @@ export const WEIGHT_PER_MULTIPLIER = 20;
 export const sourceMultiplier = (weights, id) => normalizeWeights(weights)[id] / WEIGHT_PER_MULTIPLIER;
 // Une dynamique Wikipédia (log du rapport de consultations, bornée à ±1) vaut 10 % relatifs à ×1.
 export const WIKIPEDIA_UNIT = 0.1;
-// Une correction dynamique ne dépasse jamais ±50 % du propre score sondé du candidat.
-export const RELATIVE_LIMIT = 0.5;
+// Sous ces seuils, une dynamique est considérée comme stable : 2 ‰ d'abonnés, 5 % environ de consultations.
+export const BAROMETER_NOISE = 2;
+export const WIKIPEDIA_NOISE = 0.05;
+// Compression douce des très fortes variations, sans plafond brutal (effet maximal : ×e^1,5 ou ÷e^1,5).
+export const DYNAMIC_SATURATION = 1.5;
+// Identifiant de la liste reconstruite à partir de tous les sondages.
+export const FIELD_ID = 'field';
+// Écarte les candidatures que le marché juge marginales : bulletin ≥ 15 % ou victoire ≥ 1 %.
+export const MIN_BALLOT_PRICE = 15;
+export const MIN_WIN_PRICE = 1;
+// Sans marché récent, seuls les candidats testés dans au moins 5 enquêtes sont retenus.
+export const MIN_SURVEYS_WITHOUT_MARKET = 5;
+// Camps politiques : un absent reporte d'abord ses voix dans son camp. Hypothèse explicite, par étiquette.
+export const POLITICAL_BLOCS = Object.freeze({
+  LO: 'gauche', LFI: 'gauche', PCF: 'gauche', LE: 'gauche', PS: 'gauche', PP: 'gauche', GRS: 'gauche',
+  RE: 'centre', HOR: 'centre', LFH: 'centre',
+  LR: 'droite', DLF: 'droite', SE: 'droite',
+  RN: 'extreme-droite', REC: 'extreme-droite',
+});
+const POLL_WINDOW_DAYS = 120;
+const FIT_MAX_ITERATIONS = 400;
+const FIT_TOLERANCE = 1e-7;
 export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
@@ -108,6 +128,123 @@ export function aggregatePolls(polls, candidateIds, asOf, halfLife = 21) {
     latest: [...bySurvey.values()].map(p => p.fieldEnd).sort().at(-1) };
 }
 
+function firstRoundPolls(data, asOf) {
+  return (data.polls ?? []).filter(p => p.round === 1 && validPoll(p, asOf) && daysBetween(asOf, p.fieldEnd) <= POLL_WINDOW_DAYS);
+}
+
+// Chaque liste testée devient une observation. Les listes d'une même enquête partagent ses répondants,
+// et les instituts les plus fréquents sont atténués.
+function pollObservations(polls, asOf, halfLife) {
+  const surveys = new Map();
+  for (const poll of polls) surveys.set(poll.id, { institute: poll.institute, lists: (surveys.get(poll.id)?.lists ?? 0) + 1 });
+  const instituteCounts = new Map();
+  for (const survey of surveys.values()) instituteCounts.set(survey.institute, (instituteCounts.get(survey.institute) ?? 0) + 1);
+  return polls.map(poll => {
+    const ids = Object.keys(poll.scores);
+    const total = sum(ids.map(id => poll.scores[id]));
+    const age = Math.max(0, daysBetween(asOf, poll.fieldEnd));
+    const weight = Math.pow(0.5, age / halfLife) * Math.sqrt(clamp(poll.sampleSize || 1000, 100, 5000) / 1000) /
+      Math.sqrt(instituteCounts.get(poll.institute) * surveys.get(poll.id).lists);
+    return { ids, weight, shares: Object.fromEntries(ids.map(id => [id, poll.scores[id] / total])) };
+  });
+}
+
+// Modèle de choix : part d'une option = son soutien ÷ somme des soutiens des options présentes.
+// Ajustement par l'algorithme itératif MM (Hunter, 2004).
+function fitChoice(observations) {
+  const options = [...new Set(observations.flatMap(item => item.ids))];
+  const earned = Object.fromEntries(options.map(id => [id, 0]));
+  for (const item of observations) for (const id of item.ids) earned[id] += item.weight * item.shares[id];
+  let support = Object.fromEntries(options.map(id => [id, 1 / options.length]));
+  for (let iteration = 0; iteration < FIT_MAX_ITERATIONS; iteration++) {
+    const exposure = Object.fromEntries(options.map(id => [id, 0]));
+    for (const item of observations) {
+      const listTotal = sum(item.ids.map(id => support[id]));
+      for (const id of item.ids) exposure[id] += item.weight / listTotal;
+    }
+    const raw = options.map(id => Math.max(earned[id] / exposure[id], 1e-9));
+    const total = sum(raw);
+    const next = Object.fromEntries(options.map((id, index) => [id, raw[index] / total]));
+    const change = Math.max(...options.map(id => Math.abs(next[id] - support[id]) / support[id]));
+    support = next;
+    if (change < FIT_TOLERANCE) break;
+  }
+  return support;
+}
+
+function blocResolver(data) {
+  const party = Object.fromEntries((data.candidates ?? []).map(candidate => [candidate.id, candidate.party]));
+  return id => POLITICAL_BLOCS[party[id]] ?? id;
+}
+
+// Deux niveaux : le poids de chaque camp, puis la répartition à l'intérieur du camp. Ajouter un candidat
+// de gauche divise donc surtout la gauche, sans retirer mécaniquement des voix à l'extrême droite.
+export function fitSupport(data, asOf = data.asOf, halfLife = 21) {
+  const polls = firstRoundPolls(data, asOf);
+  if (!polls.length) return null;
+  const blocOf = blocResolver(data);
+  const observations = pollObservations(polls, asOf, halfLife);
+  const blocObservations = [];
+  const insideBlocs = new Map();
+  for (const item of observations) {
+    const totals = {};
+    for (const id of item.ids) totals[blocOf(id)] = (totals[blocOf(id)] ?? 0) + item.shares[id];
+    blocObservations.push({ ids: Object.keys(totals), weight: item.weight, shares: totals });
+    for (const [bloc, total] of Object.entries(totals)) {
+      if (!(total > 0)) continue;
+      const ids = item.ids.filter(id => blocOf(id) === bloc);
+      const inside = { ids, weight: item.weight * total, shares: Object.fromEntries(ids.map(id => [id, item.shares[id] / total])) };
+      insideBlocs.set(bloc, [...(insideBlocs.get(bloc) ?? []), inside]);
+    }
+  }
+  const blocSupport = fitChoice(blocObservations);
+  const within = {};
+  for (const insideObservations of insideBlocs.values()) Object.assign(within, fitChoice(insideObservations));
+  const candidates = Object.keys(within);
+  const surveysById = {};
+  for (const id of candidates) surveysById[id] = new Set(polls.filter(poll => id in poll.scores).map(poll => poll.id)).size;
+  return { support: Object.fromEntries(candidates.map(id => [id, blocSupport[blocOf(id)] * within[id]])), blocSupport, within, blocOf, surveysById,
+    pollCount: new Set(polls.map(poll => poll.id)).size, instituteCount: new Set(polls.map(poll => poll.institute)).size,
+    latest: polls.map(poll => poll.fieldEnd).sort().at(-1) };
+}
+
+function scoresForList(fit, ids) {
+  const known = ids.filter(id => Number.isFinite(fit.within[id]));
+  const blocs = [...new Set(known.map(fit.blocOf))];
+  const blocTotal = sum(blocs.map(bloc => fit.blocSupport[bloc]));
+  if (!(blocTotal > 0)) return null;
+  const withinTotals = Object.fromEntries(blocs.map(bloc => [bloc, sum(known.filter(id => fit.blocOf(id) === bloc).map(id => fit.within[id]))]));
+  return Object.fromEntries(known.map(id => {
+    const bloc = fit.blocOf(id);
+    return [id, 100 * fit.blocSupport[bloc] / blocTotal * fit.within[id] / withinTotals[bloc]];
+  }));
+}
+
+function marketPrices(data, source) {
+  if (!recent(data.asOf, source?.capturedAt, 7)) return null;
+  return Object.fromEntries((source.markets ?? []).map(market => [market.id, market.probability]));
+}
+
+export function eligibleCandidates(data, fit) {
+  const candidates = Object.keys(fit.support);
+  const ballot = marketPrices(data, data.marketEvents?.ballot);
+  const victory = marketPrices(data, data.market);
+  if (!ballot && !victory) return candidates.filter(id => fit.surveysById[id] >= MIN_SURVEYS_WITHOUT_MARKET);
+  return candidates.filter(id => (ballot?.[id] ?? 0) >= MIN_BALLOT_PRICE || (victory?.[id] ?? 0) >= MIN_WIN_PRICE);
+}
+
+// La liste complète reconstruite, proposée par défaut, puis chaque liste réellement testée.
+export function allConfigurations(data) {
+  const lists = listConfigurations(data);
+  const fit = fitSupport(data);
+  if (!fit) return lists;
+  const candidateIds = eligibleCandidates(data, fit).sort();
+  if (candidateIds.length < 2) return lists;
+  const field = { id: FIELD_ID, isField: true, candidateIds, pollCount: fit.pollCount, latest: fit.latest,
+    example: { scores: scoresForList(fit, candidateIds), main: true } };
+  return [field, ...lists];
+}
+
 function makeRandom(seed = 2027) {
   let state = seed >>> 0;
   return () => {
@@ -155,21 +292,44 @@ const MARKET_BOARDS = Object.freeze({
   advance: { label: 'Qualification au second tour', concerned: draw => [draw.first, draw.second] },
 });
 
-export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
-  const poll = baseline ?? aggregatePolls(selectPolls(data, candidateKey(ids)), ids, data.asOf, halfLife);
+// Dernier terrain où chaque candidat a été testé : point de départ de ses dynamiques.
+function latestFieldDates(data) {
+  const latest = {};
+  for (const poll of firstRoundPolls(data, data.asOf)) {
+    for (const id of Object.keys(poll.scores)) if (!(id in latest) || poll.fieldEnd > latest[id]) latest[id] = poll.fieldEnd;
+  }
+  return latest;
+}
+
+function dynamicsSinceLastPoll(windows, ids, latest, isUsable) {
+  const periods = {};
+  const anchors = {};
+  for (const id of ids) {
+    const signal = windows?.[latest[id]]?.signals?.[id];
+    if (signal && isUsable(signal)) {
+      periods[id] = signal;
+      anchors[id] = latest[id];
+    }
+  }
+  const observed = ids.filter(id => id in periods);
+  return { periods, anchors, observed, missing: ids.filter(id => !observed.includes(id)), anchor: Object.values(anchors).sort().at(-1) };
+}
+
+export function sourceComponents(data, ids) {
+  const latest = latestFieldDates(data);
   const components = {
-    polls: { available: Boolean(poll), latest: poll?.latest, reason: 'Socle électoral : intentions de vote dans une liste exacte de candidats.' },
+    polls: { available: ids.some(id => id in latest), latest: ids.map(id => latest[id]).filter(Boolean).sort().at(-1),
+      reason: 'Socle électoral : tous les sondages de premier tour, toutes listes confondues, ramenés à des niveaux de soutien cohérents.' },
     barometer: { available: false, reason: 'Deux candidats avec une dynamique mesurable depuis le dernier terrain, sur au moins deux plateformes récentes, sont nécessaires.' },
     polymarket: { available: false, reason: 'Deux candidats cotés et une capture de moins de 7 jours sont nécessaires.' },
     wikipedia: { available: false, reason: 'Moins de deux candidats avec assez de consultations Wikipédia autour du dernier terrain, ou relevé de plus de 3 jours.' },
     trends: { available: false, reason: 'aucun candidat de cette liste dans les recherches en forte hausse des 28 derniers jours.' },
   };
   if (recent(data.asOf, data.social?.asOf, 3)) {
-    const window = data.social.windows?.[poll?.latest];
-    const observed = ids.filter(id => window?.signals?.[id]?.coverage >= 2 && Number.isFinite(window.signals[id].score));
-    if (observed.length >= 2) components.barometer = { available: true, latest: data.social.asOf, anchor: window.anchor, periods: window.signals,
-      raw: Object.fromEntries(observed.map(id => [id, window.signals[id].score])), observed, missing: ids.filter(id => !observed.includes(id)),
-      reason: 'Dynamique pondérée cumulée depuis la fin du dernier terrain compatible (date de publication absente du CSV). Variation en ‰ appliquée relativement au propre score sondé du candidat, avec multiplicateur et plafond explicites.' };
+    const dynamics = dynamicsSinceLastPoll(data.social.windows, ids, latest, signal => signal.coverage >= 2 && Number.isFinite(signal.score));
+    if (dynamics.observed.length >= 2) components.barometer = { ...dynamics, available: true, latest: data.social.asOf,
+      raw: Object.fromEntries(dynamics.observed.map(id => [id, dynamics.periods[id].score])),
+      reason: 'Dynamique pondérée depuis le dernier sondage de chaque candidat, en ‰, appliquée en bonus ou malus relatif. Une dynamique proche de zéro n’a pas d’effet ; une perte d’abonnés tire vers le bas.' };
   }
   const boards = {};
   const boardSources = { president: data.market, ...(data.marketEvents ?? {}) };
@@ -183,12 +343,10 @@ export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
     latest: Object.values(boards).map(board => board.latest).sort().at(-1),
     reason: 'Anticipations des marchés (victoire finale, vainqueur du premier tour, deuxième et troisième place, qualification). Repondération modérée des trajectoires simulées, sans transformer les prix en scores du premier tour.' };
   if (recent(data.asOf, data.wikipedia?.asOf, 3)) {
-    const window = data.wikipedia.windows?.[poll?.latest];
-    const observed = ids.filter(id => Number.isFinite(window?.signals?.[id]?.dynamic));
-    if (observed.length >= 2) components.wikipedia = { available: true, latest: data.wikipedia.asOf, anchor: window.anchor,
-      periods: window.signals, raw: Object.fromEntries(observed.map(id => [id, window.signals[id].dynamic])),
-      observed, missing: ids.filter(id => !observed.includes(id)),
-      reason: 'Dynamique des consultations Wikipédia depuis la fin du dernier terrain compatible (médianes, pics d’un jour neutralisés), appliquée en bonus ou malus relatif comme le baromètre. Une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
+    const dynamics = dynamicsSinceLastPoll(data.wikipedia.windows, ids, latest, signal => Number.isFinite(signal.dynamic));
+    if (dynamics.observed.length >= 2) components.wikipedia = { ...dynamics, available: true, latest: data.wikipedia.asOf,
+      raw: Object.fromEntries(dynamics.observed.map(id => [id, dynamics.periods[id].dynamic])),
+      reason: 'Dynamique des consultations Wikipédia depuis le dernier sondage de chaque candidat (médianes, pics d’un jour neutralisés), appliquée en bonus ou malus relatif. Une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
   }
   if (recent(data.asOf, data.trends?.asOf, 3)) {
     const signal = centeredSignal(ids, data.trends.interest ?? {});
@@ -264,15 +422,21 @@ export function runoffEstimates(data, ids, settings = DEFAULT_SETTINGS) {
   }]));
 }
 
+const ignoreNoise = (value, threshold) => Math.sign(value) * Math.max(0, Math.abs(value) - threshold);
+// Proche de la valeur brute pour les variations courantes, comprimé en douceur pour les très grosses.
+const relativeEffect = value => Math.exp(DYNAMIC_SATURATION * Math.tanh(value / DYNAMIC_SATURATION)) - 1;
+
 export function forecast(data, configurationId, rawSettings = {}) {
   const settings = settingsFrom(rawSettings);
-  const configurations = listConfigurations(data);
+  const configurations = allConfigurations(data);
   const configuration = configurations.find(c => c.id === configurationId) ?? configurations[0];
   if (!configuration) return { error: 'Aucune configuration de premier tour exploitable.', rows: [], settings };
   const ids = configuration.candidateIds;
-  const baseline = aggregatePolls(selectPolls(data, configuration.id), ids, data.asOf, settings.halfLife);
-  if (!baseline) return { error: 'Aucun sondage compatible depuis 120 jours.', rows: [], settings, configuration };
-  const components = sourceComponents(data, ids, settings.halfLife, baseline);
+  const fit = fitSupport(data, data.asOf, settings.halfLife);
+  const scores = fit && scoresForList(fit, ids);
+  if (!scores || ids.some(id => !Number.isFinite(scores[id]))) return { error: `Aucun sondage compatible depuis ${POLL_WINDOW_DAYS} jours.`, rows: [], settings, configuration };
+  const baseline = { scores, pollCount: fit.pollCount, instituteCount: fit.instituteCount, latest: fit.latest };
+  const components = sourceComponents(data, ids);
   const available = SOURCE_IDS.filter(id => components[id].available);
   const shares = sourceShares(settings.weights, available);
   const sourceMix = Object.fromEntries(SOURCE_IDS.map(id => [id, { ...components[id], requested: settings.weights[id], effective: shares[id] }]));
@@ -285,11 +449,11 @@ export function forecast(data, configurationId, rawSettings = {}) {
     trends: shares.trends / 100,
   };
   const signals = {
-    barometer: id => (components.barometer.raw?.[id] ?? 0) / 1000,
-    wikipedia: id => clamp(components.wikipedia.raw?.[id] ?? 0, -1, 1),
+    barometer: id => ignoreNoise(components.barometer.raw?.[id] ?? 0, BAROMETER_NOISE) / 1000,
+    wikipedia: id => ignoreNoise(components.wikipedia.raw?.[id] ?? 0, WIKIPEDIA_NOISE),
     trends: id => components.trends.values?.[id] ?? 0,
   };
-  const relativeBoost = (source, id) => scales[source] ? clamp(signals[source](id) * scales[source], -RELATIVE_LIMIT, RELATIVE_LIMIT) : 0;
+  const relativeBoost = (source, id) => scales[source] ? relativeEffect(signals[source](id) * scales[source]) : 0;
   const corrections = Object.fromEntries(ids.map(id => [id,
     Object.fromEntries(DYNAMIC_IDS.map(source => [source, baseline.scores[id] * relativeBoost(source, id)]))]));
   const totalCorrection = id => sum(DYNAMIC_IDS.map(source => corrections[id][source]));
@@ -351,7 +515,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
       runoff: summarizeRunoff(result.runoffSamples, result.topTwo) };
   }).sort((a, b) => b.score - a.score);
   return { modelVersion: MODEL_VERSION, settings, configuration, baseline, rows, sourceMix,
-    adjustmentLimits: { relative: RELATIVE_LIMIT * 100, barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
+    adjustmentLimits: { barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
     marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
     unresolved: unresolved / totalWeight * 100,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null })).sort((a, b) => b.probability - a.probability),
@@ -372,7 +536,15 @@ function summarizeRunoff(samples, qualifiedWeight) {
 }
 
 export function pollingHistory(data, configurationId, halfLife = 21) {
-  const ids = configurationId.split('|');
-  const dates = [...new Set(selectPolls(data, configurationId).map(p => p.fieldEnd))].sort();
-  return dates.map(date => ({ date, scores: aggregatePolls(selectPolls(data, configurationId, date), ids, date, halfLife).scores }));
+  const ids = configurationId === FIELD_ID
+    ? allConfigurations(data).find(item => item.id === FIELD_ID)?.candidateIds ?? []
+    : configurationId.split('|');
+  const dates = [...new Set(firstRoundPolls(data, data.asOf)
+    .filter(poll => ids.filter(id => id in poll.scores).length >= 2)
+    .map(poll => poll.fieldEnd))].sort();
+  return dates.flatMap(date => {
+    const fit = fitSupport(data, date, halfLife);
+    const scores = fit && scoresForList(fit, ids);
+    return scores ? [{ date, scores }] : [];
+  });
 }
