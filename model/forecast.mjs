@@ -42,21 +42,20 @@ export const SAME_PARTY_REPORTS = Object.freeze({
   'xavier-bertrand': 'bruno-retailleau', 'laurent-wauquiez': 'bruno-retailleau',
   'olivier-faure': 'francois-hollande', 'segolene-royal': 'francois-hollande', 'jerome-guedj': 'francois-hollande', 'karim-bouamrane': 'francois-hollande',
 });
-// Polymarket avant les simulations : la victoire finale est la base, les places l'affinent. Les places sont
-// cumulées (1er, 2 premiers, 3 premiers) : un pari sur la 2e place d'un favori le décrit plus faible, pas plus fort.
+// Polymarket avant les simulations : la victoire finale est la base, les places l'affinent. Chaque niveau est comparé
+// au score des sondages ; les places sont cumulées (1er, 2 premiers, 3 premiers).
 const MARKET_BASE_LEVELS = Object.freeze([
-  { key: 'president', weight: 1 / 2, boards: ['president'], concerned: draw => draw.winner === null ? [] : [draw.winner] },
-  { key: 'winner', weight: 1 / 6, boards: ['winner'], concerned: draw => [draw.first] },
-  { key: 'second', weight: 1 / 6, boards: ['winner', 'second'], concerned: draw => [draw.first, draw.second] },
-  { key: 'third', weight: 1 / 6, boards: ['winner', 'second', 'third'], concerned: draw => [draw.first, draw.second, draw.third].filter(index => index !== undefined) },
+  { key: 'president', weight: 1 / 2, boards: ['president'] },
+  { key: 'winner', weight: 1 / 6, boards: ['winner'] },
+  { key: 'second', weight: 1 / 6, boards: ['winner', 'second'] },
+  { key: 'third', weight: 1 / 6, boards: ['winner', 'second', 'third'] },
 ]);
 // Après les simulations : la qualification et la victoire finale corrigent leurs propres résultats.
 const POST_SIMULATION_BOARDS = Object.freeze(['president', 'advance']);
 // Évite qu'un écart entre deux probabilités infimes pèse lourd : un petit candidat reste neutre.
 const MARKET_FLOOR = 0.02;
-// À 25 % de part, un écart de marché de 1 (prix 2,7 fois la fréquence simulée) vaut environ +13 % relatifs.
-export const MARKET_UNIT = 0.5;
-const MARKET_PRE_SIMULATIONS = 4000;
+// Force de l'écart entre le marché et les sondages, multipliée par la part de Polymarket.
+export const MARKET_UNIT = 2;
 const POLL_WINDOW_DAYS = 120;
 const FIT_MAX_ITERATIONS = 400;
 const FIT_TOLERANCE = 1e-7;
@@ -469,8 +468,8 @@ export function runoffEstimates(data, ids, settings = DEFAULT_SETTINGS) {
   }]));
 }
 
-// Écart entre le marché et une première simulation, candidat par candidat : positif si le marché y croit davantage.
-function marketGaps(ids, trajectories, component) {
+// Écart entre le marché et les sondages, candidat par candidat : positif si le marché le place plus haut.
+function marketGaps(ids, baselineScores, component) {
   const weighted = Object.fromEntries(ids.map(id => [id, 0]));
   let totalWeight = 0;
   const used = [];
@@ -478,14 +477,12 @@ function marketGaps(ids, trajectories, component) {
     const boards = level.boards.map(key => component.boards?.[key]?.prices);
     if (boards.some(prices => !prices)) continue;
     const prices = Object.fromEntries(ids.map(id => [id, sum(boards.map(board => board[id] ?? 0))]));
-    const frequency = Object.fromEntries(ids.map(id => [id, 0]));
-    for (const draw of trajectories) for (const index of level.concerned(draw)) frequency[ids[index]]++;
     const compared = ids.filter(id => boards.some(board => Number.isFinite(board[id])));
     const marketTotal = sum(compared.map(id => prices[id]));
-    const modelTotal = sum(compared.map(id => frequency[id]));
-    if (compared.length < 2 || !(marketTotal > 0) || !(modelTotal > 0)) continue;
+    const pollTotal = sum(compared.map(id => baselineScores[id]));
+    if (compared.length < 2 || !(marketTotal > 0) || !(pollTotal > 0)) continue;
     for (const id of compared) {
-      weighted[id] += level.weight * Math.log((prices[id] / marketTotal + MARKET_FLOOR) / (frequency[id] / modelTotal + MARKET_FLOOR));
+      weighted[id] += level.weight * Math.log((prices[id] / marketTotal + MARKET_FLOOR) / (baselineScores[id] / pollTotal + MARKET_FLOOR));
     }
     totalWeight += level.weight;
     used.push(level.key);
@@ -563,10 +560,10 @@ export function forecast(data, configurationId, rawSettings = {}) {
     return raw.map(value => value * 100 / sum(raw));
   };
 
-  // Polymarket avant les simulations : une première simulation mesure ce que le modèle pense sans le marché.
+  // Polymarket avant les simulations : bonus ou malus selon l'écart entre ses prix et les sondages.
   const marketScale = components.polymarket.available ? MARKET_UNIT * shares.polymarket / 100 : 0;
   const marketBonus = marketScale
-    ? marketGaps(ids, simulate(currentCenters(), Math.min(MARKET_PRE_SIMULATIONS, settings.simulations)), components.polymarket)
+    ? marketGaps(ids, baseline.scores, components.polymarket)
     : { boards: [], gaps: Object.fromEntries(ids.map(id => [id, 0])) };
   for (const id of ids) corrections[id].polymarket = baseline.scores[id] * (marketScale ? relativeEffect(marketBonus.gaps[id] * marketScale) : 0);
   const centers = currentCenters();

@@ -16,7 +16,7 @@ import { dateLabel, shortName } from '../lib/format.js';
 const SOURCE_ROLES = {
   polls: 'Socle obligatoire des scores',
   barometer: 'Dynamique des abonnés : bonus ou malus relatif',
-  polymarket: 'Anticipations du marché : bonus ou malus, puis correction des simulations',
+  polymarket: 'Écart entre le marché et les sondages : bonus ou malus',
   wikipedia: 'Dynamique des consultations : bonus ou malus relatif',
   trends: 'Recherches en forte hausse : bonus ou malus relatif',
 };

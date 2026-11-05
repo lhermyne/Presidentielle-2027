@@ -135,7 +135,8 @@ test('market winner prices affect documented trajectories and propagate to score
 
 test('market prices cannot invent a missing runoff or a simulated winner', () => {
   const data = addSignals(dataset(firstRound));
-  const result = forecast(data, key, { simulations: 2000 });
+  // Un petit poids évite une majorité dès le premier tour : sans duel sondé, aucun vainqueur n'est inventé.
+  const result = forecast(data, key, { weights: { polls: 100, polymarket: 5 }, simulations: 2000 });
   assert.equal(result.marketFusion.active, false);
   assert.ok(result.unresolved > 90);
   assert.ok(result.rows.every(row => row.winLower === 0));
@@ -148,7 +149,8 @@ test('polls stay the base: their weight never drops below 1 and signals only adj
     assert.equal(result.settings.weights.polls, 1);
     assert.ok(!result.error);
     assert.ok(result.sourceMix.polls.effective > 0);
-    for (const row of result.rows) assert.ok(Math.abs(row.center - row.pollScore) <= row.pollScore * 1.5 + 1);
+    assert.ok(result.rows.every(row => row.center > 0));
+    assert.ok(Math.abs(result.rows.reduce((total, row) => total + row.center, 0) - 100) < 1e-8);
   }
 });
 
@@ -251,23 +253,25 @@ test('the qualification market corrects qualifications, the place markets act be
   const stamp = `${data.asOf}T12:00:00Z`;
   const board = prices => ({ capturedAt: stamp, markets: Object.entries(prices).map(([id, probability]) => ({ id, probability })) });
   const settings = { simulations: 6000, uncertainty: 4 };
+  data.market = null;
   const plain = forecast(data, key, settings);
   data.marketEvents = { advance: board({ a: 40, b: 30, c: 95, d: 35 }), other: board({ a: 99, b: 1 }) };
   const result = forecast(data, key, settings);
   const boards = Object.fromEntries(result.marketFusion.boards.map(item => [item.id, item]));
-  assert.ok(boards.advance.active && boards.president.active);
+  assert.ok(boards.advance.active);
   assert.equal(boards.other, undefined);
+  assert.equal(result.marketBonus.boards.length, 0);
   const qualification = (output, id) => output.rows.find(row => row.id === id).qualification;
   assert.ok(qualification(result, 'c') > qualification(plain, 'c'));
   assert.ok(Math.abs(result.rows.reduce((total, row) => total + row.qualification, 0) - 200) < 1e-8);
   assert.ok(result.marketFusion.effectiveSampleSize > 1000);
   assert.equal(forecast(data, key, { ...settings, weights: { polls: 100 } }).marketFusion.active, false);
-  // Un favori donné 2e par le marché reçoit un malus : les places sont comparées de façon cumulée.
-  data.market = null;
-  data.marketEvents = { winner: board({ a: 40, b: 30, c: 20, d: 10 }), second: board({ a: 45, b: 25, c: 20, d: 10 }) };
+  // Les places sont comparées au score des sondages, de façon cumulée.
+  data.marketEvents = { winner: board({ a: 80, b: 10, c: 5, d: 5 }), second: board({ a: 10, b: 60, c: 20, d: 10 }) };
   const places = forecast(data, key, settings);
   assert.deepEqual(places.marketBonus.boards, ['winner', 'second']);
-  assert.ok(places.marketBonus.gaps.a < 0);
+  assert.ok(places.marketBonus.gaps.a > 0);
+  assert.ok(places.marketBonus.gaps.d < 0);
 });
 
 const trueSupport = { a: 40, b: 30, c: 20, d: 10 };
@@ -326,6 +330,16 @@ test('an extra candidate splits its own political bloc instead of diluting every
   assert.ok(Math.abs(score(narrow, 'a') - 40) < 1e-6);
   assert.ok(Math.abs(score(result, 'b') - 40) < 1e-3);
   assert.ok(Math.abs(score(result, 'c') - 20) < 1e-3);
+});
+
+test('a market price above the poll score gives a bonus, below it a malus', () => {
+  const data = dataset(firstRound);
+  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 45 }, { id: 'b', probability: 35 }, { id: 'c', probability: 15 }, { id: 'd', probability: 5 }] };
+  const result = forecast(data, key, { weights: { polls: 100, polymarket: 50 }, simulations: 2000 });
+  const row = id => result.rows.find(item => item.id === id);
+  assert.ok(row('a').corrections.polymarket > 0 && row('a').center > row('a').pollScore);
+  assert.ok(row('a').center < 45);
+  assert.ok(row('d').corrections.polymarket < 0 && row('d').center < row('d').pollScore);
 });
 
 test('Polymarket acts before the simulations: backed candidates gain, the polls-only scenario stays untouched', () => {

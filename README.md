@@ -198,8 +198,8 @@ reste en alpha sur invitation (vérifié le 1er novembre 2026). Aucun contournem
 16 000 trajectoires reproductibles avec une graine fixe : premier tour autour du socle
 corrigé (scores positifs, total 100 %), puis sondages de second tour par paire exacte.
 Les duels non documentés conservent des bornes de victoire, sans reports inventés.
-Avant les simulations, une première simulation est comparée aux prix (victoire finale pour moitié,
-places cumulées pour l'autre moitié) : `log((marché + 2 %) / (simulé + 2 %)) × 0,5 × part de Polymarket`
+Avant les simulations, les prix sont comparés au score des sondages (victoire finale pour moitié,
+places cumulées pour l'autre moitié) : `log((marché + 2 %) / (sondages + 2 %)) × 2 × part de Polymarket`
 donne un bonus ou malus relatif. Après les simulations, la qualification et la victoire finale
 repondèrent les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
 (au moins deux candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à
