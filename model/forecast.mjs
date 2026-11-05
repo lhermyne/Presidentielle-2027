@@ -1,12 +1,12 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.6.0-coherent-field-experimental';
-export const SOURCE_IDS = Object.freeze(['polls', 'barometer', 'polymarket', 'wikipedia', 'trends']);
+export const MODEL_VERSION = '0.7.0-market-base-experimental';
+export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'barometer', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
 export const SOURCE_LABELS = Object.freeze({ polls: 'Sondages', barometer: 'Baromètre', polymarket: 'Polymarket', wikipedia: 'Wikipédia', trends: 'Google Trends' });
 // Curseurs indépendants de 0 à 100 ; seule leur proportion compte. Les sondages restent le socle (minimum 1).
-// Avec Google Trends sans signal, la référence donne 48 % sondages, 33 % baromètre (×3,5), 14 % Polymarket, 5 % Wikipédia (×0,5).
-export const DEFAULT_WEIGHTS = Object.freeze({ polls: 100, barometer: 70, polymarket: 30, wikipedia: 10, trends: 10 });
+// Référence : sondages 100, Polymarket 50, baromètre ×2, Wikipédia ×1, Google Trends léger (verrouillé sans signal).
+export const DEFAULT_WEIGHTS = Object.freeze({ polls: 100, polymarket: 50, barometer: 40, wikipedia: 20, trends: 10 });
 export const MIN_POLL_WEIGHT = 1;
 // Baromètre et Wikipédia se règlent en multiplicateur direct de ×0 à ×5 : chaque unité occupe 20 dans la barre d'influence.
 export const MULTIPLIER_IDS = Object.freeze(['barometer', 'wikipedia']);
@@ -28,20 +28,66 @@ export const MIN_WIN_PRICE = 1;
 export const MIN_SURVEYS_WITHOUT_MARKET = 5;
 // Camps politiques : un absent reporte d'abord ses voix dans son camp. Hypothèse explicite, par étiquette.
 export const POLITICAL_BLOCS = Object.freeze({
-  LO: 'gauche', LFI: 'gauche', PCF: 'gauche', LE: 'gauche', PS: 'gauche', PP: 'gauche', GRS: 'gauche',
+  LO: 'extreme-gauche', LFI: 'extreme-gauche',
+  PCF: 'gauche', LE: 'gauche', PS: 'gauche', PP: 'gauche', GRS: 'gauche',
   RE: 'centre', HOR: 'centre', LFH: 'centre',
   LR: 'droite', DLF: 'droite', SE: 'droite',
   RN: 'extreme-droite', REC: 'extreme-droite',
 });
+// Candidats d'un même parti : ils ne se présenteront pas ensemble, leurs sondages et leurs prix vont à 100 % au titulaire.
+export const SAME_PARTY_REPORTS = Object.freeze({
+  'jordan-bardella': 'marine-le-pen',
+  'sarah-knafo': 'eric-zemmour',
+  'gerald-darmanin': 'gabriel-attal', 'sebastien-lecornu': 'gabriel-attal', 'bruno-le-maire': 'gabriel-attal',
+  'xavier-bertrand': 'bruno-retailleau', 'laurent-wauquiez': 'bruno-retailleau',
+  'olivier-faure': 'francois-hollande', 'segolene-royal': 'francois-hollande', 'jerome-guedj': 'francois-hollande', 'karim-bouamrane': 'francois-hollande',
+});
+// Polymarket avant les simulations : la victoire finale est la base, les places l'affinent. Les places sont
+// cumulées (1er, 2 premiers, 3 premiers) : un pari sur la 2e place d'un favori le décrit plus faible, pas plus fort.
+const MARKET_BASE_LEVELS = Object.freeze([
+  { key: 'president', weight: 1 / 2, boards: ['president'], concerned: draw => draw.winner === null ? [] : [draw.winner] },
+  { key: 'winner', weight: 1 / 6, boards: ['winner'], concerned: draw => [draw.first] },
+  { key: 'second', weight: 1 / 6, boards: ['winner', 'second'], concerned: draw => [draw.first, draw.second] },
+  { key: 'third', weight: 1 / 6, boards: ['winner', 'second', 'third'], concerned: draw => [draw.first, draw.second, draw.third].filter(index => index !== undefined) },
+]);
+// Après les simulations : la qualification et la victoire finale corrigent leurs propres résultats.
+const POST_SIMULATION_BOARDS = Object.freeze(['president', 'advance']);
+// Évite qu'un écart entre deux probabilités infimes pèse lourd : un petit candidat reste neutre.
+const MARKET_FLOOR = 0.02;
+// À 25 % de part, un écart de marché de 1 (prix 2,7 fois la fréquence simulée) vaut environ +13 % relatifs.
+export const MARKET_UNIT = 0.5;
+const MARKET_PRE_SIMULATIONS = 4000;
 const POLL_WINDOW_DAYS = 120;
 const FIT_MAX_ITERATIONS = 400;
 const FIT_TOLERANCE = 1e-7;
-export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
+export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 16000 });
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const daysBetween = (a, b) => (Date.parse(a) - Date.parse(b)) / DAY;
 const sum = values => values.reduce((a, b) => a + b, 0);
 export const candidateKey = ids => [...ids].sort().join('|');
+const titularOf = id => SAME_PARTY_REPORTS[id] ?? id;
+
+function withPartyReports(poll) {
+  const ids = Object.keys(poll.scores ?? {});
+  if (!ids.some(id => id in SAME_PARTY_REPORTS)) return poll;
+  const scores = {};
+  for (const id of ids) scores[titularOf(id)] = (scores[titularOf(id)] ?? 0) + poll.scores[id];
+  return { ...poll, scores };
+}
+
+const reportedPolls = data => (data.polls ?? []).map(withPartyReports);
+
+// Prix d'un marché par titulaire : les chances d'un même parti s'additionnent, ou la meilleure compte (bulletin).
+function reportedPrices(markets, combine = (a, b) => Math.min(100, a + b)) {
+  const prices = {};
+  for (const market of markets ?? []) {
+    if (!Number.isFinite(market.probability) || market.probability < 0 || market.probability > 100) continue;
+    const titular = titularOf(market.id);
+    prices[titular] = titular in prices ? combine(prices[titular], market.probability) : market.probability;
+  }
+  return prices;
+}
 
 export function normalizeWeights(input = DEFAULT_WEIGHTS) {
   const weights = Object.fromEntries(SOURCE_IDS.map(key => {
@@ -63,9 +109,9 @@ export function sourceShares(weights, available = SOURCE_IDS) {
 export function settingsFrom(input = {}) {
   const finite = (key, fallback) => Number.isFinite(Number(input[key])) ? Number(input[key]) : fallback;
   return {
-    halfLife: clamp(finite('halfLife', 21), 7, 90),
+    halfLife: clamp(finite('halfLife', DEFAULT_SETTINGS.halfLife), 3, 90),
     weights: normalizeWeights(input.weights ?? DEFAULT_WEIGHTS),
-    uncertainty: clamp(finite('uncertainty', 4), 2, 8),
+    uncertainty: clamp(finite('uncertainty', DEFAULT_SETTINGS.uncertainty), 1, 8),
     simulations: Math.round(clamp(finite('simulations', 16000), 1000, 50000)),
   };
 }
@@ -79,7 +125,7 @@ function validPoll(poll, asOf) {
 
 export function listConfigurations(data) {
   const configurations = new Map();
-  for (const poll of data.polls ?? []) {
+  for (const poll of reportedPolls(data)) {
     if (poll.round !== 1 || !validPoll(poll, data.asOf) || daysBetween(data.asOf, poll.fieldEnd) > 120) continue;
     const ids = Object.keys(poll.scores).sort();
     const key = candidateKey(ids);
@@ -96,11 +142,11 @@ export function listConfigurations(data) {
 }
 
 export function selectPolls(data, configurationId, asOf = data.asOf) {
-  return (data.polls ?? []).filter(p => p.round === 1 && validPoll(p, asOf) &&
+  return reportedPolls(data).filter(p => p.round === 1 && validPoll(p, asOf) &&
     candidateKey(Object.keys(p.scores)) === configurationId && daysBetween(asOf, p.fieldEnd) <= 120);
 }
 
-export function aggregatePolls(polls, candidateIds, asOf, halfLife = 21) {
+export function aggregatePolls(polls, candidateIds, asOf, halfLife = DEFAULT_SETTINGS.halfLife) {
   if (!polls.length) return null;
   const bySurvey = new Map();
   const instituteCounts = new Map();
@@ -129,7 +175,7 @@ export function aggregatePolls(polls, candidateIds, asOf, halfLife = 21) {
 }
 
 function firstRoundPolls(data, asOf) {
-  return (data.polls ?? []).filter(p => p.round === 1 && validPoll(p, asOf) && daysBetween(asOf, p.fieldEnd) <= POLL_WINDOW_DAYS);
+  return reportedPolls(data).filter(p => p.round === 1 && validPoll(p, asOf) && daysBetween(asOf, p.fieldEnd) <= POLL_WINDOW_DAYS);
 }
 
 // Chaque liste testée devient une observation. Les listes d'une même enquête partagent ses répondants,
@@ -179,7 +225,7 @@ function blocResolver(data) {
 
 // Deux niveaux : le poids de chaque camp, puis la répartition à l'intérieur du camp. Ajouter un candidat
 // de gauche divise donc surtout la gauche, sans retirer mécaniquement des voix à l'extrême droite.
-export function fitSupport(data, asOf = data.asOf, halfLife = 21) {
+export function fitSupport(data, asOf = data.asOf, halfLife = DEFAULT_SETTINGS.halfLife) {
   const polls = firstRoundPolls(data, asOf);
   if (!polls.length) return null;
   const blocOf = blocResolver(data);
@@ -220,14 +266,13 @@ function scoresForList(fit, ids) {
   }));
 }
 
-function marketPrices(data, source) {
-  if (!recent(data.asOf, source?.capturedAt, 7)) return null;
-  return Object.fromEntries((source.markets ?? []).map(market => [market.id, market.probability]));
+function marketPrices(data, source, combine) {
+  return recent(data.asOf, source?.capturedAt, 7) ? reportedPrices(source.markets, combine) : null;
 }
 
 export function eligibleCandidates(data, fit) {
   const candidates = Object.keys(fit.support);
-  const ballot = marketPrices(data, data.marketEvents?.ballot);
+  const ballot = marketPrices(data, data.marketEvents?.ballot, Math.max);
   const victory = marketPrices(data, data.market);
   if (!ballot && !victory) return candidates.filter(id => fit.surveysById[id] >= MIN_SURVEYS_WITHOUT_MARKET);
   return candidates.filter(id => (ballot?.[id] ?? 0) >= MIN_BALLOT_PRICE || (victory?.[id] ?? 0) >= MIN_WIN_PRICE);
@@ -336,12 +381,13 @@ export function sourceComponents(data, ids) {
   for (const key of Object.keys(MARKET_BOARDS)) {
     const source = boardSources[key];
     if (!recent(data.asOf, source?.capturedAt, 7)) continue;
-    const prices = Object.fromEntries((source.markets ?? []).filter(m => ids.includes(m.id) && Number.isFinite(m.probability) && m.probability >= 0 && m.probability <= 100).map(m => [m.id, m.probability]));
+    const allPrices = reportedPrices(source.markets);
+    const prices = Object.fromEntries(ids.filter(id => id in allPrices).map(id => [id, allPrices[id]]));
     if (Object.keys(prices).length >= 2 && sum(Object.values(prices)) > 0) boards[key] = { prices, latest: source.capturedAt.slice(0, 10) };
   }
   if (Object.keys(boards).length) components.polymarket = { available: true, boards, prices: boards.president?.prices ?? {},
     latest: Object.values(boards).map(board => board.latest).sort().at(-1),
-    reason: 'Anticipations des marchés (victoire finale, vainqueur du premier tour, deuxième et troisième place, qualification). Repondération modérée des trajectoires simulées, sans transformer les prix en scores du premier tour.' };
+    reason: 'Anticipations des marchés (victoire finale, vainqueur du premier tour, deuxième et troisième place, qualification). Bonus ou malus avant les simulations selon l’écart entre le marché et le modèle, puis correction des qualifications et des victoires.' };
   if (recent(data.asOf, data.wikipedia?.asOf, 3)) {
     const dynamics = dynamicsSinceLastPoll(data.wikipedia.windows, ids, latest, signal => Number.isFinite(signal.dynamic));
     if (dynamics.observed.length >= 2) components.wikipedia = { ...dynamics, available: true, latest: data.wikipedia.asOf,
@@ -373,7 +419,8 @@ function marketBoards(ids, trajectories, component, influence) {
   const neutral = Object.fromEntries(ids.map(id => [id, 1]));
   const inactive = reason => ({ fusion: { active: false, factors: neutral, compared: [], excluded: ids, boards: [], reason }, weightOf: () => 1 });
   if (!component.available || !influence) return inactive(!influence ? 'Influence du marché réglée à zéro.' : 'Aucun marché exploitable pour cette liste.');
-  const prepared = Object.entries(MARKET_BOARDS).flatMap(([key, board]) => {
+  const prepared = POST_SIMULATION_BOARDS.flatMap(key => {
+    const board = MARKET_BOARDS[key];
     const prices = component.boards?.[key]?.prices;
     if (!prices) return [];
     const frequency = Object.fromEntries(ids.map(id => [id, 0]));
@@ -408,7 +455,7 @@ function marketBoards(ids, trajectories, component, influence) {
 
 export function runoffEstimates(data, ids, settings = DEFAULT_SETTINGS) {
   const groups = new Map();
-  for (const poll of data.polls ?? []) {
+  for (const poll of reportedPolls(data)) {
     const candidates = Object.keys(poll.scores ?? {});
     if (poll.round !== 2 || candidates.length !== 2 || !candidates.every(id => ids.includes(id)) ||
       !validPoll(poll, data.asOf) || daysBetween(data.asOf, poll.fieldEnd) > 120) continue;
@@ -420,6 +467,30 @@ export function runoffEstimates(data, ids, settings = DEFAULT_SETTINGS) {
   return Object.fromEntries([...groups].map(([key, polls]) => [key, {
     ...aggregatePolls(polls, key.split('|'), data.asOf, settings.halfLife), candidateIds: key.split('|'),
   }]));
+}
+
+// Écart entre le marché et une première simulation, candidat par candidat : positif si le marché y croit davantage.
+function marketGaps(ids, trajectories, component) {
+  const weighted = Object.fromEntries(ids.map(id => [id, 0]));
+  let totalWeight = 0;
+  const used = [];
+  for (const level of MARKET_BASE_LEVELS) {
+    const boards = level.boards.map(key => component.boards?.[key]?.prices);
+    if (boards.some(prices => !prices)) continue;
+    const prices = Object.fromEntries(ids.map(id => [id, sum(boards.map(board => board[id] ?? 0))]));
+    const frequency = Object.fromEntries(ids.map(id => [id, 0]));
+    for (const draw of trajectories) for (const index of level.concerned(draw)) frequency[ids[index]]++;
+    const compared = ids.filter(id => boards.some(board => Number.isFinite(board[id])));
+    const marketTotal = sum(compared.map(id => prices[id]));
+    const modelTotal = sum(compared.map(id => frequency[id]));
+    if (compared.length < 2 || !(marketTotal > 0) || !(modelTotal > 0)) continue;
+    for (const id of compared) {
+      weighted[id] += level.weight * Math.log((prices[id] / marketTotal + MARKET_FLOOR) / (frequency[id] / modelTotal + MARKET_FLOOR));
+    }
+    totalWeight += level.weight;
+    used.push(level.key);
+  }
+  return { boards: used, gaps: Object.fromEntries(ids.map(id => [id, totalWeight ? weighted[id] / totalWeight : 0])) };
 }
 
 const ignoreNoise = (value, threshold) => Math.sign(value) * Math.max(0, Math.abs(value) - threshold);
@@ -456,37 +527,50 @@ export function forecast(data, configurationId, rawSettings = {}) {
   const relativeBoost = (source, id) => scales[source] ? relativeEffect(signals[source](id) * scales[source]) : 0;
   const corrections = Object.fromEntries(ids.map(id => [id,
     Object.fromEntries(DYNAMIC_IDS.map(source => [source, baseline.scores[id] * relativeBoost(source, id)]))]));
-  const totalCorrection = id => sum(DYNAMIC_IDS.map(source => corrections[id][source]));
-  const rawCenters = ids.map(id => Math.max(0.05, baseline.scores[id] + totalCorrection(id)));
-  const centers = rawCenters.map(value => value * 100 / sum(rawCenters));
-
   const duels = runoffEstimates(data, ids, settings);
-  const normal = normalGenerator(makeRandom());
   const meta = Object.fromEntries((data.candidates ?? []).map(c => [c.id, c]));
-  const trajectories = [];
   const sigma = settings.uncertainty + Math.min(3, Math.max(0, daysBetween(data.asOf, baseline.latest)) / 30);
-  for (let iteration = 0; iteration < settings.simulations; iteration++) {
-    const families = new Map();
-    const draws = centers.map((center, index) => {
-      const family = meta[ids[index]]?.family ?? ids[index];
-      if (!families.has(family)) families.set(family, normal());
-      return Math.max(0.02, center + sigma * Math.sqrt(Math.max(center, 1) / 25) * (0.55 * families.get(family) + Math.sqrt(1 - 0.55 ** 2) * normal()));
-    });
-    const total = sum(draws);
-    const scores = draws.map(x => x * 100 / total);
-    const [first, second, third] = ids.map((_, index) => index).sort((a, b) => scores[b] - scores[a]);
-    const key = scores[first] > 50 ? null : candidateKey([ids[first], ids[second]]);
-    const duel = key ? duels[key] : null;
-    let winner = key ? null : first;
-    let runoff = null;
-    if (duel) {
-      const age = Math.min(3, Math.max(0, daysBetween(data.asOf, duel.latest)) / 30);
-      // Score simulé du premier qualifié au second tour, tiré autour de la moyenne des sondages du duel.
-      runoff = clamp(duel.scores[ids[first]] + normal() * (settings.uncertainty + age), 0, 100);
-      winner = runoff > 50 ? first : second;
+  const simulate = (centerValues, count) => {
+    const normal = normalGenerator(makeRandom());
+    const draws = [];
+    for (let iteration = 0; iteration < count; iteration++) {
+      const families = new Map();
+      const raw = centerValues.map((center, index) => {
+        const family = meta[ids[index]]?.family ?? ids[index];
+        if (!families.has(family)) families.set(family, normal());
+        return Math.max(0.02, center + sigma * Math.sqrt(Math.max(center, 1) / 25) * (0.55 * families.get(family) + Math.sqrt(1 - 0.55 ** 2) * normal()));
+      });
+      const total = sum(raw);
+      const scores = raw.map(x => x * 100 / total);
+      const [first, second, third] = ids.map((_, index) => index).sort((a, b) => scores[b] - scores[a]);
+      const key = scores[first] > 50 ? null : candidateKey([ids[first], ids[second]]);
+      const duel = key ? duels[key] : null;
+      let winner = key ? null : first;
+      let runoff = null;
+      if (duel) {
+        const age = Math.min(3, Math.max(0, daysBetween(data.asOf, duel.latest)) / 30);
+        // Score simulé du premier qualifié au second tour, tiré autour de la moyenne des sondages du duel.
+        runoff = clamp(duel.scores[ids[first]] + normal() * (settings.uncertainty + age), 0, 100);
+        winner = runoff > 50 ? first : second;
+      }
+      draws.push({ scores, first, second, third, winner, key, runoff });
     }
-    trajectories.push({ scores, first, second, third, winner, key, runoff });
-  }
+    return draws;
+  };
+  const totalCorrection = id => sum(Object.values(corrections[id]));
+  const currentCenters = () => {
+    const raw = ids.map(id => Math.max(0.05, baseline.scores[id] + totalCorrection(id)));
+    return raw.map(value => value * 100 / sum(raw));
+  };
+
+  // Polymarket avant les simulations : une première simulation mesure ce que le modèle pense sans le marché.
+  const marketScale = components.polymarket.available ? MARKET_UNIT * shares.polymarket / 100 : 0;
+  const marketBonus = marketScale
+    ? marketGaps(ids, simulate(currentCenters(), Math.min(MARKET_PRE_SIMULATIONS, settings.simulations)), components.polymarket)
+    : { boards: [], gaps: Object.fromEntries(ids.map(id => [id, 0])) };
+  for (const id of ids) corrections[id].polymarket = baseline.scores[id] * (marketScale ? relativeEffect(marketBonus.gaps[id] * marketScale) : 0);
+  const centers = currentCenters();
+  const trajectories = simulate(centers, settings.simulations);
 
   const { fusion: marketFusion, weightOf } = marketBoards(ids, trajectories, components.polymarket, shares.polymarket / 100);
   const counts = ids.map(() => ({ topTwo: 0, wins: 0, unknown: 0, total: 0, samples: [], runoffSamples: [] }));
@@ -515,11 +599,11 @@ export function forecast(data, configurationId, rawSettings = {}) {
       runoff: summarizeRunoff(result.runoffSamples, result.topTwo) };
   }).sort((a, b) => b.score - a.score);
   return { modelVersion: MODEL_VERSION, settings, configuration, baseline, rows, sourceMix,
-    adjustmentLimits: { barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
+    marketBonus, adjustmentLimits: { marketScale, barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
     marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
     unresolved: unresolved / totalWeight * 100,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null })).sort((a, b) => b.probability - a.probability),
-    isPersonal: settings.halfLife !== 21 || settings.uncertainty !== 4 || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };
+    isPersonal: settings.halfLife !== DEFAULT_SETTINGS.halfLife || settings.uncertainty !== DEFAULT_SETTINGS.uncertainty || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };
 }
 
 // Score moyen au second tour lorsque le candidat est qualifié dans un duel sondé.
@@ -535,7 +619,7 @@ function summarizeRunoff(samples, qualifiedWeight) {
   };
 }
 
-export function pollingHistory(data, configurationId, halfLife = 21) {
+export function pollingHistory(data, configurationId, halfLife = DEFAULT_SETTINGS.halfLife) {
   const ids = configurationId === FIELD_ID
     ? allConfigurations(data).find(item => item.id === FIELD_ID)?.candidateIds ?? []
     : configurationId.split('|');

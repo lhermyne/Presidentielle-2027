@@ -97,3 +97,6 @@ sans facteur de poids ni effet des indisponibilités des autres sources.
 - Candidats retenus : testés récemment et appuyés par Polymarket (bulletin ≥ 15 % ou victoire ≥ 1 %).
 - Baromètre et Wikipédia : petits bonus/malus, nuls près de zéro, sans plafond brutal.
 - Rôle de Polymarket sur le score de base : encore en discussion, non implémenté.
+- Polymarket agit avant les simulations (victoire finale pour base, places en affinage) ; camp extrême gauche ajouté.
+- Reports à 100 % entre candidats d'un même parti. Reports de second tour par camp : plus tard, réglés par l'utilisateur.
+- Réglages : Polymarket 50, baromètre ×2, Wikipédia ×1, incertitude 2 points, mémoire 7 jours ; Polymarket avant le baromètre dans le laboratoire.

@@ -14,15 +14,15 @@ function ForecastEffects({ result, names }) {
   return (
     <>
       <p className="metric-description">
-        Socle issu de tous les sondages, puis bonus ou malus relatifs (baromètre, Wikipédia, Google Trends). Une dynamique proche de zéro
+        Socle issu de tous les sondages, puis bonus ou malus relatifs (Polymarket, baromètre, Wikipédia, Google Trends). Une dynamique proche de zéro
         n’a pas d’effet et les très fortes variations sont comprimées en douceur. Les scores sont ensuite ramenés à 100 %. Polymarket
-        repondère après coup les simulations, sans être converti en points de vote.
+        corrige aussi les qualifications et les victoires après les simulations.
       </p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Effets des sources par candidat">
         <table>
           <thead>
             <tr>
-              <th scope="col">Candidat</th><th scope="col">Socle sondages</th><th scope="col">Baromètre</th>
+              <th scope="col">Candidat</th><th scope="col">Socle sondages</th><th scope="col">Polymarket</th><th scope="col">Baromètre</th>
               <th scope="col">Wikipédia</th><th scope="col">Google Trends</th><th scope="col">Renormalisation</th>
               <th scope="col">Centre ajusté</th><th scope="col">Projection simulée</th>
             </tr>
@@ -32,6 +32,7 @@ function ForecastEffects({ result, names }) {
               <tr key={row.id}>
                 <th scope="row">{row.name}</th>
                 <td>{percent(row.pollScore)}</td>
+                <CorrectionCell correction={row.corrections.polymarket} base={row.pollScore} />
                 <CorrectionCell correction={row.corrections.barometer} base={row.pollScore} missing={mix.barometer.missing?.includes(row.id)} />
                 <CorrectionCell correction={row.corrections.wikipedia} base={row.pollScore} missing={mix.wikipedia.missing?.includes(row.id)} />
                 <CorrectionCell correction={row.corrections.trends} base={row.pollScore} missing={mix.trends.missing?.includes(row.id)} />

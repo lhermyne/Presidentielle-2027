@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowDownIcon, ArrowUpRightIcon, DownloadSimpleIcon, ShareNetworkIcon, FlaskIcon } from '@phosphor-icons/react';
-import { allConfigurations, forecast, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
+import { allConfigurations, DEFAULT_SETTINGS, forecast, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
 import { dateLabel, downloadJson } from '../lib/format.js';
 import Results from '../components/Results.jsx';
 import Laboratory from '../components/Laboratory.jsx';
@@ -18,7 +18,7 @@ function initialSettings() {
   const weights = query.has('poids-barometer')
     ? Object.fromEntries(SOURCE_IDS.map(id => [id, query.get(`poids-${id}`) ?? 0]))
     : undefined;
-  return settingsFrom({ halfLife: query.get('memoire') ?? 21, weights, uncertainty: query.get('incertitude') ?? 4 });
+  return settingsFrom({ halfLife: query.get('memoire') ?? DEFAULT_SETTINGS.halfLife, weights, uncertainty: query.get('incertitude') ?? DEFAULT_SETTINGS.uncertainty });
 }
 
 function syncUrl(configurationId, settings) {

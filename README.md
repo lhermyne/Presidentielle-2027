@@ -148,7 +148,7 @@ fusionnent les dates pour conserver l'historique même si la source le raccourci
 à deux niveaux (`fitSupport`) : poids de chaque camp politique, puis répartition dans le camp.
 Un absent reporte ses voix d'abord dans son camp, au prorata. La liste par défaut (`field`) réunit
 les candidats testés avec au moins 15 % sur le bulletin ou 1 % de victoire sur Polymarket ; chaque
-liste réellement testée reste choisissable. Décroissance exponentielle (demi-vie 21 jours), poids
+liste réellement testée reste choisissable. Décroissance exponentielle (demi-vie 7 jours), poids
 d'échantillon en racine carrée et atténuation des instituts fréquents. Pas de biais d'institut appris.
 
 Depuis le 1er novembre 2026, **chaque source a un curseur indépendant** (0 à 100, baromètre de ×0 à ×5) :
@@ -156,8 +156,9 @@ sondages, baromètre, Polymarket, Wikipédia et Google Trends. Seule leur propor
 (sondages 100 et Polymarket 100 donnent 50 % chacun). Les sondages restent le socle :
 leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour la liste
 choisie est **verrouillée** et sort du calcul des parts.
-Référence : **sondages 100, baromètre ×3,5, Polymarket 30, Wikipédia 10, Trends 10**, soit sans
-Google Trends environ **48 % sondages, 33 % baromètre, 14 % Polymarket, 5 % Wikipédia**. « Sondages seuls » met toutes les autres sources à 0.
+Référence : **sondages 100, Polymarket 50, baromètre ×2, Wikipédia ×1, Trends 10**, soit sans
+Google Trends environ **48 % sondages, 24 % Polymarket, 19 % baromètre, 10 % Wikipédia**.
+Incertitude de campagne 2 points, mémoire des sondages 7 jours. « Sondages seuls » met toutes les autres sources à 0.
 Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
 La répartition est expérimentale, pas optimisée historiquement.
 
@@ -170,7 +171,7 @@ Au moins deux plateformes récentes par candidat et deux candidats observés son
 Le score hebdomadaire sur sept relevés reste un repère consultable séparément.
 
 Le boost relatif est `dynamique / 1 000 × multiplicateur`, réglé directement de **×0 à ×5**
-(×3,5 par défaut). Dans la barre d’influence, ×5 pèse autant qu’un curseur à 100.
+(×2 par défaut). Dans la barre d’influence, ×5 pèse autant qu’un curseur à 100.
 À ×3, 60 ‰ donnent +18 % du propre score : **10 % devient 11,8 %
 avant renormalisation** (11,2 % à ×2).
 Sous 2 ‰ (5 % environ pour Wikipédia), une dynamique n'a pas d'effet. Pas de plafond brutal : les très
@@ -184,7 +185,7 @@ Wikipédia : API publique Wikimedia Pageviews, consultations humaines quotidienn
 l’article en français de chaque personnalité. Seule l’évolution compte :
 `log(moyenne 7 derniers jours / moyenne des 21 précédents)`, au moins 30 vues/jour en
 référence, série de moins de trois jours. Comme le baromètre, c’est un bonus ou malus
-relatif : `évolution bornée à ±1 × part de Wikipédia`, plafonné à ±50 % du propre score.
+relatif : `évolution × 0,1 × multiplicateur` (×1 par défaut), avec compression douce des très gros pics.
 Une consultation n’est pas une intention de vote.
 
 Google Trends : RSS public France, titres contenant le nom complet d’un candidat,
@@ -197,9 +198,11 @@ reste en alpha sur invitation (vérifié le 1er novembre 2026). Aucun contournem
 16 000 trajectoires reproductibles avec une graine fixe : premier tour autour du socle
 corrigé (scores positifs, total 100 %), puis sondages de second tour par paire exacte.
 Les duels non documentés conservent des bornes de victoire, sans reports inventés.
-Le marché repondère les trajectoires par leur **gagnant final**, pour les seuls candidats
-cotés ayant au moins dix victoires documentées dans les simulations (au moins deux
-candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à
+Avant les simulations, une première simulation est comparée aux prix (victoire finale pour moitié,
+places cumulées pour l'autre moitié) : `log((marché + 2 %) / (simulé + 2 %)) × 0,5 × part de Polymarket`
+donne un bonus ou malus relatif. Après les simulations, la qualification et la victoire finale
+repondèrent les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
+(au moins deux candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à
 [0,05 ; 20], puis élevé à la puissance `poids marché / 100`. Les multiplicateurs sont
 normalisés pour conserver la masse des trajectoires comparées. Les autres trajectoires
 restent inchangées. Les prix bruts, le sous-ensemble comparé et la taille effective des

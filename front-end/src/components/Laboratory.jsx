@@ -16,7 +16,7 @@ import { dateLabel, shortName } from '../lib/format.js';
 const SOURCE_ROLES = {
   polls: 'Socle obligatoire des scores',
   barometer: 'Dynamique des abonnés : bonus ou malus relatif',
-  polymarket: 'Anticipations de victoire finale',
+  polymarket: 'Anticipations du marché : bonus ou malus, puis correction des simulations',
   wikipedia: 'Dynamique des consultations : bonus ou malus relatif',
   trends: 'Recherches en forte hausse : bonus ou malus relatif',
 };
@@ -160,7 +160,7 @@ export default function Laboratory({ configurations, configurationId, setConfigu
               <label htmlFor="half-life">Mémoire des sondages</label>
               <output htmlFor="half-life">{settings.halfLife} jours</output>
             </div>
-            <input name="half-life" id="half-life" type="range" min="7" max="90" step="1" value={settings.halfLife} onChange={event => setNumber('halfLife', event.target.value)} />
+            <input name="half-life" id="half-life" type="range" min="3" max="90" step="1" value={settings.halfLife} onChange={event => setNumber('halfLife', event.target.value)} />
             <p>Un sondage compte deux fois moins après cette durée.</p>
           </div>
           <div className="slider-field">
@@ -168,7 +168,7 @@ export default function Laboratory({ configurations, configurationId, setConfigu
               <label htmlFor="uncertainty">Incertitude de campagne</label>
               <output htmlFor="uncertainty">{settings.uncertainty.toLocaleString('fr-FR')} points</output>
             </div>
-            <input name="uncertainty" id="uncertainty" type="range" min="2" max="8" step="0.5" value={settings.uncertainty} onChange={event => setNumber('uncertainty', event.target.value)} />
+            <input name="uncertainty" id="uncertainty" type="range" min="1" max="8" step="0.5" value={settings.uncertainty} onChange={event => setNumber('uncertainty', event.target.value)} />
             <p>Écart-type pour un candidat à 25 %, plus faible pour les petits scores. Hypothèse à calibrer.</p>
           </div>
         </details>

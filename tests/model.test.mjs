@@ -124,8 +124,9 @@ test('market winner prices affect documented trajectories and propagate to score
   assert.ok(first.rows.find(row => row.id === 'b').winLower > second.rows.find(row => row.id === 'b').winLower);
   assert.notEqual(first.rows.find(row => row.id === 'b').score, second.rows.find(row => row.id === 'b').score);
   assert.notEqual(first.rows.find(row => row.id === 'b').qualification, second.rows.find(row => row.id === 'b').qualification);
-  // These are weights on complete paths, never a price added to a vote share.
-  assert.deepEqual(first.rows.map(row => [row.id, row.center]).sort(), second.rows.map(row => [row.id, row.center]).sort());
+  // Avant les simulations, le marché agit sur le centre ; le total reste à 100 %.
+  assert.ok(first.rows.find(row => row.id === 'b').center > second.rows.find(row => row.id === 'b').center);
+  assert.ok(Math.abs(first.rows.reduce((total, row) => total + row.center, 0) - 100) < 1e-8);
   assert.ok(Math.abs(first.rows.reduce((total, row) => total + row.score, 0) - 100) < 1e-8);
   assert.ok(Math.abs(first.rows.reduce((total, row) => total + row.qualification, 0) - 200) < 1e-8);
   assert.ok(first.rows.every(row => row.winLower <= row.winUpper && row.winUpper <= row.qualification + 1e-8));
@@ -171,7 +172,7 @@ test('historical polling averages do not use later observations', () => {
 });
 
 test('query settings are finite and constrained', () => {
-  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 1000 });
+  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 1, simulations: 1000 });
 });
 
 test('60 per mille with x2 gives about a 12 percent relative boost, not twelve points', () => {
@@ -245,26 +246,28 @@ test('Wikipedia dynamics since the last poll act like the barometer', () => {
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
 });
 
-test('extra Polymarket boards (qualification, first place) reweight trajectories and share the influence', () => {
+test('the qualification market corrects qualifications, the place markets act before the simulations', () => {
   const data = addSignals(dataset([...firstRound, ...completeDuels()]));
   const stamp = `${data.asOf}T12:00:00Z`;
   const board = prices => ({ capturedAt: stamp, markets: Object.entries(prices).map(([id, probability]) => ({ id, probability })) });
-  const plain = forecast(data, key, { simulations: 6000 });
-  data.marketEvents = {
-    advance: board({ a: 40, b: 30, c: 95, d: 35 }),
-    winner: board({ a: 10, b: 70, c: 10, d: 10 }),
-    other: board({ a: 99, b: 1 }),
-  };
-  const result = forecast(data, key, { simulations: 6000 });
+  const settings = { simulations: 6000, uncertainty: 4 };
+  const plain = forecast(data, key, settings);
+  data.marketEvents = { advance: board({ a: 40, b: 30, c: 95, d: 35 }), other: board({ a: 99, b: 1 }) };
+  const result = forecast(data, key, settings);
   const boards = Object.fromEntries(result.marketFusion.boards.map(item => [item.id, item]));
-  assert.ok(boards.advance.active && boards.winner.active && boards.president.active);
+  assert.ok(boards.advance.active && boards.president.active);
   assert.equal(boards.other, undefined);
   const qualification = (output, id) => output.rows.find(row => row.id === id).qualification;
   assert.ok(qualification(result, 'c') > qualification(plain, 'c'));
   assert.ok(Math.abs(result.rows.reduce((total, row) => total + row.qualification, 0) - 200) < 1e-8);
   assert.ok(result.marketFusion.effectiveSampleSize > 1000);
-  const silent = forecast(data, key, { weights: { polls: 100 }, simulations: 6000 });
-  assert.equal(silent.marketFusion.active, false);
+  assert.equal(forecast(data, key, { ...settings, weights: { polls: 100 } }).marketFusion.active, false);
+  // Un favori donné 2e par le marché reçoit un malus : les places sont comparées de façon cumulée.
+  data.market = null;
+  data.marketEvents = { winner: board({ a: 40, b: 30, c: 20, d: 10 }), second: board({ a: 45, b: 25, c: 20, d: 10 }) };
+  const places = forecast(data, key, settings);
+  assert.deepEqual(places.marketBonus.boards, ['winner', 'second']);
+  assert.ok(places.marketBonus.gaps.a < 0);
 });
 
 const trueSupport = { a: 40, b: 30, c: 20, d: 10 };
@@ -315,7 +318,7 @@ test('near-zero dynamics have no effect, losses pull down, and strong dynamics a
 
 test('an extra candidate splits its own political bloc instead of diluting every other camp', () => {
   const data = dataset([poll('p1', { a: 40, b: 60 }), poll('p2', { a: 40, b: 40, c: 20 })]);
-  data.candidates = [{ id: 'a', name: 'a', party: 'RN', family: 'RN' }, { id: 'b', name: 'b', party: 'LFI', family: 'LFI' }, { id: 'c', name: 'c', party: 'PS', family: 'PS' }];
+  data.candidates = [{ id: 'a', name: 'a', party: 'RN', family: 'RN' }, { id: 'b', name: 'b', party: 'PS', family: 'PS' }, { id: 'c', name: 'c', party: 'LE', family: 'LE' }];
   const result = forecast(data, 'a|b|c', { weights: { polls: 100 }, simulations: 1000 });
   const narrow = forecast(data, 'a|b', { weights: { polls: 100 }, simulations: 1000 });
   const score = (output, id) => output.rows.find(row => row.id === id).pollScore;
@@ -323,4 +326,35 @@ test('an extra candidate splits its own political bloc instead of diluting every
   assert.ok(Math.abs(score(narrow, 'a') - 40) < 1e-6);
   assert.ok(Math.abs(score(result, 'b') - 40) < 1e-3);
   assert.ok(Math.abs(score(result, 'c') - 20) < 1e-3);
+});
+
+test('Polymarket acts before the simulations: backed candidates gain, the polls-only scenario stays untouched', () => {
+  const data = dataset([...firstRound, ...completeDuels()]);
+  const stamp = `${data.asOf}T12:00:00Z`;
+  data.market = { capturedAt: stamp, markets: [{ id: 'a', probability: 40 }, { id: 'b', probability: 10 }, { id: 'c', probability: 5 }, { id: 'd', probability: 45 }] };
+  const backed = forecast(data, key, { weights: { polls: 100, polymarket: 50 }, simulations: 4000 });
+  const row = id => backed.rows.find(item => item.id === id);
+  assert.ok(row('d').corrections.polymarket > 0);
+  assert.ok(row('d').center > row('d').pollScore);
+  assert.ok(row('d').score > 18);
+  assert.ok(backed.marketBonus.gaps.d > backed.marketBonus.gaps.a);
+  const pollsOnly = forecast(data, key, { weights: { polls: 100 }, simulations: 4000 });
+  assert.ok(pollsOnly.rows.every(item => item.corrections.polymarket === 0));
+  assert.equal(pollsOnly.marketBonus.boards.length, 0);
+  const stronger = forecast(data, key, { weights: { polls: 100, polymarket: 100 }, simulations: 4000 });
+  assert.ok(stronger.rows.find(item => item.id === 'd').corrections.polymarket > row('d').corrections.polymarket);
+});
+
+test('candidates of one party report fully to their titular, in polls and in markets', () => {
+  const data = dataset([poll('p1', { 'marine-le-pen': 30, 'jordan-bardella': 5, 'eric-zemmour': 5, 'sarah-knafo': 3, b: 57 }), poll('p2', { 'jordan-bardella': 36, b: 64 }, { round: 2 })]);
+  data.candidates = ['marine-le-pen', 'jordan-bardella', 'eric-zemmour', 'sarah-knafo', 'b'].map(id => ({ id, name: id, family: id }));
+  const stamp = `${data.asOf}T12:00:00Z`;
+  data.market = { capturedAt: stamp, markets: [{ id: 'marine-le-pen', probability: 40 }, { id: 'jordan-bardella', probability: 5 }, { id: 'b', probability: 20 }] };
+  const [list] = listConfigurations(data);
+  assert.deepEqual(list.candidateIds, ['b', 'eric-zemmour', 'marine-le-pen']);
+  const result = forecast(data, list.id, { weights: { polls: 100 }, simulations: 1000 });
+  assert.ok(Math.abs(result.rows.find(row => row.id === 'marine-le-pen').pollScore - 35) < 1e-3);
+  assert.ok(Math.abs(result.rows.find(row => row.id === 'eric-zemmour').pollScore - 8) < 1e-3);
+  assert.ok(result.pairs.some(pair => pair.key === 'b|marine-le-pen' && pair.estimate) || !result.pairs.length);
+  assert.equal(result.sourceMix.polymarket.prices['marine-le-pen'], 45);
 });
