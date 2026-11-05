@@ -5,7 +5,8 @@ on:
     branches: [main]
     paths-ignore: ['data/**', 'README.md', 'BRIEF.md', 'DESIGN.md', 'docs/**']
   schedule:
-    - cron: '17 5 * * *'
+    # 23:30 UTC : 00:30 à Paris en hiver, 01:30 en été, soit après la mise à jour du baromètre (vers 00:15).
+    - cron: '30 23 * * *'
   workflow_dispatch:
 
 concurrency:

@@ -109,8 +109,8 @@ Les étapes suivantes permettent de réinstaller le projet dans un autre dépôt
 4. Dans **Actions**, exécuter **Actualisation et publication → Run workflow**.
 5. Vérifier les étapes et ouvrir l'URL fournie par le job `deploy`.
 
-L'exécution programmée est à **05:17 UTC chaque jour**, soit 06:17 en hiver et 07:17 en
-été à Paris. Elle se déroule entièrement sur les serveurs GitHub. Les heures de départ
+L'exécution programmée est à **23:30 UTC chaque jour**, soit 00:30 en hiver et 01:30 en
+été à Paris, juste après le baromètre (vers 00:15). Elle se déroule entièrement sur les serveurs GitHub. Les heures de départ
 peuvent être retardées par GitHub. Les workflows planifiés d'un dépôt public peuvent
 être désactivés après 60 jours sans activité : vérifier l'onglet Actions si la date du
 site cesse d'avancer. L'archivage quotidien crée normalement une activité régulière.
