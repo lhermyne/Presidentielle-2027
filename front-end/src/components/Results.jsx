@@ -5,7 +5,7 @@ import { integer, percent, shortName } from '../lib/format.js';
 const METRICS = [
   { id: 'score', label: 'Premier tour', column: 'Score projeté', description: 'Projection expérimentale des suffrages exprimés. Le trait fin indique l’intervalle simulé à 90 %.' },
   { id: 'qualification', label: 'Qualification', column: 'Dans les deux premiers', description: 'Part des simulations où le candidat termine parmi les deux premiers.' },
-  { id: 'runoff', label: 'Second tour', description: 'Les duels les plus probables et le score projeté de chaque finaliste, avec son intervalle simulé à 90 %.' },
+  { id: 'runoff', label: 'Second tour', description: 'Les duels les plus probables et le score projeté de chaque finaliste. La zone hachurée montre où le score peut varier (intervalle à 90 %).' },
 ];
 const VISIBLE_ROWS = 8;
 // En dessous de 1 % des simulations, un duel repose sur trop peu de cas pour être affiché.
@@ -67,6 +67,21 @@ function DuelSide({ row, projection, alignEnd }) {
   );
 }
 
+function DuelBar({ left, right, projection }) {
+  const lower = projection.lower[left.id];
+  const upper = projection.upper[left.id];
+  const score = projection.scores[left.id];
+  const label = `${left.name} ${percent(score)}, ${right.name} ${percent(projection.scores[right.id])}. Zone hachurée : le score de ${shortName(left.name)} peut varier de ${percent(lower)} à ${percent(upper)}.`;
+  return (
+    <div className="duel-bar" role="img" aria-label={label} style={{ '--candidate-left': left.color, '--candidate-right': right.color }}>
+      <span className="duel-left" style={{ width: `${lower}%` }} />
+      <span className="duel-doubt" style={{ left: `${lower}%`, width: `${upper - lower}%` }} />
+      <span className="duel-right" style={{ left: `${upper}%` }} />
+      <span className="duel-score" style={{ left: `${score}%` }} />
+    </div>
+  );
+}
+
 function DuelRow({ pair, rows }) {
   const finalists = rows.filter(row => pair.key.split('|').includes(row.id));
   if (finalists.length !== 2) return null;
@@ -80,14 +95,18 @@ function DuelRow({ pair, rows }) {
         <DuelSide row={right} projection={projection} alignEnd />
       </div>
       {projection
-        ? (
-          <div className="duel-bar" role="img" aria-label={`${left.name} ${percent(projection.scores[left.id])}, ${right.name} ${percent(projection.scores[right.id])}`}>
-            <span style={{ '--candidate': left.color, flexGrow: projection.scores[left.id] }} />
-            <span style={{ '--candidate': right.color, flexGrow: projection.scores[right.id] }} />
-            <i aria-hidden="true" />
-          </div>
-        )
+        ? <DuelBar left={left} right={right} projection={projection} />
         : <p className="missing-duel">Duel jamais sondé : aucun score projeté.</p>}
+    </div>
+  );
+}
+
+function DuelScale() {
+  return (
+    <div className="duel-scale" aria-hidden="true">
+      {[0, 25, 50, 75, 100].map(value => (
+        <span key={value} className={value === 50 ? 'is-majority' : ''} style={{ left: `${value}%` }}>{value === 50 ? '50 %' : value}</span>
+      ))}
     </div>
   );
 }
@@ -161,7 +180,7 @@ export default function Results({ result, pending }) {
       <p className="metric-description">{metric.description}</p>
 
       {isDuels
-        ? <div className="duel-rows" role="table" aria-label="Duels de second tour">{duels.map(pair => <DuelRow key={pair.key} pair={pair} rows={result.rows} />)}</div>
+        ? <div className="duel-rows" role="table" aria-label="Duels de second tour"><DuelScale />{duels.map(pair => <DuelRow key={pair.key} pair={pair} rows={result.rows} />)}</div>
         : <CandidateTable result={result} metric={metric} rows={visible} max={max} />}
 
       {!isDuels && result.rows.length > VISIBLE_ROWS && (
@@ -173,7 +192,7 @@ export default function Results({ result, pending }) {
         <InfoIcon aria-hidden="true" size={17} />
         <p>
           {isDuels
-            ? `Seuls les duels présents dans au moins ${MIN_DUEL_PROBABILITY} % des simulations apparaissent. Les scores partent des sondages du duel, puis Polymarket les corrige. Aucun report de voix n’est inventé.`
+            ? `Seuls les duels présents dans au moins ${MIN_DUEL_PROBABILITY} % des simulations apparaissent. Les scores partent des sondages du duel. Polymarket les nuance sans jamais inverser le vainqueur sondé. Aucun report de voix n’est inventé.`
             : 'Ces résultats dépendent des candidats retenus. L’incertitude repose sur des hypothèses explicites, en cours de validation.'}
         </p>
       </div>

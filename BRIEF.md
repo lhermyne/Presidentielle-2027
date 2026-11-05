@@ -105,3 +105,4 @@ sans facteur de poids ni effet des indisponibilités des autres sources.
 - Le marché de victoire agit sur les duels (score et incertitude) pour que la victoire ne reste pas figée à 100 % ; les scores de duels affichés restent ceux des sondages.
 - Chances de victoire retirées de l'affichage (favori nommé sans score) ; onglet Second tour par duel, sur une barre partagée.
 - Polymarket à fond ne dépasse pas le prix de victoire. Incertitude 2 à 6 points (4 par défaut), proportionnelle au score, corrigée selon la régularité des dynamiques.
+- Mémoire des sondages à 21 jours. Duels : le marché n'inverse pas le vainqueur sondé et n'élargit plus l'incertitude ; barre graduée avec marque à 50 % et zone hachurée.

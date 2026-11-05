@@ -148,7 +148,7 @@ fusionnent les dates pour conserver l'historique même si la source le raccourci
 à deux niveaux (`fitSupport`) : poids de chaque camp politique, puis répartition dans le camp.
 Un absent reporte ses voix d'abord dans son camp, au prorata. La liste par défaut (`field`) réunit
 les candidats testés avec au moins 15 % sur le bulletin ou 1 % de victoire sur Polymarket ; chaque
-liste réellement testée reste choisissable. Décroissance exponentielle (demi-vie 7 jours), poids
+liste réellement testée reste choisissable. Décroissance exponentielle (demi-vie 21 jours), poids
 d'échantillon en racine carrée et atténuation des instituts fréquents. Pas de biais d'institut appris.
 
 Depuis le 1er novembre 2026, **chaque source a un curseur indépendant** (0 à 100, baromètre de ×0 à ×5) :
@@ -158,7 +158,7 @@ leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour 
 choisie est **verrouillée** et sort du calcul des parts.
 Référence : **sondages 100, Polymarket 50, baromètre ×2, Wikipédia ×1, Trends 10**, soit sans
 Google Trends environ **48 % sondages, 24 % Polymarket, 19 % baromètre, 10 % Wikipédia**.
-Mémoire des sondages 7 jours. Incertitude de campagne de 2 à 6 points pour un candidat à 25 % (4 par défaut,
+Mémoire des sondages 21 jours. Incertitude de campagne de 2 à 6 points pour un candidat à 25 % (4 par défaut,
 soit ±16 % de son score), corrigée par candidat : une tendance régulière la resserre, des allers-retours l'élargissent. « Sondages seuls » met toutes les autres sources à 0.
 Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
 La répartition est expérimentale, pas optimisée historiquement.
@@ -201,7 +201,7 @@ corrigé (scores positifs, total 100 %), puis sondages de second tour par paire 
 Les duels non documentés conservent des bornes de victoire, sans reports inventés.
 Avant les simulations, le score est tiré vers la cible du marché (victoire finale pour moitié, places
 cumulées pour l'autre moitié) selon `1 − (1 − part de Polymarket)²`, sans dépasser le prix de victoire. Le marché de la victoire déplace aussi les duels : l'écart entre son prix
-et la fréquence de victoire simulée modifie le score du duel et élargit son incertitude. Après les
+et la fréquence de victoire simulée nuance le score du duel, sans jamais inverser le vainqueur sondé. Après les
 simulations, la qualification repondère les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
 (au moins deux candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à
 [0,05 ; 20], puis élevé à la puissance `poids marché / 100`. Les multiplicateurs sont

@@ -1,5 +1,5 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.10.0-stability-uncertainty-experimental';
+export const MODEL_VERSION = '0.11.0-bounded-duels-experimental';
 export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'barometer', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
@@ -53,7 +53,9 @@ const MARKET_BASE_LEVELS = Object.freeze([
 // Après les simulations, seule la qualification repondère : la victoire finale agit déjà sur les duels.
 const POST_SIMULATION_BOARDS = Object.freeze(['advance']);
 // Force du marché de victoire sur les duels, en plus de la part de Polymarket.
-const DUEL_MARKET_UNIT = 0.25;
+const DUEL_MARKET_UNIT = 0.1;
+// Le marché nuance un duel sondé sans jamais en inverser le vainqueur.
+const DUEL_WINNER_MARGIN = 0.5;
 const DUEL_PRE_SIMULATIONS = 4000;
 // Évite qu'un écart entre deux probabilités infimes pèse lourd : un petit candidat reste neutre.
 const MARKET_FLOOR = 0.02;
@@ -69,7 +71,7 @@ const MIN_POLLS_FOR_SPREAD = 3;
 const POLL_WINDOW_DAYS = 120;
 const FIT_MAX_ITERATIONS = 400;
 const FIT_TOLERANCE = 1e-7;
-export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
+export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const daysBetween = (a, b) => (Date.parse(a) - Date.parse(b)) / DAY;
@@ -631,7 +633,10 @@ function marketDuelShifts(ids, draws, prices, duels, scale) {
 
 function shiftedDuelScore(score, shift) {
   const share = clamp(score / 100, 0.01, 0.99);
-  return 100 / (1 + Math.exp(-(Math.log(share / (1 - share)) + shift)));
+  const shifted = 100 / (1 + Math.exp(-(Math.log(share / (1 - share)) + shift)));
+  if (score > 50) return Math.max(shifted, Math.min(score, 50 + DUEL_WINNER_MARGIN));
+  if (score < 50) return Math.min(shifted, Math.max(score, 50 - DUEL_WINNER_MARGIN));
+  return shifted;
 }
 
 const ignoreNoise = (value, threshold) => Math.sign(value) * Math.max(0, Math.abs(value) - threshold);
@@ -694,11 +699,11 @@ export function forecast(data, configurationId, rawSettings = {}) {
       if (duel) {
         const age = Math.min(3, Math.max(0, daysBetween(data.asOf, duel.latest)) / 30);
         // Score simulé du premier qualifié au second tour, tiré autour de la moyenne des sondages du duel.
-        // Un désaccord entre le marché et le sondage du duel déplace le score et élargit son incertitude.
+        // Le marché déplace le score attendu du duel ; l'incertitude reste celle des sondages et de la campagne.
         const pollScore = duel.scores[ids[first]];
         const direction = ids[first] === duel.candidateIds[0] ? 1 : -1;
         const expected = shiftedDuelScore(pollScore, (duelShifts[key] ?? 0) * direction);
-        runoff = clamp(expected + normal() * Math.hypot(duel.spread, settings.uncertainty, age, expected - pollScore), 0, 100);
+        runoff = clamp(expected + normal() * Math.hypot(duel.spread, settings.uncertainty, age), 0, 100);
         winner = runoff > 50 ? first : second;
       }
       draws.push({ scores, first, second, third, winner, key, runoff });

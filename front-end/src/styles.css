@@ -475,8 +475,18 @@ td a { display: inline-flex; align-items: center; gap: 4px; color: var(--accent)
 .duel-side strong { display: block; font-size: 13px; font-weight: 750; }
 .duel-side small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
 .duel-side b { font-size: 20px; font-weight: 750; letter-spacing: -.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.duel-bar { position: relative; display: flex; gap: 2px; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-sunken); }
-.duel-bar span { flex-basis: 0; background: var(--candidate-ink); transition: flex-grow .3s ease; }
-.duel-bar i { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--bg); }
+.duel-bar { position: relative; height: 16px; border-radius: 999px; overflow: hidden; background: var(--surface-sunken); --left-ink: color-mix(in oklab, var(--candidate-left), var(--series-tint) var(--series-amount)); --right-ink: color-mix(in oklab, var(--candidate-right), var(--series-tint) var(--series-amount)); }
+.duel-bar > span { position: absolute; top: 0; bottom: 0; }
+.duel-left { left: 0; background: var(--left-ink); }
+.duel-right { right: 0; background: var(--right-ink); }
+.duel-doubt { background: repeating-linear-gradient(135deg, var(--left-ink) 0 5px, var(--right-ink) 5px 10px); }
+.duel-score { width: 2px; margin-left: -1px; background: var(--ink); }
+.duel-rows { position: relative; }
+.duel-rows::before { content: ''; position: absolute; left: 50%; top: 20px; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); opacity: .55; pointer-events: none; z-index: 1; }
+.duel-scale { position: relative; height: 20px; font-family: var(--font-mono); font-size: 11px; color: var(--faint); }
+.duel-scale span { position: absolute; top: 0; transform: translateX(-50%); }
+.duel-scale span:first-child { transform: none; }
+.duel-scale span:last-child { transform: translateX(-100%); }
+.duel-scale .is-majority { color: var(--ink); font-weight: 700; }
 @media (max-width: 1200px) { .duel-rows { margin: 0 20px; } }
 @media (max-width: 640px) { .duel-rows { margin: 0 16px; } .duel-side .portrait { display: none; } .duel-side b { font-size: 17px; } }

@@ -174,7 +174,7 @@ test('historical polling averages do not use later observations', () => {
 });
 
 test('query settings are finite and constrained', () => {
-  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 1000 });
+  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 1000 });
 });
 
 test('60 per mille with x2 gives about a 12 percent relative boost, not twelve points', () => {
@@ -440,4 +440,16 @@ test('each probable duel exposes the projected score of both finalists', () => {
   assert.ok(pair.projection.lower.a < 60 && pair.projection.upper.a > 60);
   const undocumented = result.pairs.find(item => item.key !== 'a|b');
   if (undocumented) assert.equal(undocumented.projection, null);
+});
+
+test('the market nuances a polled duel without reversing its winner or widening its interval', () => {
+  const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 54, b: 46 }, { round: 2 })]);
+  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 90 }, { id: 'c', probability: 5 }] };
+  const run = weights => forecast(data, 'a|b|c', { weights, simulations: 4000 }).pairs.find(pair => pair.key === 'a|b').projection;
+  const pollsOnly = run({ polls: 100 });
+  const market = run({ polls: 100, polymarket: 20 });
+  assert.ok(market.scores.a < pollsOnly.scores.a);
+  assert.ok(market.scores.a > 50);
+  const width = projection => projection.upper.a - projection.lower.a;
+  assert.ok(Math.abs(width(market) - width(pollsOnly)) < 1);
 });
