@@ -463,3 +463,20 @@ td a { display: inline-flex; align-items: center; gap: 4px; color: var(--accent)
   .dashboard-grid > .secondary-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 640px) { .dashboard-grid > .secondary-grid { grid-template-columns: 1fr; } }
+
+/* Second tour : un duel par ligne, sur une barre partagée entre les deux finalistes. */
+.duel-rows { margin: 0 26px; }
+.duel-row { padding: 16px 0 18px; border-bottom: 1px solid var(--line-soft); }
+.duel-row:last-child { border-bottom: 0; }
+.duel-chance { font-size: 12px; font-weight: 700; color: var(--muted); }
+.duel-sides { display: flex; justify-content: space-between; gap: 16px; margin: 12px 0 10px; }
+.duel-side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.duel-side.is-end { flex-direction: row-reverse; text-align: right; }
+.duel-side strong { display: block; font-size: 13px; font-weight: 750; }
+.duel-side small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+.duel-side b { font-size: 20px; font-weight: 750; letter-spacing: -.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.duel-bar { position: relative; display: flex; gap: 2px; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-sunken); }
+.duel-bar span { flex-basis: 0; background: var(--candidate-ink); transition: flex-grow .3s ease; }
+.duel-bar i { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--bg); }
+@media (max-width: 1200px) { .duel-rows { margin: 0 20px; } }
+@media (max-width: 640px) { .duel-rows { margin: 0 16px; } .duel-side .portrait { display: none; } .duel-side b { font-size: 17px; } }

@@ -103,3 +103,5 @@ sans facteur de poids ni effet des indisponibilités des autres sources.
 - Correction : Polymarket se compare directement au score des sondages, pas à une simulation (Le Pen 34,5 % en sondages et 45 % sur le marché doit monter, pas baisser).
 - Incertitude de base dynamique, par candidat, non réductible : sondages (aucune marge publiée, écarts mesurés) + agitation de Polymarket, du baromètre et de Wikipédia sur la mémoire ; curseur d'ajout seulement.
 - Le marché de victoire agit sur les duels (score et incertitude) pour que la victoire ne reste pas figée à 100 % ; les scores de duels affichés restent ceux des sondages.
+- Chances de victoire retirées de l'affichage (favori nommé sans score) ; onglet Second tour par duel, sur une barre partagée.
+- Polymarket à fond ne dépasse pas le prix de victoire. Incertitude 2 à 6 points (4 par défaut), proportionnelle au score, corrigée selon la régularité des dynamiques.

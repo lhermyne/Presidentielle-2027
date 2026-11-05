@@ -158,8 +158,8 @@ leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour 
 choisie est **verrouillée** et sort du calcul des parts.
 Référence : **sondages 100, Polymarket 50, baromètre ×2, Wikipédia ×1, Trends 10**, soit sans
 Google Trends environ **48 % sondages, 24 % Polymarket, 19 % baromètre, 10 % Wikipédia**.
-Mémoire des sondages 7 jours. L'incertitude de base est calculée par candidat (écarts entre sondages et
-agitation des sources sur la mémoire, en somme quadratique) ; un curseur permet seulement de l'élargir. « Sondages seuls » met toutes les autres sources à 0.
+Mémoire des sondages 7 jours. Incertitude de campagne de 2 à 6 points pour un candidat à 25 % (4 par défaut,
+soit ±16 % de son score), corrigée par candidat : une tendance régulière la resserre, des allers-retours l'élargissent. « Sondages seuls » met toutes les autres sources à 0.
 Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
 La répartition est expérimentale, pas optimisée historiquement.
 
@@ -199,9 +199,8 @@ reste en alpha sur invitation (vérifié le 1er novembre 2026). Aucun contournem
 16 000 trajectoires reproductibles avec une graine fixe : premier tour autour du socle
 corrigé (scores positifs, total 100 %), puis sondages de second tour par paire exacte.
 Les duels non documentés conservent des bornes de victoire, sans reports inventés.
-Avant les simulations, les prix sont comparés au score des sondages (victoire finale pour moitié,
-places cumulées pour l'autre moitié) : `log((marché + 2 %) / (sondages + 2 %)) × 2 × part de Polymarket`
-donne un bonus ou malus relatif. Le marché de la victoire déplace aussi les duels : l'écart entre son prix
+Avant les simulations, le score est tiré vers la cible du marché (victoire finale pour moitié, places
+cumulées pour l'autre moitié) selon `1 − (1 − part de Polymarket)²`, sans dépasser le prix de victoire. Le marché de la victoire déplace aussi les duels : l'écart entre son prix
 et la fréquence de victoire simulée modifie le score du duel et élargit son incertitude. Après les
 simulations, la qualification repondère les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
 (au moins deux candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à

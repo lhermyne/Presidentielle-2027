@@ -19,18 +19,12 @@ function Fact({ label, rows, title, value, detail }) {
         <span className="fact-avatars">{rows.map(row => <Avatar key={row.id} row={row} />)}</span>
         <div>
           <strong className="fact-title">{title}</strong>
-          <span className="fact-value">{value}</span>
+          {value && <span className="fact-value">{value}</span>}
         </div>
       </div>
       <small>{detail}</small>
     </div>
   );
-}
-
-function victoryLabel(row) {
-  return row.winUpper - row.winLower > 0.15
-    ? `${percent(row.winLower).replace(' %', '')}–${percent(row.winUpper)}`
-    : percent(row.winLower);
 }
 
 function duelDetail(duel, rows) {
@@ -73,8 +67,7 @@ export default function KeyFacts({ result }) {
         label="Favori pour la victoire"
         rows={[favourite]}
         title={favourite.name}
-        value={victoryLabel(favourite)}
-        detail={duel?.estimate ? 'Sondages de duels et Polymarket' : 'Fourchette élargie : duels peu documentés'}
+        detail={duel?.estimate ? 'Selon les duels sondés et Polymarket' : 'Selon Polymarket : duels peu documentés'}
       />
     </section>
   );

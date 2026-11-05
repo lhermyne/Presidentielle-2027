@@ -174,7 +174,7 @@ test('historical polling averages do not use later observations', () => {
 });
 
 test('query settings are finite and constrained', () => {
-  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 0, simulations: 1000 });
+  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 7, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 1000 });
 });
 
 test('60 per mille with x2 gives about a 12 percent relative boost, not twelve points', () => {
@@ -270,8 +270,8 @@ test('the qualification market corrects qualifications, the place markets act be
   data.marketEvents = { winner: board({ a: 80, b: 10, c: 5, d: 5 }), second: board({ a: 10, b: 60, c: 20, d: 10 }) };
   const places = forecast(data, key, settings);
   assert.deepEqual(places.marketBonus.boards, ['winner', 'second']);
-  assert.ok(places.marketBonus.gaps.a > 0);
-  assert.ok(places.marketBonus.gaps.d < 0);
+  assert.ok(places.marketBonus.targets.a > 35);
+  assert.ok(places.marketBonus.targets.d < 18);
 });
 
 const trueSupport = { a: 40, b: 30, c: 20, d: 10 };
@@ -351,7 +351,7 @@ test('Polymarket acts before the simulations: backed candidates gain, the polls-
   assert.ok(row('d').corrections.polymarket > 0);
   assert.ok(row('d').center > row('d').pollScore);
   assert.ok(row('d').score > 18);
-  assert.ok(backed.marketBonus.gaps.d > backed.marketBonus.gaps.a);
+  assert.ok(backed.marketBonus.targets.d > row('d').pollScore);
   const pollsOnly = forecast(data, key, { weights: { polls: 100 }, simulations: 4000 });
   assert.ok(pollsOnly.rows.every(item => item.corrections.polymarket === 0));
   assert.equal(pollsOnly.marketBonus.boards.length, 0);
@@ -373,31 +373,6 @@ test('candidates of one party report fully to their titular, in polls and in mar
   assert.equal(result.sourceMix.polymarket.prices['marine-le-pen'], 45);
 });
 
-test('the base uncertainty comes from poll spreads and source agitation, and the slider only widens it', () => {
-  const polls = [poll('p1', { a: 30, b: 70 }), poll('p2', { a: 40, b: 60 }, { institute: 'Institut B' }), poll('p3', { a: 50, b: 50 }, { institute: 'Institut C' })];
-  const data = dataset(polls);
-  const plain = forecast(data, 'a|b', { weights: { polls: 100 }, simulations: 3000 });
-  const leader = id => plain.rows.find(row => row.id === id);
-  assert.ok(leader('a').uncertainty.polls > 3);
-  assert.equal(leader('a').uncertainty.polymarket, 0);
-  const stable = forecast(dataset([poll('p1', { a: 40, b: 60 })]), 'a|b', { weights: { polls: 100 }, simulations: 1000 });
-  assert.ok(Math.abs(stable.rows.find(row => row.id === 'a').uncertainty.polls - 100 * Math.sqrt(0.4 * 0.6 / 1000)) < 1e-9);
-  const widened = forecast(data, 'a|b', { weights: { polls: 100 }, uncertainty: 4, simulations: 3000 });
-  const width = (result, id) => { const row = result.rows.find(item => item.id === id); return row.upper - row.lower; };
-  assert.ok(width(widened, 'a') > width(plain, 'a'));
-  assert.deepEqual(widened.rows.find(row => row.id === 'a').uncertainty, leader('a').uncertainty);
-  // L'agitation d'une source n'entre en compte que si cette source est utilisée.
-  data.history = { polymarket: { a: { '2026-10-15': 20, '2026-10-17': 40, '2026-10-19': 10, '2026-10-20': 50 } }, wikipedia: { a: { '2026-10-16': 100, '2026-10-18': 400, '2026-10-20': 100 } }, barometer: { a: { '2026-10-18': 10, '2026-10-20': -10 } } };
-  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 40 }, { id: 'b', probability: 60 }] };
-  data.wikipedia = { asOf: data.asOf, windows: { '2026-10-19': { signals: { a: { dynamic: 0 }, b: { dynamic: 0 } } } } };
-  data.social = { asOf: data.asOf, windows: { '2026-10-19': { signals: { a: { score: 0, coverage: 2 }, b: { score: 0, coverage: 2 } } } } };
-  const off = forecast(data, 'a|b', { weights: { polls: 100 }, simulations: 1000 }).rows.find(row => row.id === 'a').uncertainty;
-  assert.equal(off.polymarket + off.wikipedia + off.barometer, 0);
-  const on = forecast(data, 'a|b', { weights: { polls: 100, polymarket: 50, barometer: 40, wikipedia: 20 }, simulations: 1000 }).rows.find(row => row.id === 'a').uncertainty;
-  assert.ok(on.polymarket > 0 && on.wikipedia > 0 && on.barometer > 0);
-  assert.ok(Math.abs(on.base - Math.hypot(on.polls, on.polymarket, on.barometer, on.wikipedia)) < 1e-9);
-});
-
 test('the victory market moves the duels: a favourite the market doubts loses ground, without it the polls decide', () => {
   const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 70, b: 30 }, { round: 2 })]);
   data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 40 }, { id: 'b', probability: 55 }, { id: 'c', probability: 5 }] };
@@ -413,4 +388,56 @@ test('the victory market moves the duels: a favourite the market doubts loses gr
   assert.ok(row(market, 'a').runoff.score < row(pollsOnly, 'a').runoff.score);
   // Le score affiché du duel reste celui des sondages.
   assert.equal(market.pairs.find(pair => pair.key === 'a|b').estimate.scores.a, pollsOnly.pairs.find(pair => pair.key === 'a|b').estimate.scores.a);
+});
+
+test('Polymarket pulls a score towards the market without ever exceeding its price', () => {
+  const data = dataset(firstRound);
+  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 45 }, { id: 'b', probability: 10 }, { id: 'c', probability: 5 }, { id: 'd', probability: 2 }] };
+  const center = (weights, id) => forecast(data, key, { weights, simulations: 1000 }).rows.find(row => row.id === id).center;
+  const low = center({ polls: 100, polymarket: 20 }, 'a');
+  const high = center({ polls: 100, polymarket: 100 }, 'a');
+  const extreme = center({ polls: 1, polymarket: 100 }, 'a');
+  assert.ok(35 < low && low < high && high <= extreme);
+  assert.ok(extreme <= 45 + 1e-9);
+  // Un candidat mieux placé dans les sondages que sur le marché descend, sans être bloqué par ce plafond.
+  assert.ok(center({ polls: 1, polymarket: 100 }, 'c') < 22);
+});
+
+test('uncertainty stays between 2 and 6 points, is proportional to the score, and rewards steady dynamics', () => {
+  const days = ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20'];
+  const series = values => Object.fromEntries(days.map((day, index) => [day, values[index]]));
+  const data = dataset(firstRound);
+  data.history = { polymarket: {
+    a: series([10, 11, 12, 13, 14, 15, 16]),
+    b: series([10, 30, 8, 35, 6, 40, 10]),
+    c: series([10, 12, 11, 13, 12, 14, 13]),
+    d: series([10, 10, 11, 11, 12, 12, 13]),
+  } };
+  const run = uncertainty => forecast(data, key, { weights: { polls: 100 }, uncertainty, simulations: 2000 });
+  const row = (result, id) => result.rows.find(item => item.id === id);
+  const result = run(4);
+  assert.ok(row(result, 'a').uncertainty.percent < row(result, 'b').uncertainty.percent);
+  assert.ok(row(result, 'a').uncertainty.multiplier < 1 && row(result, 'b').uncertainty.multiplier > 1);
+  for (const uncertainty of [2, 4, 6]) {
+    for (const item of run(uncertainty).rows) {
+      assert.ok(item.uncertainty.points >= 2 && item.uncertainty.points <= 6);
+      assert.ok(Math.abs(item.uncertainty.percent - item.uncertainty.points * 4) < 1e-9);
+    }
+  }
+  assert.equal(settingsFrom({ uncertainty: 1 }).uncertainty, 2);
+  assert.equal(settingsFrom({ uncertainty: 9 }).uncertainty, 6);
+  assert.equal(settingsFrom().uncertainty, 4);
+  const width = (output, id) => row(output, id).upper - row(output, id).lower;
+  assert.ok(width(run(6), 'a') > width(run(2), 'a'));
+});
+
+test('each probable duel exposes the projected score of both finalists', () => {
+  const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 60, b: 40 }, { round: 2 })]);
+  const result = forecast(data, 'a|b|c', { weights: { polls: 100 }, simulations: 4000 });
+  const pair = result.pairs.find(item => item.key === 'a|b');
+  assert.ok(Math.abs(pair.projection.scores.a + pair.projection.scores.b - 100) < 1e-9);
+  assert.ok(Math.abs(pair.projection.scores.a - 60) < 1);
+  assert.ok(pair.projection.lower.a < 60 && pair.projection.upper.a > 60);
+  const undocumented = result.pairs.find(item => item.key !== 'a|b');
+  if (undocumented) assert.equal(undocumented.projection, null);
 });

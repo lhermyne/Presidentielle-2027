@@ -10,7 +10,7 @@ import SourceBreakdown from '../components/SourceBreakdown.jsx';
 import KeyFacts from '../components/KeyFacts.jsx';
 import DuelsPanel from '../components/DuelsPanel.jsx';
 
-const OBSOLETE_PARAMS = ['reseaux', 'amplification', 'incertitude'];
+const OBSOLETE_PARAMS = ['reseaux', 'amplification', 'incertitude-ajoutee'];
 
 function initialSettings() {
   const query = new URLSearchParams(window.location.search);
@@ -18,7 +18,7 @@ function initialSettings() {
   const weights = query.has('poids-barometer')
     ? Object.fromEntries(SOURCE_IDS.map(id => [id, query.get(`poids-${id}`) ?? 0]))
     : undefined;
-  return settingsFrom({ halfLife: query.get('memoire') ?? DEFAULT_SETTINGS.halfLife, weights, uncertainty: query.get('incertitude-ajoutee') ?? DEFAULT_SETTINGS.uncertainty });
+  return settingsFrom({ halfLife: query.get('memoire') ?? DEFAULT_SETTINGS.halfLife, weights, uncertainty: query.get('incertitude') ?? DEFAULT_SETTINGS.uncertainty });
 }
 
 function syncUrl(configurationId, settings) {
@@ -26,7 +26,7 @@ function syncUrl(configurationId, settings) {
   url.searchParams.set('candidats', configurationId ?? '');
   url.searchParams.set('memoire', settings.halfLife);
   for (const id of SOURCE_IDS) url.searchParams.set(`poids-${id}`, settings.weights[id]);
-  url.searchParams.set('incertitude-ajoutee', settings.uncertainty);
+  url.searchParams.set('incertitude', settings.uncertainty);
   for (const name of OBSOLETE_PARAMS) url.searchParams.delete(name);
   window.history.replaceState(window.history.state, '', url);
 }

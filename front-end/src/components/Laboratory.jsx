@@ -5,9 +5,12 @@ import {
   WEIGHT_PER_MULTIPLIER,
   DEFAULT_SETTINGS,
   DEFAULT_WEIGHTS,
+  MAX_UNCERTAINTY,
   MIN_POLL_WEIGHT,
+  MIN_UNCERTAINTY,
   SOURCE_IDS,
   SOURCE_LABELS,
+  UNCERTAINTY_REFERENCE_SCORE,
   sourceComponents,
   sourceShares,
 } from '../../../model/forecast.mjs';
@@ -16,7 +19,7 @@ import { dateLabel, shortName } from '../lib/format.js';
 const SOURCE_ROLES = {
   polls: 'Socle obligatoire des scores',
   barometer: 'Dynamique des abonnés : bonus ou malus relatif',
-  polymarket: 'Écart entre le marché et les sondages : bonus ou malus',
+  polymarket: 'Tire le score vers le marché, sans dépasser son prix',
   wikipedia: 'Dynamique des consultations : bonus ou malus relatif',
   trends: 'Recherches en forte hausse : bonus ou malus relatif',
 };
@@ -165,11 +168,11 @@ export default function Laboratory({ configurations, configurationId, setConfigu
           </div>
           <div className="slider-field">
             <div>
-              <label htmlFor="uncertainty">Incertitude ajoutée</label>
-              <output htmlFor="uncertainty">+{settings.uncertainty.toLocaleString('fr-FR')} point{settings.uncertainty > 1 ? 's' : ''}</output>
+              <label htmlFor="uncertainty">Incertitude de campagne</label>
+              <output htmlFor="uncertainty">{settings.uncertainty.toLocaleString('fr-FR')} points</output>
             </div>
-            <input name="uncertainty" id="uncertainty" type="range" min="0" max="8" step="0.5" value={settings.uncertainty} onChange={event => setNumber('uncertainty', event.target.value)} />
-            <p>L’incertitude de base est calculée à partir des sondages et des sources. Ce curseur ne peut que l’élargir.</p>
+            <input name="uncertainty" id="uncertainty" type="range" min={MIN_UNCERTAINTY} max={MAX_UNCERTAINTY} step="0.5" value={settings.uncertainty} onChange={event => setNumber('uncertainty', event.target.value)} />
+            <p>Pour un candidat à 25 %, soit ±{(settings.uncertainty * 100 / UNCERTAINTY_REFERENCE_SCORE).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} % de son score. Elle se resserre si ses sources évoluent dans un sens régulier et s’élargit si elles font des allers-retours.</p>
           </div>
         </details>
 
