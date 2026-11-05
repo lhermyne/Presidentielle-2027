@@ -89,3 +89,4 @@ sans facteur de poids ni effet des indisponibilités des autres sources.
   Wikipédia agit comme le baromètre : bonus/malus relatif au propre score.
 - Ajout du score projeté au second tour ; page d’accueil allégée (marché retiré, détail en bas).
 - Baromètre ramené à un curseur ×0 à ×5 direct (×3,5 par défaut, environ 33 % de la barre).
+- 5 marchés Polymarket suivis en plus (1er tour, 2e/3e place, qualification, bulletin), sans critère de liquidité ; ils corrigent premier tour, qualification et victoire. Google Trends : candidature à l'alpha à faire par l'utilisateur.

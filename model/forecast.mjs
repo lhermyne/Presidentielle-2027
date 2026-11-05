@@ -145,6 +145,16 @@ function centeredSignal(ids, values) {
     observed, missing: ids.filter(id => !observed.includes(id)) };
 }
 
+// Chaque marché Polymarket décrit un événement de la simulation : la liste renvoyée donne les candidats
+// concernés par une trajectoire (vainqueur, 1re, 2e, 3e place, qualifiés).
+const MARKET_BOARDS = Object.freeze({
+  president: { label: 'Victoire finale', concerned: draw => draw.winner === null ? [] : [draw.winner] },
+  winner: { label: 'Vainqueur du premier tour', concerned: draw => [draw.first] },
+  second: { label: 'Deuxième place', concerned: draw => [draw.second] },
+  third: { label: 'Troisième place', concerned: draw => draw.third === undefined ? [] : [draw.third] },
+  advance: { label: 'Qualification au second tour', concerned: draw => [draw.first, draw.second] },
+});
+
 export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
   const poll = baseline ?? aggregatePolls(selectPolls(data, candidateKey(ids)), ids, data.asOf, halfLife);
   const components = {
@@ -161,11 +171,17 @@ export function sourceComponents(data, ids, halfLife = 21, baseline = null) {
       raw: Object.fromEntries(observed.map(id => [id, window.signals[id].score])), observed, missing: ids.filter(id => !observed.includes(id)),
       reason: 'Dynamique pondérée cumulée depuis la fin du dernier terrain compatible (date de publication absente du CSV). Variation en ‰ appliquée relativement au propre score sondé du candidat, avec multiplicateur et plafond explicites.' };
   }
-  if (recent(data.asOf, data.market?.capturedAt, 7)) {
-    const prices = Object.fromEntries((data.market.markets ?? []).filter(m => ids.includes(m.id) && Number.isFinite(m.probability) && m.probability >= 0 && m.probability <= 100).map(m => [m.id, m.probability]));
-    if (Object.keys(prices).length >= 2 && sum(Object.values(prices)) > 0) components.polymarket = { available: true, prices, latest: data.market.capturedAt.slice(0, 10),
-      reason: 'Anticipations de victoire finale. Repondération modérée des trajectoires avec gagnant documenté, sans transformer les prix en scores du premier tour.' };
+  const boards = {};
+  const boardSources = { president: data.market, ...(data.marketEvents ?? {}) };
+  for (const key of Object.keys(MARKET_BOARDS)) {
+    const source = boardSources[key];
+    if (!recent(data.asOf, source?.capturedAt, 7)) continue;
+    const prices = Object.fromEntries((source.markets ?? []).filter(m => ids.includes(m.id) && Number.isFinite(m.probability) && m.probability >= 0 && m.probability <= 100).map(m => [m.id, m.probability]));
+    if (Object.keys(prices).length >= 2 && sum(Object.values(prices)) > 0) boards[key] = { prices, latest: source.capturedAt.slice(0, 10) };
   }
+  if (Object.keys(boards).length) components.polymarket = { available: true, boards, prices: boards.president?.prices ?? {},
+    latest: Object.values(boards).map(board => board.latest).sort().at(-1),
+    reason: 'Anticipations des marchés (victoire finale, vainqueur du premier tour, deuxième et troisième place, qualification). Repondération modérée des trajectoires simulées, sans transformer les prix en scores du premier tour.' };
   if (recent(data.asOf, data.wikipedia?.asOf, 3)) {
     const window = data.wikipedia.windows?.[poll?.latest];
     const observed = ids.filter(id => Number.isFinite(window?.signals?.[id]?.dynamic));
@@ -194,23 +210,42 @@ function weightedQuantile(samples, probability, totalWeight) {
 
 // Market prices describe a different candidate universe and are not independent
 // observations. This is an explicit, capped sensitivity heuristic, not Bayes fitting.
-function marketLikelihood(ids, trajectories, component, influence) {
-  const factors = Object.fromEntries(ids.map(id => [id, 1]));
-  const wins = Object.fromEntries(ids.map(id => [id, 0]));
-  for (const draw of trajectories) if (draw.winner !== null) wins[ids[draw.winner]]++;
-  const compared = ids.filter(id => wins[id] >= 10 && Number.isFinite(component.prices?.[id]));
-  const excluded = ids.filter(id => !compared.includes(id));
-  const marketTotal = sum(compared.map(id => component.prices[id]));
-  if (!component.available || !influence || compared.length < 2 || marketTotal <= 0) return { active: false, factors, compared: [], excluded,
-    reason: !influence ? 'Influence du marché réglée à zéro.' : 'Pas assez de gagnants simulés documentés et cotés : aucun effet forcé du marché.' };
-  const winsTotal = sum(compared.map(id => wins[id]));
-  const marketShares = Object.fromEntries(compared.map(id => [id, component.prices[id] / marketTotal]));
-  const modelShares = Object.fromEntries(compared.map(id => [id, wins[id] / winsTotal]));
-  const raw = Object.fromEntries(compared.map(id => [id, Math.pow(clamp(marketShares[id] / modelShares[id], 0.05, 20), influence)]));
-  const average = sum(compared.map(id => wins[id] * raw[id])) / winsTotal;
-  for (const id of compared) factors[id] = raw[id] / average;
-  return { active: true, factors, compared, excluded, marketShares, modelShares,
-    reason: 'Prix de victoire comparés uniquement entre gagnants documentés et cotés (au moins 10 tirages chacun). Rapport plafonné entre 0,05 et 20, élevé au poids du marché ; masse totale de ces trajectoires conservée. Les autres trajectoires restent inchangées.' };
+// L'influence est partagée entre les marchés actifs : ils se recoupent, ils ne s'additionnent pas.
+function marketBoards(ids, trajectories, component, influence) {
+  const neutral = Object.fromEntries(ids.map(id => [id, 1]));
+  const inactive = reason => ({ fusion: { active: false, factors: neutral, compared: [], excluded: ids, boards: [], reason }, weightOf: () => 1 });
+  if (!component.available || !influence) return inactive(!influence ? 'Influence du marché réglée à zéro.' : 'Aucun marché exploitable pour cette liste.');
+  const prepared = Object.entries(MARKET_BOARDS).flatMap(([key, board]) => {
+    const prices = component.boards?.[key]?.prices;
+    if (!prices) return [];
+    const frequency = Object.fromEntries(ids.map(id => [id, 0]));
+    for (const draw of trajectories) for (const index of board.concerned(draw)) frequency[ids[index]]++;
+    const compared = ids.filter(id => frequency[id] >= 10 && Number.isFinite(prices[id]));
+    const marketTotal = sum(compared.map(id => prices[id]));
+    return [{ key, board, prices, frequency, compared, marketTotal, active: compared.length >= 2 && marketTotal > 0 }];
+  });
+  const active = prepared.filter(item => item.active);
+  if (!active.length) return inactive('Pas assez de candidats cotés et simulés : aucun effet forcé du marché.');
+  const exponent = influence / active.length;
+  for (const item of active) {
+    const total = sum(item.compared.map(id => item.frequency[id]));
+    item.marketShares = Object.fromEntries(item.compared.map(id => [id, item.prices[id] / item.marketTotal]));
+    item.modelShares = Object.fromEntries(item.compared.map(id => [id, item.frequency[id] / total]));
+    const raw = Object.fromEntries(item.compared.map(id => [id, Math.pow(clamp(item.marketShares[id] / item.modelShares[id], 0.05, 20), exponent)]));
+    const average = sum(item.compared.map(id => item.frequency[id] * raw[id])) / total;
+    item.factors = Object.fromEntries(ids.map(id => [id, item.compared.includes(id) ? raw[id] / average : 1]));
+  }
+  const weightOf = draw => active.reduce((weight, item) => {
+    const concerned = item.board.concerned(draw);
+    if (!concerned.length) return weight;
+    return weight * Math.exp(sum(concerned.map(index => Math.log(item.factors[ids[index]]))) / concerned.length);
+  }, 1);
+  const lead = active.find(item => item.key === 'president') ?? active[0];
+  const compared = ids.filter(id => active.some(item => item.compared.includes(id)));
+  return { weightOf, fusion: { active: true, factors: lead.factors, compared, excluded: ids.filter(id => !compared.includes(id)),
+    marketShares: lead.marketShares, modelShares: lead.modelShares,
+    boards: prepared.map(({ key, board, active: isActive, compared: list }) => ({ id: key, label: board.label, active: isActive, compared: list })),
+    reason: `${active.length} marché${active.length > 1 ? 's' : ''} comparé${active.length > 1 ? 's' : ''} aux fréquences simulées, uniquement entre candidats cotés et simulés au moins 10 fois. Rapport plafonné entre 0,05 et 20, élevé à l’influence de Polymarket partagée entre les marchés actifs ; masse totale conservée.` } };
 }
 
 export function runoffEstimates(data, ids, settings = DEFAULT_SETTINGS) {
@@ -275,7 +310,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
     });
     const total = sum(draws);
     const scores = draws.map(x => x * 100 / total);
-    const [first, second] = ids.map((_, index) => index).sort((a, b) => scores[b] - scores[a]);
+    const [first, second, third] = ids.map((_, index) => index).sort((a, b) => scores[b] - scores[a]);
     const key = scores[first] > 50 ? null : candidateKey([ids[first], ids[second]]);
     const duel = key ? duels[key] : null;
     let winner = key ? null : first;
@@ -286,15 +321,15 @@ export function forecast(data, configurationId, rawSettings = {}) {
       runoff = clamp(duel.scores[ids[first]] + normal() * (settings.uncertainty + age), 0, 100);
       winner = runoff > 50 ? first : second;
     }
-    trajectories.push({ scores, first, second, winner, key, runoff });
+    trajectories.push({ scores, first, second, third, winner, key, runoff });
   }
 
-  const marketFusion = marketLikelihood(ids, trajectories, components.polymarket, shares.polymarket / 100);
+  const { fusion: marketFusion, weightOf } = marketBoards(ids, trajectories, components.polymarket, shares.polymarket / 100);
   const counts = ids.map(() => ({ topTwo: 0, wins: 0, unknown: 0, total: 0, samples: [], runoffSamples: [] }));
   const pairCounts = new Map();
   let totalWeight = 0, squaredWeight = 0, unresolved = 0;
   for (const draw of trajectories) {
-    const weight = draw.winner === null ? 1 : marketFusion.factors[ids[draw.winner]];
+    const weight = weightOf(draw);
     totalWeight += weight; squaredWeight += weight ** 2;
     draw.scores.forEach((value, index) => { counts[index].samples.push([value, weight]); counts[index].total += value * weight; });
     counts[draw.first].topTwo += weight; counts[draw.second].topTwo += weight;

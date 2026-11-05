@@ -16,7 +16,18 @@ from urllib.parse import quote
 
 BAROMETER_BASE = "https://lhermyne.github.io/L_Hermyne/data"
 POLL_URL = "https://sondax.fr/donnees/sondages-presidentielle-2027.csv"
-MARKET_URL = "https://gamma-api.polymarket.com/events?slug=next-french-presidential-election"
+GAMMA_EVENTS = "https://gamma-api.polymarket.com/events?slug="
+MARKET_URL = GAMMA_EVENTS + "next-french-presidential-election"
+# Marchés complémentaires : indicateurs de premier tour, de qualification et de candidature.
+MARKET_EVENTS = {
+    "winner": ("french-presidential-election-first-round-winner", "Vainqueur du premier tour"),
+    "second": ("french-presidential-election-first-round-2nd-place", "Deuxième place du premier tour"),
+    "third": ("french-presidential-election-first-round-3rd-place", "Troisième place du premier tour"),
+    "advance": ("next-french-presidential-election-who-will-advance-to-the-2nd-round", "Qualification au second tour"),
+    "ballot": ("2027-french-presidential-election-who-will-be-on-the-ballot", "Présence sur le bulletin de vote"),
+}
+# Lignes de remplissage de Polymarket (« Candidate A », « Other ») : jamais un vrai candidat.
+PLACEHOLDER_MARKET = re.compile(r"^(candidate [a-z]+|other|autre)$", re.IGNORECASE)
 TRENDS_URL = "https://trends.google.com/trending/rss?geo=FR"
 WIKIPEDIA_API = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/fr.wikipedia/all-access/user"
 WIKIPEDIA_DOCUMENTATION = "https://doc.wikimedia.org/generated-data-platform/aqs/analytics-api/reference/page-views.html"
@@ -390,7 +401,7 @@ def wikipedia_signals(series, as_of, fetched_at, anchors=()):
             "note": "Consultations humaines de Wikipédia en français (robots exclus). Dynamique depuis la fin du dernier terrain compatible : médiane des jours suivants face à la médiane des 28 jours précédents. Une consultation n’est pas une intention de vote."}
 
 
-def parse_market(raw, captured_at):
+def parse_market(raw, captured_at, title=None):
     events = raw if isinstance(raw, list) else [raw]
     if not events or not isinstance(events[0], dict) or not events[0].get("markets"):
         raise ValueError("Événement Polymarket absent ou schéma modifié.")
@@ -400,7 +411,7 @@ def parse_market(raw, captured_at):
         if market.get("closed") or not market.get("active", True):
             continue
         name = market.get("groupItemTitle")
-        if not name:
+        if not name or PLACEHOLDER_MARKET.match(name.strip()):
             continue
         prices = market.get("outcomePrices", [])
         outcomes = market.get("outcomes", [])
@@ -422,6 +433,7 @@ def parse_market(raw, captured_at):
     if not markets:
         raise ValueError("Aucun prix public exploitable.")
     return {"capturedAt": captured_at, "updatedAt": event.get("updatedAt"),
-            "url": "https://polymarket.com/event/next-french-presidential-election",
+            "url": f"https://polymarket.com/event/{event.get('slug', 'next-french-presidential-election')}",
+            "title": title or event.get("title"), "endDate": event.get("endDate"),
             "scope": "Victoire nationale, toutes candidatures possibles, inconditionnelle.",
             "markets": sorted(markets, key=lambda market: -market["probability"])}

@@ -142,6 +142,29 @@ class SourceTests(unittest.TestCase):
         self.assertIn("Jean-Luc_M%C3%A9lenchon", wikipedia_url({"id": "jlm", "name": "Jean-Luc Mélenchon"},
                                                               date(2026, 10, 1), date(2026, 10, 30)))
 
+    def test_market_event_drops_placeholder_rows(self):
+        event = [{"slug": "event", "title": "Event", "endDate": "2027-04-18T23:59:00Z", "markets": [
+            {"groupItemTitle": name, "outcomes": json.dumps(["Yes", "No"]), "outcomePrices": json.dumps([price, 1 - price]),
+             "slug": name.lower().replace(" ", "-"), "liquidity": liquidity}
+            for name, price, liquidity in [("Marine Le Pen", .85, "43994"), ("Candidate A", .5, "0"),
+                                           ("Other", .5, "0"), ("Jean-Luc Mélenchon", .09, "100")]]}]
+        parsed = parse_market(event, "2026-11-05T06:00:00Z", "Vainqueur du premier tour")
+        self.assertEqual([m["name"] for m in parsed["markets"]], ["Marine Le Pen", "Jean-Luc Mélenchon"])
+        self.assertEqual(parsed["title"], "Vainqueur du premier tour")
+        self.assertIn("/event/event", parsed["url"])
+
+    def test_market_events_keep_one_failure_isolated(self):
+        temporary_root = Path(__file__).resolve().parents[1] / "output"
+        temporary_root.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temporary_root) as directory:
+            payload = json.dumps([{"slug": "x", "markets": [{"groupItemTitle": "A B", "outcomes": json.dumps(["Yes", "No"]),
+                                                              "outcomePrices": json.dumps([.4, .6])}]}]).encode()
+            answers = [payload, RuntimeError("HTTP 500"), payload, payload, payload]
+            with patch.object(collect, "CACHE", Path(directory)), patch.object(collect, "fetch", side_effect=answers):
+                events = collect.collect_market_events("2026-11-05T06:00:00Z", False)
+            self.assertEqual(sorted(events), ["advance", "ballot", "third", "winner"])
+            self.assertTrue(all(event["status"] == "ok" for event in events.values()))
+
     def test_wikipedia_partial_failure_keeps_other_series_and_cache(self):
         temporary_root = Path(__file__).resolve().parents[1] / "output"
         temporary_root.mkdir(exist_ok=True)

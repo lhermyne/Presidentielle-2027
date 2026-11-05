@@ -242,3 +242,25 @@ test('Wikipedia dynamics since the last poll act like the barometer: x1 turns a 
   data.wikipedia.asOf = '2026-10-10';
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
 });
+
+test('extra Polymarket boards (qualification, first place) reweight trajectories and share the influence', () => {
+  const data = addSignals(dataset([...firstRound, ...completeDuels()]));
+  const stamp = `${data.asOf}T12:00:00Z`;
+  const board = prices => ({ capturedAt: stamp, markets: Object.entries(prices).map(([id, probability]) => ({ id, probability })) });
+  const plain = forecast(data, key, { simulations: 6000 });
+  data.marketEvents = {
+    advance: board({ a: 40, b: 30, c: 95, d: 35 }),
+    winner: board({ a: 10, b: 70, c: 10, d: 10 }),
+    other: board({ a: 99, b: 1 }),
+  };
+  const result = forecast(data, key, { simulations: 6000 });
+  const boards = Object.fromEntries(result.marketFusion.boards.map(item => [item.id, item]));
+  assert.ok(boards.advance.active && boards.winner.active && boards.president.active);
+  assert.equal(boards.other, undefined);
+  const qualification = (output, id) => output.rows.find(row => row.id === id).qualification;
+  assert.ok(qualification(result, 'c') > qualification(plain, 'c'));
+  assert.ok(Math.abs(result.rows.reduce((total, row) => total + row.qualification, 0) - 200) < 1e-8);
+  assert.ok(result.marketFusion.effectiveSampleSize > 1000);
+  const silent = forecast(data, key, { weights: { polls: 100 }, simulations: 6000 });
+  assert.equal(silent.marketFusion.active, false);
+});

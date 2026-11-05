@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
-from sources import (ATTRIBUTION, BAROMETER_BASE, MARKET_URL, PLATFORMS, POLL_URL, TRENDS_URL,
+from sources import (ATTRIBUTION, BAROMETER_BASE, GAMMA_EVENTS, MARKET_EVENTS, MARKET_URL, PLATFORMS, POLL_URL, TRENDS_URL,
                      WIKIPEDIA_DOCUMENTATION, normalize_history, parse_market, parse_polls, social_signals,
                      parse_trends, merge_trends, trend_signals,
                      merge_pageviews, parse_pageviews, wikipedia_signals, wikipedia_url)
@@ -78,6 +78,17 @@ def collect_source(key, title, url, parser, captured_at, offline):
     if previous:
         return previous["data"], {**status, "status": "cached", "fetchedAt": previous["fetchedAt"], "observedThrough": observation_date(key, previous["data"]), "sha256": previous["sha256"]}
     return None, {**status, "status": "unavailable", "fetchedAt": None}
+
+
+def collect_market_events(captured_at, offline):
+    """Marchés complémentaires : un échec isolé conserve le dernier relevé de ce marché."""
+    events = {}
+    for key, (event_slug, title) in MARKET_EVENTS.items():
+        data, status = collect_source(f"polymarket-{key}", title, GAMMA_EVENTS + event_slug,
+            lambda raw, title=title: parse_market(json.loads(raw), captured_at, title), captured_at, offline)
+        if data:
+            events[key] = {**data, "status": status["status"], "fetchedAt": status["fetchedAt"]}
+    return events
 
 
 def collect_wikipedia(candidates, as_of, captured_at, offline, pause=1.0, history_days=160):
@@ -154,6 +165,7 @@ def main():
     market_data, status = collect_source("polymarket", "Polymarket", MARKET_URL,
         lambda raw: parse_market(json.loads(raw), captured_at), captured_at, args.offline)
     statuses.append(status)
+    market_events = collect_market_events(captured_at, args.offline)
     trends_data, trends_status = collect_source("google-trends", "Google Trends · recherches en hausse", TRENDS_URL,
         parse_trends, captured_at, args.offline)
     trends_status["note"] = "Flux public Trending Now en France, archivé quotidiennement. Signal actif avec au moins deux candidats identifiés dans les 28 derniers jours. Ce n’est pas l’API comparative Google Trends."
@@ -169,7 +181,7 @@ def main():
                0 <= (date_check.date() - datetime.fromisoformat(p["fieldEnd"]).date()).days <= 120]
     result = {"schemaVersion": 1, "generatedAt": captured_at, "asOf": as_of,
               "candidates": candidates, "polls": poll_data["polls"],
-              "social": social_signals(histories, as_of, anchors), "market": market_data,
+              "social": social_signals(histories, as_of, anchors), "market": market_data, "marketEvents": market_events,
               "trends": trend_signals(trends_data, candidates, as_of, trends_status.get("fetchedAt")),
               "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt"), anchors),
               "sources": statuses, "rejectedPolls": poll_data.get("rejected", []),

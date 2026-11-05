@@ -232,6 +232,10 @@ un export JSON inclut les observations exactes et les réglages du scénario.
   sont conservées dans `data/cache/google-trends.json` et les archives.
 - **Wikipédia** : https://wikimedia.org/api/rest_v1/metrics/pageviews/ ; API Pageviews de la
   Wikimedia Foundation, gratuite et sans clé, données CC0. Séries dans `data/cache/wikipedia.json`.
+- **Polymarket, marchés complémentaires** : vainqueur du premier tour, 2e et 3e place,
+  qualification au second tour, présence sur le bulletin (API Gamma, `data/cache/polymarket-*.json`).
+  Les lignes de remplissage (« Candidate A », « Other ») sont écartées. Les quatre premiers
+  repondèrent les simulations ; le dernier est consultatif.
 - **Portraits** : ressources existantes du baromètre fournies dans le projet utilisateur ;
   leur réutilisation publique reste soumise aux droits des images d'origine.
 
