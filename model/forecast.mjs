@@ -14,8 +14,8 @@ export const WEIGHT_PER_MULTIPLIER = 20;
 export const sourceMultiplier = (weights, id) => normalizeWeights(weights)[id] / WEIGHT_PER_MULTIPLIER;
 // Une dynamique Wikipédia (log du rapport de consultations, bornée à ±1) vaut 10 % relatifs à ×1.
 export const WIKIPEDIA_UNIT = 0.1;
-// Sous ces seuils, une dynamique est considérée comme stable : 2 ‰ d'abonnés, 5 % environ de consultations.
-export const BAROMETER_NOISE = 2;
+// Sous ces seuils, une dynamique est considérée comme stable : 0,5 ‰ d'abonnés, 5 % environ de consultations.
+export const BAROMETER_NOISE = 0.5;
 export const WIKIPEDIA_NOISE = 0.05;
 // Compression douce des très fortes variations, sans plafond brutal (effet maximal : ×e^1,5 ou ÷e^1,5).
 export const DYNAMIC_SATURATION = 1.5;

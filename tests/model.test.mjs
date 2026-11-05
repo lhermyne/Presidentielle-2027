@@ -181,7 +181,7 @@ test('60 per mille with x2 gives about a 12 percent relative boost, not twelve p
   const data = addSignals(dataset([poll('p', {a: 40, b: 30, c: 20, d: 10})]));
   const result = forecast(data, key, { weights: { polls: 100, barometer: 40 }, simulations: 1000 });
   const row = result.rows.find(row => row.id === 'd');
-  assert.ok(Math.abs(row.corrections.barometer - 10 * effect(0.058 * 2)) < 1e-10);
+  assert.ok(Math.abs(row.corrections.barometer - 10 * effect(0.0595 * 2)) < 1e-10);
   assert.equal(result.adjustmentLimits.barometerScale, 2);
   assert.ok(row.center < 11.3);
   // A new survey at the same date resets the measurement window.
@@ -311,7 +311,7 @@ test('the coherent field keeps candidates backed by the ballot or victory market
 test('near-zero dynamics have no effect, losses pull down, and strong dynamics are not clipped', () => {
   const data = addSignals(dataset(firstRound));
   const window = data.social.windows['2026-10-19'].signals;
-  Object.assign(window, { a: { score: 1.5, coverage: 4 }, b: { score: -40, coverage: 4 }, c: { score: 400, coverage: 4 }, d: { score: -1, coverage: 4 } });
+  Object.assign(window, { a: { score: 0.4, coverage: 4 }, b: { score: -40, coverage: 4 }, c: { score: 400, coverage: 4 }, d: { score: -0.3, coverage: 4 } });
   const result = forecast(data, key, { weights: { polls: 100, barometer: 100 }, simulations: 1000 });
   const row = id => result.rows.find(item => item.id === id);
   assert.equal(row('a').corrections.barometer, 0);

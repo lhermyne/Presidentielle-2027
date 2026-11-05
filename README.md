@@ -175,7 +175,7 @@ Le boost relatif est `dynamique / 1 000 × multiplicateur`, réglé directement 
 (×2 par défaut). Dans la barre d’influence, ×5 pèse autant qu’un curseur à 100.
 À ×3, 60 ‰ donnent +18 % du propre score : **10 % devient 11,8 %
 avant renormalisation** (11,2 % à ×2).
-Sous 2 ‰ (5 % environ pour Wikipédia), une dynamique n'a pas d'effet. Pas de plafond brutal : les très
+Sous 0,5 ‰ (5 % environ pour Wikipédia), une dynamique n'a pas d'effet. Pas de plafond brutal : les très
 fortes variations sont comprimées en douceur, puis l’ensemble est renormalisé à 100 %.
 Un nouveau terrain compatible réinitialise le point de départ. Chaque calcul repart du
 socle sondé ; les boosts quotidiens ne sont pas composés plusieurs fois. Une dynamique
