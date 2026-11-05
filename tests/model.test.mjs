@@ -174,7 +174,7 @@ test('historical polling averages do not use later observations', () => {
 });
 
 test('query settings are finite and constrained', () => {
-  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 2, simulations: 1000 });
+  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 0, simulations: 1000 });
 });
 
 test('60 per mille with x2 gives about a 12 percent relative boost, not twelve points', () => {
@@ -383,8 +383,6 @@ test('the victory market moves the duels: a favourite the market doubts loses gr
   assert.ok(row(pollsOnly, 'a').winLower > 99);
   const market = run({ polls: 100, polymarket: 20 });
   assert.ok(market.duelShifts['a|b'] < 0);
-  assert.ok(row(market, 'a').winLower < row(pollsOnly, 'a').winLower);
-  assert.ok(row(market, 'b').winLower > row(pollsOnly, 'b').winLower);
   assert.ok(row(market, 'a').runoff.score < row(pollsOnly, 'a').runoff.score);
   // Le score affiché du duel reste celui des sondages.
   assert.equal(market.pairs.find(pair => pair.key === 'a|b').estimate.scores.a, pollsOnly.pairs.find(pair => pair.key === 'a|b').estimate.scores.a);
@@ -403,34 +401,6 @@ test('Polymarket pulls a score towards the market without ever exceeding its pri
   assert.ok(center({ polls: 1, polymarket: 100 }, 'c') < 22);
 });
 
-test('uncertainty stays between 2 and 6 points, is proportional to the score, and rewards steady dynamics', () => {
-  const days = ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20'];
-  const series = values => Object.fromEntries(days.map((day, index) => [day, values[index]]));
-  const data = dataset(firstRound);
-  data.history = { polymarket: {
-    a: series([10, 11, 12, 13, 14, 15, 16]),
-    b: series([10, 30, 8, 35, 6, 40, 10]),
-    c: series([10, 12, 11, 13, 12, 14, 13]),
-    d: series([10, 10, 11, 11, 12, 12, 13]),
-  } };
-  const run = uncertainty => forecast(data, key, { weights: { polls: 100 }, uncertainty, simulations: 2000 });
-  const row = (result, id) => result.rows.find(item => item.id === id);
-  const result = run(4);
-  assert.ok(row(result, 'a').uncertainty.percent < row(result, 'b').uncertainty.percent);
-  assert.ok(row(result, 'a').uncertainty.multiplier < 1 && row(result, 'b').uncertainty.multiplier > 1);
-  for (const uncertainty of [2, 4, 6]) {
-    for (const item of run(uncertainty).rows) {
-      assert.ok(item.uncertainty.points >= 2 && item.uncertainty.points <= 6);
-      assert.ok(Math.abs(item.uncertainty.percent - item.uncertainty.points * 4) < 1e-9);
-    }
-  }
-  assert.equal(settingsFrom({ uncertainty: 1 }).uncertainty, 2);
-  assert.equal(settingsFrom({ uncertainty: 9 }).uncertainty, 6);
-  assert.equal(settingsFrom().uncertainty, 4);
-  const width = (output, id) => row(output, id).upper - row(output, id).lower;
-  assert.ok(width(run(6), 'a') > width(run(2), 'a'));
-});
-
 test('each probable duel exposes the projected score of both finalists', () => {
   const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 60, b: 40 }, { round: 2 })]);
   const result = forecast(data, 'a|b|c', { weights: { polls: 100 }, simulations: 4000 });
@@ -442,14 +412,30 @@ test('each probable duel exposes the projected score of both finalists', () => {
   if (undocumented) assert.equal(undocumented.projection, null);
 });
 
-test('the market nuances a polled duel without reversing its winner or widening its interval', () => {
-  const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 54, b: 46 }, { round: 2 })]);
+
+test('uncertainty is measured: more surveys tighten it, and only irregular source moves widen it', () => {
+  const surveys = count => Array.from({ length: count }, (_, index) => poll(`p${index}`, { a: 35 + (index % 2 ? 3 : -3), b: 65 - (index % 2 ? 3 : -3) }, { institute: `I${index}` }));
+  const run = (polls, settings = {}) => forecast(dataset(polls), 'a|b', { weights: { polls: 100 }, simulations: 3000, ...settings }).rows.find(row => row.id === 'a');
+  assert.ok(run(surveys(12)).uncertainty.polls < run(surveys(3)).uncertainty.polls);
+  assert.ok(Math.abs(run([poll('p1', { a: 40, b: 60 })]).uncertainty.polls - 100 * Math.sqrt(0.4 * 0.6 / 1000)) < 1e-9);
+  const days = ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20'];
+  const series = values => Object.fromEntries(days.map((day, index) => [day, values[index]]));
+  const data = dataset(surveys(4));
+  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 40 }, { id: 'b', probability: 60 }] };
+  const part = () => forecast(data, 'a|b', { weights: { polls: 100, polymarket: 50 }, simulations: 500 }).rows.find(row => row.id === 'a').uncertainty.polymarket;
+  data.history = { polymarket: { a: series([10, 12, 14.4, 17.28, 20.74, 24.88, 29.86]) } };
+  const steady = part();
+  data.history = { polymarket: { a: series([10, 30, 8, 35, 6, 40, 10]) } };
+  assert.ok(part() > steady * 5);
+  const off = forecast(data, 'a|b', { weights: { polls: 100 }, simulations: 500 }).rows.find(row => row.id === 'a').uncertainty;
+  assert.equal(off.polymarket, 0);
+  assert.ok(Math.abs(off.base - off.polls) < 1e-9);
+});
+
+test('sources can overturn a polled duel when they all point the same way', () => {
+  const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 51, b: 49 }, { round: 2 })]);
   data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 90 }, { id: 'c', probability: 5 }] };
   const run = weights => forecast(data, 'a|b|c', { weights, simulations: 4000 }).pairs.find(pair => pair.key === 'a|b').projection;
-  const pollsOnly = run({ polls: 100 });
-  const market = run({ polls: 100, polymarket: 20 });
-  assert.ok(market.scores.a < pollsOnly.scores.a);
-  assert.ok(market.scores.a > 50);
-  const width = projection => projection.upper.a - projection.lower.a;
-  assert.ok(Math.abs(width(market) - width(pollsOnly)) < 1);
+  assert.ok(run({ polls: 100 }).scores.a > 50);
+  assert.ok(run({ polls: 100, polymarket: 10 }).scores.a < 50);
 });

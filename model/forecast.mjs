@@ -1,5 +1,5 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.11.0-bounded-duels-experimental';
+export const MODEL_VERSION = '0.12.0-measured-uncertainty-experimental';
 export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'barometer', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
@@ -54,24 +54,18 @@ const MARKET_BASE_LEVELS = Object.freeze([
 const POST_SIMULATION_BOARDS = Object.freeze(['advance']);
 // Force du marché de victoire sur les duels, en plus de la part de Polymarket.
 const DUEL_MARKET_UNIT = 0.1;
-// Le marché nuance un duel sondé sans jamais en inverser le vainqueur.
-const DUEL_WINNER_MARGIN = 0.5;
 const DUEL_PRE_SIMULATIONS = 4000;
 // Évite qu'un écart entre deux probabilités infimes pèse lourd : un petit candidat reste neutre.
 const MARKET_FLOOR = 0.02;
 // Force de l'écart entre le marché et les sondages, multipliée par la part de Polymarket.
 export const MARKET_UNIT = 2;
-// Incertitude en points pour un candidat à 25 %, soit en pourcentage de son score : 4 points valent ±16 %.
-export const MIN_UNCERTAINTY = 2;
-export const MAX_UNCERTAINTY = 6;
-export const UNCERTAINTY_REFERENCE_SCORE = 25;
-// Plancher des petits scores : l'aléa d'un échantillon de 1 000 personnes.
+// Aléa de référence d'une enquête : un échantillon de 1 000 personnes.
 const REFERENCE_SAMPLE = 1000;
 const MIN_POLLS_FOR_SPREAD = 3;
 const POLL_WINDOW_DAYS = 120;
 const FIT_MAX_ITERATIONS = 400;
 const FIT_TOLERANCE = 1e-7;
-export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 4, simulations: 16000 });
+export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 0, simulations: 16000 });
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const daysBetween = (a, b) => (Date.parse(a) - Date.parse(b)) / DAY;
@@ -122,7 +116,7 @@ export function settingsFrom(input = {}) {
   return {
     halfLife: clamp(finite('halfLife', DEFAULT_SETTINGS.halfLife), 3, 90),
     weights: normalizeWeights(input.weights ?? DEFAULT_WEIGHTS),
-    uncertainty: clamp(finite('uncertainty', DEFAULT_SETTINGS.uncertainty), MIN_UNCERTAINTY, MAX_UNCERTAINTY),
+    uncertainty: clamp(finite('uncertainty', DEFAULT_SETTINGS.uncertainty), 0, 8),
     simulations: Math.round(clamp(finite('simulations', 16000), 1000, 50000)),
   };
 }
@@ -202,7 +196,7 @@ function pollObservations(polls, asOf, halfLife) {
     const age = Math.max(0, daysBetween(asOf, poll.fieldEnd));
     const weight = Math.pow(0.5, age / halfLife) * Math.sqrt(clamp(poll.sampleSize || 1000, 100, 5000) / 1000) /
       Math.sqrt(instituteCounts.get(poll.institute) * surveys.get(poll.id).lists);
-    return { ids, weight, shares: Object.fromEntries(ids.map(id => [id, poll.scores[id] / total])) };
+    return { ids, weight, institute: poll.institute, shares: Object.fromEntries(ids.map(id => [id, poll.scores[id] / total])) };
   });
 }
 
@@ -287,10 +281,13 @@ function samplingSpread(score) {
   return 100 * Math.sqrt(share * (1 - share) / REFERENCE_SAMPLE);
 }
 
-// Écart relatif de chaque liste testée à ce que le modèle prévoit pour elle.
-function pollAgitations(fit, ids) {
+// Précision de la moyenne des sondages pour chaque candidat : écart observé entre les listes testées et le modèle,
+// réduit par le nombre effectif d'instituts (les listes d'un même institut ne sont pas indépendantes).
+// Sans écart mesurable, l'aléa de sondage seul.
+function pollPrecisions(fit, ids, scores) {
   const predictions = fit.observations.map(item => scoresForList(fit, item.ids));
   return Object.fromEntries(ids.map(id => {
+    const byInstitute = new Map();
     let weight = 0;
     let squared = 0;
     let count = 0;
@@ -298,10 +295,13 @@ function pollAgitations(fit, ids) {
       const predicted = predictions[index]?.[id];
       if (!item.ids.includes(id) || !(predicted > 0)) return;
       weight += item.weight;
+      byInstitute.set(item.institute, (byInstitute.get(item.institute) ?? 0) + item.weight);
       squared += item.weight * ((item.shares[id] * 100 - predicted) / predicted) ** 2;
       count++;
     });
-    return [id, count >= MIN_POLLS_FOR_SPREAD && weight > 0 ? Math.sqrt(squared / weight) : null];
+    const effective = weight > 0 ? weight ** 2 / sum([...byInstitute.values()].map(value => value ** 2)) : 1;
+    const observed = count >= MIN_POLLS_FOR_SPREAD ? Math.sqrt(squared / weight) * scores[id] : 0;
+    return [id, Math.max(observed, samplingSpread(scores[id])) / Math.sqrt(effective)];
   }));
 }
 
@@ -320,44 +320,29 @@ function reportedMarketSeries(history, id) {
   return series;
 }
 
-// Mouvement sans direction : une tendance régulière vaut 0, des allers-retours comptent entièrement.
-function directionlessMove(levels) {
-  if (levels.length < 3) return null;
-  const path = sum(levels.slice(1).map((value, index) => Math.abs(value - levels[index])));
-  return path - Math.abs(levels.at(-1) - levels[0]);
-}
+const dailyChanges = levels => levels.slice(1).map((value, index) => value - levels[index]);
+// Une évolution régulière a des variations quotidiennes constantes : seul l'irrégulier compte comme du bruit.
+const irregularity = changes => changes.length >= 2 ? standardDeviation(changes) : 0;
 
-function runningTotal(values) {
-  let total = 0;
-  return values.map(value => (total += value));
-}
-
-const median = values => {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
-};
-
-// Incertitude par candidat : proportionnelle à son score, resserrée si ses sources évoluent dans un sens
-// régulier, élargie si elles font des allers-retours, comparé aux autres candidats et borné entre 2 et 6 points.
-function campaignUncertainty(data, ids, fit, halfLife, reference) {
+// Incertitude en points par candidat, entièrement mesurée : précision des sondages et bruit de chaque source utilisée
+// sur la mémoire des sondages. Ces parts indépendantes se combinent en somme quadratique, sans borne fixée à la main.
+function campaignUncertainty(data, ids, fit, scores, halfLife, strengths, targets) {
   const days = Math.max(2, Math.round(halfLife));
-  const agitations = {
-    polls: pollAgitations(fit, ids),
-    polymarket: Object.fromEntries(ids.map(id => [id, directionlessMove(valuesOverMemory(reportedMarketSeries(data.history?.polymarket, id), data.asOf, days).map(price => Math.log(price / 100 + MARKET_FLOOR)))])),
-    barometer: Object.fromEntries(ids.map(id => [id, directionlessMove(runningTotal(valuesOverMemory(data.history?.barometer?.[id], data.asOf, days)))])),
-    wikipedia: Object.fromEntries(ids.map(id => [id, directionlessMove(valuesOverMemory(data.history?.wikipedia?.[id], data.asOf, days).filter(views => views > 0).map(Math.log))])),
-  };
-  const ratios = Object.fromEntries(Object.entries(agitations).map(([source, values]) => {
-    const known = ids.filter(id => values[id] !== null);
-    const middle = known.length >= 2 ? median(known.map(id => values[id])) : 0;
-    return [source, Object.fromEntries(known.filter(() => middle > 0).map(id => [id, (values[id] + 0.1 * middle) / (1.1 * middle)]))];
-  }));
+  const polls = pollPrecisions(fit, ids, scores);
   return Object.fromEntries(ids.map(id => {
-    const sources = Object.fromEntries(Object.keys(ratios).filter(source => id in ratios[source]).map(source => [source, ratios[source][id]]));
-    const logs = Object.values(sources).map(Math.log);
-    const multiplier = logs.length ? Math.exp(0.5 * sum(logs) / logs.length) : 1;
-    const points = clamp(reference * multiplier, MIN_UNCERTAINTY, MAX_UNCERTAINTY);
-    return [id, { sources, multiplier, points, percent: 100 * points / UNCERTAINTY_REFERENCE_SCORE }];
+    const prices = valuesOverMemory(reportedMarketSeries(data.history?.polymarket, id), data.asOf, days).map(price => Math.log(price / 100 + MARKET_FLOOR));
+    const views = valuesOverMemory(data.history?.wikipedia?.[id], data.asOf, days).filter(count => count > 0).map(Math.log);
+    const followers = valuesOverMemory(data.history?.barometer?.[id], data.asOf, days);
+    const parts = {
+      polls: polls[id],
+      // Une variation de prix déplace la cible du marché, retenue selon la force de Polymarket.
+      polymarket: targets[id] * irregularity(dailyChanges(prices)) * strengths.polymarket,
+      // Les variations quotidiennes d'abonnés s'accumulent sur la période.
+      barometer: scores[id] * (followers.length >= 2 ? standardDeviation(followers) : 0) * Math.sqrt(days) / 1000 * strengths.barometer,
+      // Le signal Wikipédia est une médiane : son bruit diminue avec le nombre de jours.
+      wikipedia: scores[id] * (views.length >= 2 ? 1.25 * standardDeviation(views) / Math.sqrt(views.length) : 0) * strengths.wikipedia,
+    };
+    return [id, { ...parts, base: Math.hypot(...Object.values(parts)) }];
   }));
 }
 
@@ -563,7 +548,8 @@ export function runoffEstimates(data, ids, settings = DEFAULT_SETTINGS) {
     const candidateIds = key.split('|');
     const estimate = aggregatePolls(polls, candidateIds, data.asOf, settings.halfLife);
     const observed = polls.length >= MIN_POLLS_FOR_SPREAD ? standardDeviation(polls.map(poll => poll.scores[candidateIds[0]])) : 0;
-    return [key, { ...estimate, candidateIds, spread: Math.max(observed, samplingSpread(estimate.scores[candidateIds[0]])) }];
+    const spread = Math.max(observed, samplingSpread(estimate.scores[candidateIds[0]])) / Math.sqrt(estimate.instituteCount);
+    return [key, { ...estimate, candidateIds, spread }];
   }));
 }
 
@@ -633,10 +619,7 @@ function marketDuelShifts(ids, draws, prices, duels, scale) {
 
 function shiftedDuelScore(score, shift) {
   const share = clamp(score / 100, 0.01, 0.99);
-  const shifted = 100 / (1 + Math.exp(-(Math.log(share / (1 - share)) + shift)));
-  if (score > 50) return Math.max(shifted, Math.min(score, 50 + DUEL_WINNER_MARGIN));
-  if (score < 50) return Math.min(shifted, Math.max(score, 50 - DUEL_WINNER_MARGIN));
-  return shifted;
+  return 100 / (1 + Math.exp(-(Math.log(share / (1 - share)) + shift)));
 }
 
 const ignoreNoise = (value, threshold) => Math.sign(value) * Math.max(0, Math.abs(value) - threshold);
@@ -677,7 +660,6 @@ export function forecast(data, configurationId, rawSettings = {}) {
   const meta = Object.fromEntries((data.candidates ?? []).map(c => [c.id, c]));
   // Polymarket avant les simulations : bonus ou malus selon l'écart entre ses prix et les sondages.
   const marketScale = components.polymarket.available ? MARKET_UNIT * shares.polymarket / 100 : 0;
-  const uncertainty = campaignUncertainty(data, ids, fit, settings.halfLife, settings.uncertainty);
   const simulate = (centerValues, count, duelShifts = {}) => {
     const normal = normalGenerator(makeRandom());
     const draws = [];
@@ -686,7 +668,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
       const raw = centerValues.map((center, index) => {
         const family = meta[ids[index]]?.family ?? ids[index];
         if (!families.has(family)) families.set(family, normal());
-        const spread = Math.max(center * uncertainty[ids[index]].percent / 100, samplingSpread(center));
+        const spread = Math.hypot(uncertainty[ids[index]].base, settings.uncertainty * Math.sqrt(Math.max(center, 1) / 25));
         return Math.max(0.02, center + spread * (0.55 * families.get(family) + Math.sqrt(1 - 0.55 ** 2) * normal()));
       });
       const total = sum(raw);
@@ -697,13 +679,12 @@ export function forecast(data, configurationId, rawSettings = {}) {
       let winner = key ? null : first;
       let runoff = null;
       if (duel) {
-        const age = Math.min(3, Math.max(0, daysBetween(data.asOf, duel.latest)) / 30);
         // Score simulé du premier qualifié au second tour, tiré autour de la moyenne des sondages du duel.
-        // Le marché déplace le score attendu du duel ; l'incertitude reste celle des sondages et de la campagne.
+        // Les sources déplacent le score attendu du duel et peuvent le faire basculer.
         const pollScore = duel.scores[ids[first]];
         const direction = ids[first] === duel.candidateIds[0] ? 1 : -1;
         const expected = shiftedDuelScore(pollScore, (duelShifts[key] ?? 0) * direction);
-        runoff = clamp(expected + normal() * Math.hypot(duel.spread, settings.uncertainty, age), 0, 100);
+        runoff = clamp(expected + normal() * Math.hypot(duel.spread, settings.uncertainty), 0, 100);
         winner = runoff > 50 ? first : second;
       }
       draws.push({ scores, first, second, third, winner, key, runoff });
@@ -722,10 +703,20 @@ export function forecast(data, configurationId, rawSettings = {}) {
     ? { ...marketTargets(ids, baseline.scores, components.polymarket), blend: marketBlend }
     : { boards: [], targets: { ...baseline.scores }, ceilings: {}, blend: 0 };
   for (const id of ids) corrections[id].polymarket = marketBlend * (marketBonus.targets[id] - baseline.scores[id]);
+  const uncertainty = campaignUncertainty(data, ids, fit, baseline.scores, settings.halfLife,
+    { polymarket: marketBlend, barometer: scales.barometer, wikipedia: scales.wikipedia }, marketBonus.targets);
   const centers = applyCeilings(ids, currentCenters(), marketBonus.ceilings);
-  const duelShifts = marketScale
+  // Dans les duels : le prix de victoire face à une première simulation, et l'élan du baromètre et de Wikipédia.
+  const marketShifts = marketScale
     ? marketDuelShifts(ids, simulate(centers, Math.min(DUEL_PRE_SIMULATIONS, settings.simulations)), components.polymarket.boards?.president?.prices, duels, marketScale)
     : {};
+  const momentum = id => {
+    const score = baseline.scores[id];
+    return score > 0 ? Math.log(Math.max(0.05, score + sum(DYNAMIC_IDS.map(source => corrections[id][source]))) / score) : 0;
+  };
+  const duelShifts = Object.fromEntries(Object.entries(duels)
+    .map(([key, duel]) => [key, (marketShifts[key] ?? 0) + momentum(duel.candidateIds[0]) - momentum(duel.candidateIds[1])])
+    .filter(([, shift]) => shift !== 0));
   const trajectories = simulate(centers, settings.simulations, duelShifts);
 
   const { fusion: marketFusion, weightOf } = marketBoards(ids, trajectories, components.polymarket, shares.polymarket / 100);

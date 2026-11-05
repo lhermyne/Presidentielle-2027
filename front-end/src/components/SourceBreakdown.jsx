@@ -9,26 +9,25 @@ function CorrectionCell({ correction, base, missing }) {
 }
 
 function UncertaintyTable({ rows }) {
-  const ratio = value => Number.isFinite(value) ? `×${value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}` : '—';
   const number = value => value.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return (
     <>
-      <h2 className="signal-heading">Incertitude par candidat</h2>
+      <h2 className="signal-heading">Incertitude mesurée</h2>
       <p className="metric-description">
-        Mouvements sans direction de chaque source sur la mémoire des sondages, comparés aux autres candidats : ×1 est la moyenne,
-        moins de ×1 une évolution plus régulière, plus de ×1 davantage d’allers-retours. L’incertitude reste entre 2 et 6 points pour un candidat à 25 %.
+        Écart-type en points : précision de la moyenne des sondages, puis bruit de chaque source sur la mémoire des sondages. Rien n’est fixé à la main.
+        Cette marge décrit la photo d’aujourd’hui, pas ce que la campagne peut encore changer d’ici au scrutin.
       </p>
-      <div className="table-scroll" tabIndex={0} role="region" aria-label="Incertitude par candidat">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Incertitude mesurée par candidat">
         <table>
-          <thead><tr><th scope="col">Candidat</th><th scope="col">Sondages</th><th scope="col">Polymarket</th><th scope="col">Baromètre</th><th scope="col">Wikipédia</th><th scope="col">Part du score</th><th scope="col">En points</th></tr></thead>
+          <thead><tr><th scope="col">Candidat</th><th scope="col">Sondages</th><th scope="col">Polymarket</th><th scope="col">Baromètre</th><th scope="col">Wikipédia</th><th scope="col">Total</th><th scope="col">Largeur à 90 %</th></tr></thead>
           <tbody>
             {rows.map(row => (
               <tr key={row.id}>
                 <th scope="row">{row.name}</th>
-                <td>{ratio(row.uncertainty.sources.polls)}</td><td>{ratio(row.uncertainty.sources.polymarket)}</td>
-                <td>{ratio(row.uncertainty.sources.barometer)}</td><td>{ratio(row.uncertainty.sources.wikipedia)}</td>
-                <td><strong>±{number(row.uncertainty.percent)} %</strong></td>
-                <td>±{number(row.center * row.uncertainty.percent / 100)}</td>
+                <td>{number(row.uncertainty.polls)}</td><td>{number(row.uncertainty.polymarket)}</td>
+                <td>{number(row.uncertainty.barometer)}</td><td>{number(row.uncertainty.wikipedia)}</td>
+                <td><strong>{number(row.uncertainty.base)}</strong></td>
+                <td>{number(row.upper - row.lower)} pts</td>
               </tr>
             ))}
           </tbody>

@@ -192,7 +192,7 @@ export default function Results({ result, pending }) {
         <InfoIcon aria-hidden="true" size={17} />
         <p>
           {isDuels
-            ? `Seuls les duels présents dans au moins ${MIN_DUEL_PROBABILITY} % des simulations apparaissent. Les scores partent des sondages du duel. Polymarket les nuance sans jamais inverser le vainqueur sondé. Aucun report de voix n’est inventé.`
+            ? `Seuls les duels présents dans au moins ${MIN_DUEL_PROBABILITY} % des simulations apparaissent. Les scores partent des sondages du duel. Polymarket, le baromètre et Wikipédia les font bouger, et peuvent les faire basculer. Aucun report de voix n’est inventé.`
             : 'Ces résultats dépendent des candidats retenus. L’incertitude repose sur des hypothèses explicites, en cours de validation.'}
         </p>
       </div>

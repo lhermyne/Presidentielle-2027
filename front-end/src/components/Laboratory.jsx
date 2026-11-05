@@ -5,12 +5,9 @@ import {
   WEIGHT_PER_MULTIPLIER,
   DEFAULT_SETTINGS,
   DEFAULT_WEIGHTS,
-  MAX_UNCERTAINTY,
   MIN_POLL_WEIGHT,
-  MIN_UNCERTAINTY,
   SOURCE_IDS,
   SOURCE_LABELS,
-  UNCERTAINTY_REFERENCE_SCORE,
   sourceComponents,
   sourceShares,
 } from '../../../model/forecast.mjs';
@@ -157,7 +154,7 @@ export default function Laboratory({ configurations, configurationId, setConfigu
         </fieldset>
 
         <details className="advanced-settings">
-          <summary>Mémoire et incertitude</summary>
+          <summary>Mémoire des sondages</summary>
           <div className="slider-field">
             <div>
               <label htmlFor="half-life">Mémoire des sondages</label>
@@ -165,14 +162,6 @@ export default function Laboratory({ configurations, configurationId, setConfigu
             </div>
             <input name="half-life" id="half-life" type="range" min="3" max="90" step="1" value={settings.halfLife} onChange={event => setNumber('halfLife', event.target.value)} />
             <p>Un sondage compte deux fois moins après cette durée.</p>
-          </div>
-          <div className="slider-field">
-            <div>
-              <label htmlFor="uncertainty">Incertitude de campagne</label>
-              <output htmlFor="uncertainty">{settings.uncertainty.toLocaleString('fr-FR')} points</output>
-            </div>
-            <input name="uncertainty" id="uncertainty" type="range" min={MIN_UNCERTAINTY} max={MAX_UNCERTAINTY} step="0.5" value={settings.uncertainty} onChange={event => setNumber('uncertainty', event.target.value)} />
-            <p>Pour un candidat à 25 %, soit ±{(settings.uncertainty * 100 / UNCERTAINTY_REFERENCE_SCORE).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} % de son score. Elle se resserre si ses sources évoluent dans un sens régulier et s’élargit si elles font des allers-retours.</p>
           </div>
         </details>
 

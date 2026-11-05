@@ -158,8 +158,8 @@ leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour 
 choisie est **verrouillée** et sort du calcul des parts.
 Référence : **sondages 100, Polymarket 50, baromètre ×2, Wikipédia ×1, Trends 10**, soit sans
 Google Trends environ **48 % sondages, 24 % Polymarket, 19 % baromètre, 10 % Wikipédia**.
-Mémoire des sondages 21 jours. Incertitude de campagne de 2 à 6 points pour un candidat à 25 % (4 par défaut,
-soit ±16 % de son score), corrigée par candidat : une tendance régulière la resserre, des allers-retours l'élargissent. « Sondages seuls » met toutes les autres sources à 0.
+Mémoire des sondages 21 jours. Incertitude mesurée par candidat, sans réglage manuel : précision de la moyenne des sondages et bruit
+irrégulier de chaque source sur la mémoire, en somme quadratique. Elle ne couvre pas les évolutions de campagne. « Sondages seuls » met toutes les autres sources à 0.
 Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
 La répartition est expérimentale, pas optimisée historiquement.
 
@@ -201,7 +201,7 @@ corrigé (scores positifs, total 100 %), puis sondages de second tour par paire 
 Les duels non documentés conservent des bornes de victoire, sans reports inventés.
 Avant les simulations, le score est tiré vers la cible du marché (victoire finale pour moitié, places
 cumulées pour l'autre moitié) selon `1 − (1 − part de Polymarket)²`, sans dépasser le prix de victoire. Le marché de la victoire déplace aussi les duels : l'écart entre son prix
-et la fréquence de victoire simulée nuance le score du duel, sans jamais inverser le vainqueur sondé. Après les
+et la fréquence de victoire simulée et l'élan du baromètre et de Wikipédia déplacent le score du duel, qui peut basculer. Après les
 simulations, la qualification repondère les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
 (au moins deux candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à
 [0,05 ; 20], puis élevé à la puissance `poids marché / 100`. Les multiplicateurs sont
