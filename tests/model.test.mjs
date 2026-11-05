@@ -120,7 +120,7 @@ test('market winner prices affect documented trajectories and propagate to score
   const altered = structuredClone(data);
   altered.market.markets = [{ id: 'a', probability: 80 }, { id: 'b', probability: 5 }, { id: 'c', probability: 10 }, { id: 'd', probability: 5 }];
   const second = forecast(altered, key, { simulations: 6000, uncertainty: 4 });
-  assert.ok(first.marketFusion.active && second.marketFusion.active);
+  assert.ok(Object.keys(first.duelShifts).length > 0 && Object.keys(second.duelShifts).length > 0);
   assert.ok(first.rows.find(row => row.id === 'b').winLower > second.rows.find(row => row.id === 'b').winLower);
   assert.notEqual(first.rows.find(row => row.id === 'b').score, second.rows.find(row => row.id === 'b').score);
   assert.notEqual(first.rows.find(row => row.id === 'b').qualification, second.rows.find(row => row.id === 'b').qualification);
@@ -396,4 +396,21 @@ test('the base uncertainty comes from poll spreads and source agitation, and the
   const on = forecast(data, 'a|b', { weights: { polls: 100, polymarket: 50, barometer: 40, wikipedia: 20 }, simulations: 1000 }).rows.find(row => row.id === 'a').uncertainty;
   assert.ok(on.polymarket > 0 && on.wikipedia > 0 && on.barometer > 0);
   assert.ok(Math.abs(on.base - Math.hypot(on.polls, on.polymarket, on.barometer, on.wikipedia)) < 1e-9);
+});
+
+test('the victory market moves the duels: a favourite the market doubts loses ground, without it the polls decide', () => {
+  const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 70, b: 30 }, { round: 2 })]);
+  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 40 }, { id: 'b', probability: 55 }, { id: 'c', probability: 5 }] };
+  const run = weights => forecast(data, 'a|b|c', { weights, simulations: 4000 });
+  const row = (result, id) => result.rows.find(item => item.id === id);
+  const pollsOnly = run({ polls: 100 });
+  assert.deepEqual(pollsOnly.duelShifts, {});
+  assert.ok(row(pollsOnly, 'a').winLower > 99);
+  const market = run({ polls: 100, polymarket: 20 });
+  assert.ok(market.duelShifts['a|b'] < 0);
+  assert.ok(row(market, 'a').winLower < row(pollsOnly, 'a').winLower);
+  assert.ok(row(market, 'b').winLower > row(pollsOnly, 'b').winLower);
+  assert.ok(row(market, 'a').runoff.score < row(pollsOnly, 'a').runoff.score);
+  // Le score affiché du duel reste celui des sondages.
+  assert.equal(market.pairs.find(pair => pair.key === 'a|b').estimate.scores.a, pollsOnly.pairs.find(pair => pair.key === 'a|b').estimate.scores.a);
 });

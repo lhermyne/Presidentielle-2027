@@ -1,5 +1,5 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.8.0-dynamic-uncertainty-experimental';
+export const MODEL_VERSION = '0.9.0-market-duels-experimental';
 export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'barometer', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
@@ -50,8 +50,11 @@ const MARKET_BASE_LEVELS = Object.freeze([
   { key: 'second', weight: 1 / 6, boards: ['winner', 'second'] },
   { key: 'third', weight: 1 / 6, boards: ['winner', 'second', 'third'] },
 ]);
-// Après les simulations : la qualification et la victoire finale corrigent leurs propres résultats.
-const POST_SIMULATION_BOARDS = Object.freeze(['president', 'advance']);
+// Après les simulations, seule la qualification repondère : la victoire finale agit déjà sur les duels.
+const POST_SIMULATION_BOARDS = Object.freeze(['advance']);
+// Force du marché de victoire sur les duels, en plus de la part de Polymarket.
+const DUEL_MARKET_UNIT = 0.25;
+const DUEL_PRE_SIMULATIONS = 4000;
 // Évite qu'un écart entre deux probabilités infimes pèse lourd : un petit candidat reste neutre.
 const MARKET_FLOOR = 0.02;
 // Force de l'écart entre le marché et les sondages, multipliée par la part de Polymarket.
@@ -562,6 +565,29 @@ function marketGaps(ids, baselineScores, component) {
   return { boards: used, gaps: Object.fromEntries(ids.map(id => [id, totalWeight ? weighted[id] / totalWeight : 0])) };
 }
 
+// Déplacement de chaque duel selon l'écart entre le prix de victoire et la fréquence de victoire simulée.
+function marketDuelShifts(ids, draws, prices, duels, scale) {
+  if (!prices) return {};
+  const wins = Object.fromEntries(ids.map(id => [id, 0]));
+  for (const draw of draws) if (draw.winner !== null) wins[ids[draw.winner]]++;
+  const compared = ids.filter(id => Number.isFinite(prices[id]));
+  const marketTotal = sum(compared.map(id => prices[id]));
+  const winTotal = sum(compared.map(id => wins[id]));
+  if (compared.length < 2 || !(marketTotal > 0) || !(winTotal > 0)) return {};
+  const gap = id => compared.includes(id)
+    ? Math.log((prices[id] / marketTotal + MARKET_FLOOR) / (wins[id] / winTotal + MARKET_FLOOR))
+    : 0;
+  return Object.fromEntries(Object.entries(duels).map(([key, duel]) => {
+    const [first, second] = duel.candidateIds;
+    return [key, (gap(first) - gap(second)) * scale * DUEL_MARKET_UNIT];
+  }));
+}
+
+function shiftedDuelScore(score, shift) {
+  const share = clamp(score / 100, 0.01, 0.99);
+  return 100 / (1 + Math.exp(-(Math.log(share / (1 - share)) + shift)));
+}
+
 const ignoreNoise = (value, threshold) => Math.sign(value) * Math.max(0, Math.abs(value) - threshold);
 // Proche de la valeur brute pour les variations courantes, comprimé en douceur pour les très grosses.
 const relativeEffect = value => Math.exp(DYNAMIC_SATURATION * Math.tanh(value / DYNAMIC_SATURATION)) - 1;
@@ -603,7 +629,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
   const uncertainty = campaignUncertainty(data, ids, fit, baseline.scores, settings.halfLife,
     { polymarket: marketScale, barometer: scales.barometer, wikipedia: scales.wikipedia });
   const pollAge = Math.min(3, Math.max(0, daysBetween(data.asOf, baseline.latest)) / 30);
-  const simulate = (centerValues, count) => {
+  const simulate = (centerValues, count, duelShifts = {}) => {
     const normal = normalGenerator(makeRandom());
     const draws = [];
     for (let iteration = 0; iteration < count; iteration++) {
@@ -625,7 +651,11 @@ export function forecast(data, configurationId, rawSettings = {}) {
       if (duel) {
         const age = Math.min(3, Math.max(0, daysBetween(data.asOf, duel.latest)) / 30);
         // Score simulé du premier qualifié au second tour, tiré autour de la moyenne des sondages du duel.
-        runoff = clamp(duel.scores[ids[first]] + normal() * Math.hypot(duel.spread, settings.uncertainty, age), 0, 100);
+        // Un désaccord entre le marché et le sondage du duel déplace le score et élargit son incertitude.
+        const pollScore = duel.scores[ids[first]];
+        const direction = ids[first] === duel.candidateIds[0] ? 1 : -1;
+        const expected = shiftedDuelScore(pollScore, (duelShifts[key] ?? 0) * direction);
+        runoff = clamp(expected + normal() * Math.hypot(duel.spread, settings.uncertainty, age, expected - pollScore), 0, 100);
         winner = runoff > 50 ? first : second;
       }
       draws.push({ scores, first, second, third, winner, key, runoff });
@@ -643,7 +673,10 @@ export function forecast(data, configurationId, rawSettings = {}) {
     : { boards: [], gaps: Object.fromEntries(ids.map(id => [id, 0])) };
   for (const id of ids) corrections[id].polymarket = baseline.scores[id] * (marketScale ? relativeEffect(marketBonus.gaps[id] * marketScale) : 0);
   const centers = currentCenters();
-  const trajectories = simulate(centers, settings.simulations);
+  const duelShifts = marketScale
+    ? marketDuelShifts(ids, simulate(centers, Math.min(DUEL_PRE_SIMULATIONS, settings.simulations)), components.polymarket.boards?.president?.prices, duels, marketScale)
+    : {};
+  const trajectories = simulate(centers, settings.simulations, duelShifts);
 
   const { fusion: marketFusion, weightOf } = marketBoards(ids, trajectories, components.polymarket, shares.polymarket / 100);
   const counts = ids.map(() => ({ topTwo: 0, wins: 0, unknown: 0, total: 0, samples: [], runoffSamples: [] }));
@@ -672,7 +705,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
       runoff: summarizeRunoff(result.runoffSamples, result.topTwo) };
   }).sort((a, b) => b.score - a.score);
   return { modelVersion: MODEL_VERSION, settings, configuration, baseline, rows, sourceMix,
-    marketBonus, adjustmentLimits: { marketScale, barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
+    marketBonus, duelShifts, adjustmentLimits: { marketScale, barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
     marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
     unresolved: unresolved / totalWeight * 100,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null })).sort((a, b) => b.probability - a.probability),

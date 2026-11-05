@@ -201,8 +201,9 @@ corrigé (scores positifs, total 100 %), puis sondages de second tour par paire 
 Les duels non documentés conservent des bornes de victoire, sans reports inventés.
 Avant les simulations, les prix sont comparés au score des sondages (victoire finale pour moitié,
 places cumulées pour l'autre moitié) : `log((marché + 2 %) / (sondages + 2 %)) × 2 × part de Polymarket`
-donne un bonus ou malus relatif. Après les simulations, la qualification et la victoire finale
-repondèrent les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
+donne un bonus ou malus relatif. Le marché de la victoire déplace aussi les duels : l'écart entre son prix
+et la fréquence de victoire simulée modifie le score du duel et élargit son incertitude. Après les
+simulations, la qualification repondère les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
 (au moins deux candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à
 [0,05 ; 20], puis élevé à la puissance `poids marché / 100`. Les multiplicateurs sont
 normalisés pour conserver la masse des trajectoires comparées. Les autres trajectoires
