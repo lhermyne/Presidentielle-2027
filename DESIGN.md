@@ -1,50 +1,55 @@
-# Direction : une rédaction de données
+# Direction : le duel en une, la rigueur en dessous
 
-Trois pistes étudiées : rédaction claire, terminal sombre, atlas cartographique.
-Retenue : rédaction claire, consultation publique et exploration des hypothèses.
-La carte est reportée : aucune estimation locale ne doit être fabriquée à partir du national.
+Nom affiché : L'Hermyne - Présidentielle 2027.
 
-DESIGN_VARIANCE 4 / MOTION_INTENSITY 2 / VISUAL_DENSITY 6.
-Le skill Taste exclut ce tableau de bord ; seuls ses principes de cohérence et de
-typographie sont retenus. Pas de hero commercial ni d'effet scroll-world : ils gêneraient
-l'accès aux chiffres. CSS suffit aux retours d'interaction ; Motion n'est pas ajouté.
+Refonte validée par l'utilisateur le 6 novembre 2026, à partir de trois maquettes
+(A La Une, B Le Duel, C La Table). Retenu : un mélange.
+- De B : le hero avec le duel en grand, portraits et scores, halos aux couleurs des finalistes ; les polices.
+- De A : la liste à filets fins du premier tour, le fond noir chaud, le vermillon.
+- De C : le reclassement animé des barres.
+Objectif : comprendre en quelques secondes de quoi il s'agit, sans surcharge.
 
-Références lues dans F:/OverFlo/Ressources/awesome-design-md/design-md :
-- aljazeera/DESIGN.md : hiérarchie éditoriale et séparation par filets.
-- nerdwallet/DESIGN.md : comparaisons, surfaces plates et vert profond.
-- linear.app/DESIGN.md : précision des commandes, sans reprendre sa palette sombre.
-Commit du catalogue non vérifiable dans le sandbox ; pas de révision inventée.
-Ces analyses ne constituent pas une inspection visuelle des sites originaux.
+Références observées dans le navigateur : sondages2027.fr, ourworldindata.org/democracy, pudding.cool.
+Lues en texte seulement : The Economist (modèle 2024), 538/ABC (Information is Beautiful Awards).
+Non retenu : Higgsfield, scroll-world, photographie stock, carte (aucune estimation locale fabriquée).
 
 ## Tokens
-Thème sombre par défaut (demande de l'utilisateur, 1er novembre 2026) :
-fond #0c1312 ; surface #121b19 ; texte #e4ebe7 ; secondaire #98a7a0 ; filet #24312d.
-Accent #5cc9a1 (texte) et #1f7d5f (fonds pleins) ; avertissement #f0b47c sur #2f2112.
-Thème clair sur choix du visiteur : fond #f5f6f2 ; surface #ffffff ; texte #182b29 ;
-secondaire #5a6863 ; filet #dce2dc ; accent #17634e ; avertissement #84501c sur #fff0dc.
-Toutes les couleurs passent par les variables CSS de styles.css, jamais en dur.
+Sombre par défaut : fond #100e0b ; surface #17140f ; texte #f3ecdf ; secondaire #b7ad9c ;
+atténué #978d7d ; filet #2a2519 ; accent #ef7655 (texte) et #c6472a (fonds pleins).
+Clair sur choix du visiteur : fond #f6f2ea ; surface #fffdf8 ; texte #1c1812 ; secondaire #5d5548 ;
+filet #e0d9cb ; accent #b23c1c. Toutes les couleurs passent par les variables de styles.css.
 En sombre, les couleurs de candidats sont éclaircies de 30 % (color-mix) pour le contraste.
-Couleurs de candidats réservées aux séries et à leurs repères, avec noms et valeurs.
-Manrope auto-hébergée ; chiffres tabulaires ; IBM Plex Mono pour métadonnées rares.
-Titre 48–56px desktop, environ 28–32px mobile ; contenu explicatif 13–16px,
-commandes 11–12px, métadonnées et légendes plus compactes pour le tableau de bord.
-Largeur maximale 1440px ; marges 40px desktop, 20px mobile ; échelle 4/8/12/16/24/32/48.
-Rayons 6px contrôles, 12px panneaux ; aucune ombre décorative lourde.
+Couleurs de candidats réservées aux séries, aux repères et aux halos, toujours avec noms et valeurs.
+Bricolage Grotesque (titres, chiffres) et Instrument Sans (texte), auto-hébergées ; chiffres tabulaires.
+Largeur de contenu 1140px ; marges 20 à 48px ; texte minimal 12px ; cibles de 44px.
 
 ## Composition
-Navigation compacte ; titre, statut expérimental et date ; résumé des données ;
-grande surface de résultats et laboratoire latéral ; courbes et duels en dessous.
-Sources et méthode utilisent les mêmes tokens. Les visages sont de vraies ressources
-locales du baromètre, copiées dans ce projet ; initiales si ressource absente.
-Pas de faux graphique, chiffre décoratif, logo de partenaire ni photographie stock.
+Accueil : hero duel, onglets (Premier tour, Qualification, Second tour probable) avec choix
+Toutes les sources / Sondages seuls, invitation au laboratoire, tendance des sondages.
+Le laboratoire (curseurs, liste de candidats, effet de chaque source, export, partage) s'ouvre
+dans un panneau latéral natif <dialog> avec les premiers scores en direct.
+Second tour : duels des simulations, puis autres duels sondés, ajustés par les mêmes sources.
+Le hero suit le duel le plus probable ; un duel non sondé n'affiche aucun score.
+Mention « expérimental, non calibré » visible dans le hero. Pas de faux graphique ni de logo de partenaire.
+Portraits : ressources locales du baromètre en 128px, affichées à 132px au plus ; initiales si absentes.
 
-## Interaction et adaptation
-Libellés visibles, focus contrasté, cibles de 44px, liens explicites.
-Graphiques SVG accompagnés de valeurs textuelles, jamais couleur seule.
-Le simulateur est un formulaire natif ; mises à jour annoncées avec modération.
-Sur tablette : laboratoire sous les résultats. Sur mobile : colonnes réduites,
-tableau consultable sans débordement global, légendes accessibles.
-Transitions de 120ms pour commandes ; désactivées avec prefers-reduced-motion.
-Sombre par défaut ; bouton soleil/lune dans l'en-tête, choix conservé en localStorage
-et appliqué avant le premier rendu. Pas de bascule automatique selon le système.
-Texte minimal 11px, sauf repères d'axe à 10px.
+## Mouvement
+CSS et Web Animations, sans bibliothèque. Chaque effet a un rôle :
+- nombres qui défilent vers leur valeur, avec minuteur de secours pour la valeur exacte ;
+- barres qui se remplissent, barre de duel partant de 50 % ;
+- reclassement FLIP des lignes quand l'ordre change ;
+- indicateur d'onglet glissant, apparition des sections au défilement, tracé des courbes ;
+- halos à dérive lente, ouverture du panneau latéral.
+prefers-reduced-motion coupe tout ; aucune animation ne cache durablement un contenu.
+
+## Composants 21st
+Bar Race Chart, dhxwhy, https://21st.dev/@dhxwhy/components/bar-race-chart, id 37544 :
+code lu, seule la technique FLIP est reprise et réécrite dans components/Motion.jsx.
+Licence du composant non précisée par le catalogue : aucun fichier copié tel quel.
+Génération IA 21st désactivée sur le compte, non utilisée.
+
+## Adaptation
+Tablette : même composition, baromètre retiré de l'en-tête. Mobile : finalistes en colonne,
+barres sous le nom, libellé d'onglet raccourci, panneau du laboratoire en pleine largeur.
+Tableaux consultables sans débordement global. Sombre par défaut, choix conservé en localStorage
+et appliqué avant le premier rendu. Clavier : flèches dans les onglets, Échap ferme le panneau.

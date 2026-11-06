@@ -432,6 +432,33 @@ test('uncertainty is measured: more surveys tighten it, and only irregular sourc
   assert.ok(Math.abs(off.base - off.polls) < 1e-9);
 });
 
+test('every polled duel gets the same source adjustment as a simulated duel', () => {
+  // Le duel a|c n'est presque jamais simulé : c est loin derrière au premier tour.
+  const data = dataset([
+    poll('p1', { a: 45, b: 35, c: 5, d: 15 }),
+    poll('duel-ab', { a: 60, b: 40 }, { round: 2 }),
+    poll('duel-ac', { a: 60, c: 40 }, { round: 2 }),
+  ]);
+  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 20 }, { id: 'b', probability: 40 }, { id: 'c', probability: 30 }, { id: 'd', probability: 10 }] };
+  const run = weights => forecast(data, 'a|b|c|d', { weights, simulations: 4000 });
+  const polled = (result, key) => result.polledDuels.find(duel => duel.key === key);
+
+  const pollsOnly = run({ polls: 100 });
+  assert.ok(Math.abs(polled(pollsOnly, 'a|c').projection.scores.a - polled(pollsOnly, 'a|c').estimate.scores.a) < 1e-9);
+
+  const market = run({ polls: 100, polymarket: 20 });
+  const rare = polled(market, 'a|c');
+  assert.ok(rare.projection.scores.a < polled(pollsOnly, 'a|c').projection.scores.a);
+  assert.ok(Math.abs(rare.projection.scores.a + rare.projection.scores.c - 100) < 1e-9);
+  assert.ok(rare.projection.lower.a <= rare.projection.scores.a && rare.projection.scores.a <= rare.projection.upper.a);
+  assert.equal(rare.estimate.scores.a, polled(pollsOnly, 'a|c').estimate.scores.a);
+
+  // Pour un duel simulé, le calcul direct retrouve le résultat des simulations.
+  const simulated = market.pairs.find(pair => pair.key === 'a|b').projection;
+  assert.ok(Math.abs(polled(market, 'a|b').projection.scores.a - simulated.scores.a) < 0.5);
+  assert.ok(Math.abs(polled(market, 'a|b').projection.lower.a - simulated.lower.a) < 1);
+});
+
 test('sources can overturn a polled duel when they all point the same way', () => {
   const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 51, b: 49 }, { round: 2 })]);
   data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 90 }, { id: 'c', probability: 5 }] };

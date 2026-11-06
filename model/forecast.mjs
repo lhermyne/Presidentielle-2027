@@ -1,5 +1,5 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
-export const MODEL_VERSION = '0.12.0-measured-uncertainty-experimental';
+export const MODEL_VERSION = '0.13.0-adjusted-polled-duels-experimental';
 export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'barometer', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
@@ -617,6 +617,9 @@ function marketDuelShifts(ids, draws, prices, duels, scale) {
   }));
 }
 
+// Quantile d'une loi normale pour un intervalle central à 90 %.
+const INTERVAL_90 = 1.6449;
+
 function shiftedDuelScore(score, shift) {
   const share = clamp(score / 100, 0.01, 0.99);
   return 100 / (1 + Math.exp(-(Math.log(share / (1 - share)) + shift)));
@@ -718,6 +721,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
     .map(([key, duel]) => [key, (marketShifts[key] ?? 0) + momentum(duel.candidateIds[0]) - momentum(duel.candidateIds[1])])
     .filter(([, shift]) => shift !== 0));
   const trajectories = simulate(centers, settings.simulations, duelShifts);
+  const polledDuels = adjustedDuels(duels, duelShifts, settings.uncertainty);
 
   const { fusion: marketFusion, weightOf } = marketBoards(ids, trajectories, components.polymarket, shares.polymarket / 100);
   const counts = ids.map(() => ({ topTwo: 0, wins: 0, unknown: 0, total: 0, samples: [], runoffSamples: [] }));
@@ -754,8 +758,30 @@ export function forecast(data, configurationId, rawSettings = {}) {
     marketBonus, duelShifts, adjustmentLimits: { marketScale, barometerScale: scales.barometer, wikipediaScale: sourceMultiplier(settings.weights, 'wikipedia'), trendsScale: scales.trends },
     marketFusion: { ...marketFusion, effectiveSampleSize: totalWeight ** 2 / squaredWeight },
     unresolved: unresolved / totalWeight * 100,
+    polledDuels,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null, projection: duelProjection(key, pairSamples.get(key)) })).sort((a, b) => b.probability - a.probability),
     isPersonal: settings.halfLife !== DEFAULT_SETTINGS.halfLife || settings.uncertainty !== DEFAULT_SETTINGS.uncertainty || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };
+}
+
+// Tous les duels sondés, ajustés par les mêmes sources que les duels simulés, même si le premier tour
+// ne les retient presque jamais : même score attendu et même marge que dans les simulations.
+function adjustedDuels(duels, duelShifts, addedUncertainty) {
+  return Object.entries(duels).map(([key, duel]) => {
+    const [first, second] = duel.candidateIds;
+    const score = shiftedDuelScore(duel.scores[first], duelShifts[key] ?? 0);
+    const margin = INTERVAL_90 * Math.hypot(duel.spread, addedUncertainty);
+    const lower = clamp(score - margin, 0, 100);
+    const upper = clamp(score + margin, 0, 100);
+    return {
+      key,
+      estimate: duel,
+      projection: {
+        scores: { [first]: score, [second]: 100 - score },
+        lower: { [first]: lower, [second]: 100 - upper },
+        upper: { [first]: upper, [second]: 100 - lower },
+      },
+    };
+  });
 }
 
 // Score projeté de chaque finaliste dans un duel précis, avec son intervalle à 90 %.

@@ -1,4 +1,4 @@
-import { ArrowCounterClockwiseIcon, SlidersHorizontalIcon, ArrowUpRightIcon, LockSimpleIcon } from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon, ArrowUpRightIcon, LockSimpleIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 import {
   MULTIPLIER_IDS,
@@ -12,6 +12,7 @@ import {
   sourceShares,
 } from '../../../model/forecast.mjs';
 import { dateLabel, shortName } from '../lib/format.js';
+import { PRESETS } from '../lib/presets.js';
 
 const SOURCE_ROLES = {
   polls: 'Socle obligatoire des scores',
@@ -20,7 +21,6 @@ const SOURCE_ROLES = {
   wikipedia: 'Dynamique des consultations : bonus ou malus relatif',
   trends: 'Recherches en forte hausse : bonus ou malus relatif',
 };
-const POLLS_ONLY = Object.fromEntries(SOURCE_IDS.map(id => [id, id === 'polls' ? 100 : 0]));
 
 function lowerFirst(text) {
   return text.charAt(0).toLowerCase() + text.slice(1);
@@ -117,15 +117,7 @@ export default function Laboratory({ configurations, configurationId, setConfigu
   const reset = () => setSettings({ ...DEFAULT_SETTINGS, weights: { ...DEFAULT_WEIGHTS } });
 
   return (
-    <aside id="laboratoire" className="laboratory panel" aria-label="Personnaliser les hypothèses">
-      <div className="lab-title">
-        <span className="lab-icon"><SlidersHorizontalIcon aria-hidden="true" size={20} /></span>
-        <div>
-          <h2>Le laboratoire</h2>
-          <p>Testez vos propres hypothèses.</p>
-        </div>
-      </div>
-
+    <div id="laboratoire" className="laboratory">
       <div className="lab-body">
         <label className="field-label" htmlFor="configuration">Candidats</label>
         <select id="configuration" name="configuration" value={configurationId} onChange={event => setConfigurationId(event.target.value)}>
@@ -145,8 +137,9 @@ export default function Laboratory({ configurations, configurationId, setConfigu
             de ×0 à ×5 (×5 pèse autant que 100). Les sondages restent le socle (minimum 1). Une source sans signal est verrouillée.
           </p>
           <div className="weight-presets">
-            <button type="button" className="button" onClick={() => applyWeights(DEFAULT_WEIGHTS)}>Référence</button>
-            <button type="button" className="button" onClick={() => applyWeights(POLLS_ONLY)}>Sondages seuls</button>
+            {PRESETS.map(preset => (
+              <button key={preset.id} type="button" className="button" onClick={() => applyWeights(preset.weights)}>{preset.label}</button>
+            ))}
           </div>
           {SOURCE_IDS.map(id => (
             <SourceSlider key={id} id={id} value={settings.weights[id]} share={shares[id]} component={components[id]} onChange={changeWeight} />
@@ -175,6 +168,6 @@ export default function Laboratory({ configurations, configurationId, setConfigu
         <p>Rien n’est encore calibré sur les élections passées.</p>
         <Link to="/methode#signaux">Comprendre les sources <ArrowUpRightIcon aria-hidden="true" size={15} /></Link>
       </div>
-    </aside>
+    </div>
   );
 }

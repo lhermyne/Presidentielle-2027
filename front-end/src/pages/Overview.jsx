@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router';
-import { ArrowDownIcon, ArrowUpRightIcon, DownloadSimpleIcon, ShareNetworkIcon, FlaskIcon } from '@phosphor-icons/react';
+import { SlidersHorizontalIcon } from '@phosphor-icons/react';
 import { allConfigurations, DEFAULT_SETTINGS, forecast, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
-import { dateLabel, downloadJson } from '../lib/format.js';
-import Results from '../components/Results.jsx';
-import Laboratory from '../components/Laboratory.jsx';
+import { downloadJson } from '../lib/format.js';
+import { activePresetId } from '../lib/presets.js';
+import DuelHero from '../components/DuelHero.jsx';
 import HistoryChart from '../components/HistoryChart.jsx';
+import LabDrawer from '../components/LabDrawer.jsx';
+import Laboratory from '../components/Laboratory.jsx';
+import { Reveal } from '../components/Motion.jsx';
+import Results from '../components/Results.jsx';
 import SourceBreakdown from '../components/SourceBreakdown.jsx';
-import KeyFacts from '../components/KeyFacts.jsx';
-import DuelsPanel from '../components/DuelsPanel.jsx';
 
 const OBSOLETE_PARAMS = ['reseaux', 'amplification', 'incertitude', 'incertitude-ajoutee'];
+const MESSAGE_DURATION = 6000;
 
 function initialSettings() {
   const query = new URLSearchParams(window.location.search);
@@ -30,11 +32,6 @@ function syncUrl(configurationId, settings) {
   window.history.replaceState(window.history.state, '', url);
 }
 
-function scrollToId(event, id) {
-  event.preventDefault();
-  document.getElementById(id)?.scrollIntoView({ behavior: 'auto' });
-}
-
 export default function Overview({ data }) {
   const configurations = useMemo(() => allConfigurations(data), [data]);
   const [configurationId, setConfigurationId] = useState(() => {
@@ -44,15 +41,16 @@ export default function Overview({ data }) {
   const [settings, setSettings] = useState(initialSettings);
   const [result, setResult] = useState(null);
   const [pending, setPending] = useState(true);
+  const [labOpen, setLabOpen] = useState(false);
   const [message, setMessage] = useState('');
   const worker = useRef(null);
   const requestId = useRef(0);
-  const noticeTimer = useRef(null);
+  const messageTimer = useRef(null);
 
   const notify = text => {
-    clearTimeout(noticeTimer.current);
+    clearTimeout(messageTimer.current);
     setMessage(text);
-    noticeTimer.current = setTimeout(() => setMessage(''), 6000);
+    messageTimer.current = setTimeout(() => setMessage(''), MESSAGE_DURATION);
   };
 
   useEffect(() => {
@@ -71,7 +69,7 @@ export default function Overview({ data }) {
     return () => {
       worker.current?.terminate();
       worker.current = null;
-      clearTimeout(noticeTimer.current);
+      clearTimeout(messageTimer.current);
     };
   }, []);
 
@@ -90,71 +88,55 @@ export default function Overview({ data }) {
     return () => clearTimeout(timer);
   }, [data, configurationId, settings]);
 
+  const applyWeights = weights => setSettings(previous => ({ ...previous, weights: { ...weights } }));
+
   const share = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      notify('Lien copié : mêmes réglages, données les plus récentes lors de l’ouverture.');
+      notify('Lien copié : mêmes réglages, données les plus récentes à l’ouverture.');
     } catch {
-      notify('La copie automatique est indisponible. Copiez l’adresse de cette page pour partager vos réglages.');
+      notify('Copie automatique indisponible. Copiez l’adresse de la page pour partager vos réglages.');
     }
   };
   const exportScenario = () => downloadJson({ generatedAt: data.generatedAt, observations: data, result }, `lhermyne-scenario-${data.asOf}.json`);
-  const lastPoll = result?.baseline?.latest;
+  const isPersonal = !activePresetId(settings.weights) || configurationId !== configurations[0]?.id;
 
   return (
-    <div className="page-content">
-      <div className="page-context"><span>OBSERVATOIRE ÉLECTORAL</span><span>France · Présidentielle 2027</span></div>
-      <div className="page-intro">
-        <div>
-          <h1>Présidentielle <span>2027.</span></h1>
-          <p>Sondages, marchés et signaux en ligne réunis dans une simulation transparente. Réglez les hypothèses, le calcul suit.</p>
-        </div>
-        <div className="intro-aside">
-          <span className="experimental-badge"><FlaskIcon aria-hidden="true" size={15} />Modèle expérimental</span>
-          <span>Actualisé le {dateLabel(data.asOf, true)}</span>
-          <Link to="/sources">Voir la provenance des données <ArrowUpRightIcon aria-hidden="true" size={15} /></Link>
-        </div>
-      </div>
+    <div className="home">
+      <DuelHero result={result} data={data} isPersonal={isPersonal} />
 
-      <KeyFacts result={result} />
+      <div className="home-content">
+        <Reveal>
+          <Results result={result} pending={pending} settings={settings} onPreset={applyWeights} />
+        </Reveal>
 
-      <div className="data-strip">
-        <div><span className="stat-number">{result?.baseline?.pollCount ?? '…'}</span><span>enquêtes utilisées<small>toutes listes de candidats confondues</small></span></div>
-        <div><span className="stat-number">{data.social.platforms.length}<span>/4</span></span><span>réseaux du baromètre<small>historique depuis {dateLabel(data.social.historyStart, true)}</small></span></div>
-        <div><span className="stat-number date-stat">{result ? dateLabel(lastPoll, true) : '…'}</span><span>dernier terrain<small>la date de mesure de l’opinion</small></span></div>
-        <a className="jump-link" href="#explorer" onClick={event => scrollToId(event, 'explorer')}>Explorer les résultats <ArrowDownIcon aria-hidden="true" size={17} /></a>
-      </div>
+        <Reveal as="section" className="lab-invite">
+          <h2>Et si vous faisiez votre propre calcul ?</h2>
+          <button type="button" className="button primary" onClick={() => setLabOpen(true)}>
+            <SlidersHorizontalIcon aria-hidden="true" size={18} />Ouvrir le laboratoire
+          </button>
+        </Reveal>
 
-      <div className="workspace-heading" id="explorer">
-        <span className="workspace-description">Tous les sondages réunis en une projection cohérente.</span>
-        <a className="mobile-lab-link" href="#laboratoire" onClick={event => scrollToId(event, 'laboratoire')}>Les réglages <ArrowDownIcon aria-hidden="true" size={15} /></a>
-        <div className="action-group">
-          <button className="button" onClick={exportScenario} disabled={!result || result.error || pending}><DownloadSimpleIcon aria-hidden="true" size={17} />Exporter</button>
-          <button className="button" onClick={share}><ShareNetworkIcon aria-hidden="true" size={17} />Partager</button>
-        </div>
-      </div>
-      <div className="dashboard-grid">
-        <Results result={result} pending={pending} />
-        <Laboratory configurations={configurations} configurationId={configurationId} setConfigurationId={setConfigurationId} settings={settings} setSettings={setSettings} data={data} />
         {!result?.error && (
-          <div className="secondary-grid">
+          <Reveal>
             <HistoryChart data={data} result={result} />
-            <DuelsPanel result={result} data={data} />
-          </div>
+          </Reveal>
         )}
       </div>
 
-      <SourceBreakdown result={pending ? null : result} data={data} />
+      <LabDrawer
+        open={labOpen}
+        onClose={() => setLabOpen(false)}
+        result={result}
+        pending={pending}
+        onExport={exportScenario}
+        onShare={share}
+        message={message}
+      >
+        <Laboratory configurations={configurations} configurationId={configurationId} setConfigurationId={setConfigurationId} settings={settings} setSettings={setSettings} data={data} />
+        <SourceBreakdown result={pending ? null : result} data={data} />
+      </LabDrawer>
 
-      <div className="transparency-note">
-        <FlaskIcon aria-hidden="true" size={24} />
-        <div>
-          <strong>La transparence fait partie du modèle.</strong>
-          <p>Paramètres heuristiques, configurations explicites, sources consultables. La validation sur les campagnes précédentes reste à réaliser.</p>
-        </div>
-        <Link to="/methode">Lire la méthode <ArrowUpRightIcon aria-hidden="true" size={16} /></Link>
-      </div>
-      <div className="toast" role="status" aria-live="polite">{message}</div>
       <span className="sr-only" role="status">{pending ? 'Calcul du scénario en cours.' : 'Scénario actualisé.'}</span>
     </div>
   );

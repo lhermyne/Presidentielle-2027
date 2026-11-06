@@ -6,8 +6,8 @@ const STORAGE_KEY = 'lhermyne-theme';
 export const DEFAULT_THEME = 'dark';
 
 const BROWSER_BAR_COLORS = {
-  dark: '#121b19',
-  light: '#ffffff',
+  dark: '#100e0b',
+  light: '#f6f2ea',
 };
 
 export function readStoredTheme() {

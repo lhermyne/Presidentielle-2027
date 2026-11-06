@@ -1,5 +1,5 @@
 import { SOURCE_IDS, SOURCE_LABELS } from '../../../model/forecast.mjs';
-import { percent, dateLabel } from '../lib/format.js';
+import { percent } from '../lib/format.js';
 
 const signed = (value, digits = 2) => `${value > 0 ? '+' : ''}${value.toLocaleString('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 const relative = (correction, base) => `${signed(base > 0 ? correction / base * 100 : 0, 1)} %`;
@@ -126,7 +126,7 @@ export default function SourceBreakdown({ result, data }) {
     .filter(([id, value]) => names[id] && Number.isFinite(value.barometerScore))
     .sort((a, b) => b[1].barometerScore - a[1].barometerScore);
   return (
-    <section className="panel source-breakdown">
+    <section className="source-breakdown">
       <details key={result?.error ? 'signals' : 'forecast'} open={Boolean(result?.error)}>
         <summary>Vérifier l’effet de chaque source et consulter les dynamiques</summary>
         {result?.rows?.length > 0 && <><ForecastEffects result={result} names={names} /><UncertaintyTable rows={result.rows} /></>}

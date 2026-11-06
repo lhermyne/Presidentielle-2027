@@ -1,4 +1,4 @@
-# L'Hermyne · Présidentielle 2027
+# L'Hermyne - Présidentielle 2027
 
 Observatoire national expérimental, autonome, conçu pour **GitHub Pages + GitHub Actions**.
 Aucun import de PatriBot, aucun serveur permanent, aucun PC allumé en production.
