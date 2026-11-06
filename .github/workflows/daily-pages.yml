@@ -42,6 +42,10 @@ jobs:
         run: npm run forecast
       - name: Construire le site statique
         run: npm run build
+      - name: Générer l’aperçu des liens partagés
+        # Un échec ne doit pas bloquer la publication : seul l'aperçu manquerait.
+        continue-on-error: true
+        run: node scripts/render-share-image.mjs
       - name: Conserver les observations et les prévisions
         env:
           DATA_BRANCH: ${{ github.ref_name }}

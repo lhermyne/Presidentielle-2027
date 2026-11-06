@@ -25,7 +25,12 @@ Largeur de contenu 1140px ; marges 20 à 48px ; texte minimal 12px ; cibles de 4
 
 ## Composition
 Accueil : hero duel, onglets (Premier tour, Qualification, Second tour probable) avec choix
-Toutes les sources / Sondages seuls, invitation au laboratoire, tendance des sondages.
+Toutes les sources / Sondages seuls, tendance des sondages.
+Bouton du laboratoire dans la barre de navigation ; sur téléphone, barre fixe en bas avec
+Ouvrir le laboratoire et Partager. L'adresse reste nue aux réglages de référence.
+Partage : carte 1200x630 dessinée sur canvas (duel, scores, barre), partagée nativement sur téléphone ;
+sur ordinateur, lien copié et image téléchargée. La publication photographie cette carte
+(scripts/render-share-image.mjs, route /carte-partage) pour produire og.png, l'aperçu des liens.
 Le laboratoire (curseurs, liste de candidats, effet de chaque source, export, partage) s'ouvre
 dans un panneau latéral natif <dialog> avec les premiers scores en direct.
 Second tour : duels des simulations, puis autres duels sondés, ajustés par les mêmes sources.

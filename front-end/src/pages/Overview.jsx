@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SlidersHorizontalIcon } from '@phosphor-icons/react';
-import { allConfigurations, DEFAULT_SETTINGS, forecast, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
+import { allConfigurations, DEFAULT_SETTINGS, DEFAULT_WEIGHTS, forecast, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
 import { downloadJson } from '../lib/format.js';
 import { activePresetId } from '../lib/presets.js';
+import { shareForecast } from '../lib/share.js';
+import { duelCardData, shareCardBlob, shareSentence } from '../lib/shareCard.js';
 import DuelHero from '../components/DuelHero.jsx';
 import HistoryChart from '../components/HistoryChart.jsx';
 import LabDrawer from '../components/LabDrawer.jsx';
 import Laboratory from '../components/Laboratory.jsx';
+import MobileBar from '../components/MobileBar.jsx';
 import { Reveal } from '../components/Motion.jsx';
 import Results from '../components/Results.jsx';
 import SourceBreakdown from '../components/SourceBreakdown.jsx';
 
 const OBSOLETE_PARAMS = ['reseaux', 'amplification', 'incertitude', 'incertitude-ajoutee'];
+const SETTING_PARAMS = ['candidats', 'memoire', ...SOURCE_IDS.map(id => `poids-${id}`)];
 const MESSAGE_DURATION = 6000;
+const SHARE_IMAGE_DELAY = 400;
+const DEFAULT_SHARE_SENTENCE = 'Présidentielle 2027 : sondages, marchés et signaux en ligne réunis dans une projection expérimentale.';
 
 function initialSettings() {
   const query = new URLSearchParams(window.location.search);
@@ -23,16 +28,21 @@ function initialSettings() {
   return settingsFrom({ halfLife: query.get('memoire') ?? DEFAULT_SETTINGS.halfLife, weights });
 }
 
-function syncUrl(configurationId, settings) {
+// L'adresse reste nue tant que les réglages sont ceux de la référence ; seul un réglage modifié y apparaît.
+function syncUrl(configurationId, defaultConfigurationId, settings) {
   const url = new URL(window.location.href);
-  url.searchParams.set('candidats', configurationId ?? '');
-  url.searchParams.set('memoire', settings.halfLife);
-  for (const id of SOURCE_IDS) url.searchParams.set(`poids-${id}`, settings.weights[id]);
-  for (const name of OBSOLETE_PARAMS) url.searchParams.delete(name);
+  for (const name of [...OBSOLETE_PARAMS, ...SETTING_PARAMS]) url.searchParams.delete(name);
+
+  if (configurationId !== defaultConfigurationId) url.searchParams.set('candidats', configurationId ?? '');
+  if (settings.halfLife !== DEFAULT_SETTINGS.halfLife) url.searchParams.set('memoire', settings.halfLife);
+  if (SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id])) {
+    for (const id of SOURCE_IDS) url.searchParams.set(`poids-${id}`, settings.weights[id]);
+  }
+
   window.history.replaceState(window.history.state, '', url);
 }
 
-export default function Overview({ data }) {
+export default function Overview({ data, labOpen, onLabChange }) {
   const configurations = useMemo(() => allConfigurations(data), [data]);
   const [configurationId, setConfigurationId] = useState(() => {
     const requested = new URLSearchParams(window.location.search).get('candidats');
@@ -41,7 +51,7 @@ export default function Overview({ data }) {
   const [settings, setSettings] = useState(initialSettings);
   const [result, setResult] = useState(null);
   const [pending, setPending] = useState(true);
-  const [labOpen, setLabOpen] = useState(false);
+  const [shareImage, setShareImage] = useState(null);
   const [message, setMessage] = useState('');
   const worker = useRef(null);
   const requestId = useRef(0);
@@ -84,19 +94,37 @@ export default function Overview({ data }) {
         setPending(false);
       }
     }, 140);
-    syncUrl(configurationId, settings);
+    syncUrl(configurationId, configurations[0]?.id, settings);
     return () => clearTimeout(timer);
-  }, [data, configurationId, settings]);
+  }, [data, configurations, configurationId, settings]);
+
+  // L'image est préparée d'avance : le partage natif doit partir aussitôt après le geste du visiteur.
+  useEffect(() => {
+    const card = pending ? null : duelCardData(result);
+    if (!card) {
+      setShareImage(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const blob = await shareCardBlob(card, data.asOf);
+      if (!cancelled) setShareImage({ blob, sentence: shareSentence(card) });
+    }, SHARE_IMAGE_DELAY);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [result, pending, data.asOf]);
 
   const applyWeights = weights => setSettings(previous => ({ ...previous, weights: { ...weights } }));
 
   const share = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      notify('Lien copié : mêmes réglages, données les plus récentes à l’ouverture.');
-    } catch {
-      notify('Copie automatique indisponible. Copiez l’adresse de la page pour partager vos réglages.');
-    }
+    const shareMessage = await shareForecast({
+      blob: shareImage?.blob ?? null,
+      sentence: shareImage?.sentence ?? DEFAULT_SHARE_SENTENCE,
+      url: window.location.href,
+    });
+    if (shareMessage) notify(shareMessage);
   };
   const exportScenario = () => downloadJson({ generatedAt: data.generatedAt, observations: data, result }, `lhermyne-scenario-${data.asOf}.json`);
   const isPersonal = !activePresetId(settings.weights) || configurationId !== configurations[0]?.id;
@@ -110,13 +138,6 @@ export default function Overview({ data }) {
           <Results result={result} pending={pending} settings={settings} onPreset={applyWeights} />
         </Reveal>
 
-        <Reveal as="section" className="lab-invite">
-          <h2>Et si vous faisiez votre propre calcul ?</h2>
-          <button type="button" className="button primary" onClick={() => setLabOpen(true)}>
-            <SlidersHorizontalIcon aria-hidden="true" size={18} />Ouvrir le laboratoire
-          </button>
-        </Reveal>
-
         {!result?.error && (
           <Reveal>
             <HistoryChart data={data} result={result} />
@@ -126,7 +147,7 @@ export default function Overview({ data }) {
 
       <LabDrawer
         open={labOpen}
-        onClose={() => setLabOpen(false)}
+        onClose={() => onLabChange(false)}
         result={result}
         pending={pending}
         onExport={exportScenario}
@@ -137,6 +158,8 @@ export default function Overview({ data }) {
         <SourceBreakdown result={pending ? null : result} data={data} />
       </LabDrawer>
 
+      <MobileBar onOpenLab={() => onLabChange(true)} onShare={share} />
+      {!labOpen && message && <p className="toast" role="status">{message}</p>}
       <span className="sr-only" role="status">{pending ? 'Calcul du scénario en cours.' : 'Scénario actualisé.'}</span>
     </div>
   );

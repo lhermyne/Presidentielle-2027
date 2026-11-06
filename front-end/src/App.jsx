@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Route, Routes, useLocation } from 'react-router';
-import { ArrowClockwiseIcon, ArrowUpRightIcon } from '@phosphor-icons/react';
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { ArrowClockwiseIcon, ArrowUpRightIcon, SlidersHorizontalIcon } from '@phosphor-icons/react';
 import Overview from './pages/Overview.jsx';
 import Sources from './pages/Sources.jsx';
 import Method from './pages/Method.jsx';
+import ShareCardPage from './components/ShareCardPage.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import { dateLabel } from './lib/format.js';
 
@@ -26,7 +27,7 @@ function focusMain(event) {
   document.getElementById('main-content')?.focus();
 }
 
-function Header() {
+function Header({ onOpenLab }) {
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -35,11 +36,17 @@ function Header() {
           <span className="brand-separator" aria-hidden="true"> - </span>
           <span className="brand-subtitle">Présidentielle 2027</span>
         </Link>
-        <nav aria-label="Navigation principale">
-          <NavLink to="/" end>Prévision</NavLink>
-          <NavLink to="/sources">Sources</NavLink>
-          <NavLink to="/methode">Méthode</NavLink>
-        </nav>
+        <div className="header-center">
+          <nav aria-label="Navigation principale">
+            <NavLink to="/" end>Prévision</NavLink>
+            <NavLink to="/sources">Sources</NavLink>
+            <NavLink to="/methode">Méthode</NavLink>
+          </nav>
+          <button type="button" className="header-lab" onClick={onOpenLab}>
+            <SlidersHorizontalIcon aria-hidden="true" size={17} />
+            <span><span className="header-lab-verb">Ouvrir le l</span><span className="header-lab-initial">L</span>aboratoire</span>
+          </button>
+        </div>
         <div className="header-actions">
           <a className="barometer-link" href={BAROMETER_URL} target="_blank" rel="noreferrer">Le baromètre <ArrowUpRightIcon aria-hidden="true" size={15} /></a>
           <ThemeToggle />
@@ -65,7 +72,9 @@ function Footer({ data }) {
 export default function App() {
   const [state, setState] = useState({ data: null, error: null });
   const [attempt, setAttempt] = useState(0);
+  const [labOpen, setLabOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -88,13 +97,20 @@ export default function App() {
     document.title = pageTitle ? `${pageTitle} | ${SITE_NAME}` : SITE_NAME;
   }, [location.pathname, location.hash]);
 
+  const openLab = () => {
+    if (location.pathname !== '/') navigate('/');
+    setLabOpen(true);
+  };
+
+  if (location.pathname === '/carte-partage') return <ShareCardPage />;
+
   const { data, error } = state;
   const stale = data?.sources.filter(source => ['cached', 'unavailable'].includes(source.status)) ?? [];
 
   return (
     <>
       <a className="skip-link" href="#main-content" onClick={focusMain}>Aller au contenu</a>
-      <Header />
+      <Header onOpenLab={openLab} />
       <main id="main-content" tabIndex={-1}>
         {!data && !error && <div className="loading-state" role="status"><span className="loading-ring" />Lecture des dernières données…</div>}
         {error && (
@@ -113,7 +129,7 @@ export default function App() {
             )}
             <div className="page-fade" key={location.pathname}>
               <Routes location={location}>
-                <Route path="/" element={<Overview data={data} />} />
+                <Route path="/" element={<Overview data={data} labOpen={labOpen} onLabChange={setLabOpen} />} />
                 <Route path="/sources" element={<Sources data={data} />} />
                 <Route path="/methode" element={<Method />} />
                 <Route path="*" element={<div className="empty-state"><h1>Cette page n’existe pas.</h1><Link className="button primary" to="/">Revenir aux prévisions</Link></div>} />
