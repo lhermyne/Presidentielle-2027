@@ -17,7 +17,7 @@ import { PRESETS } from '../lib/presets.js';
 const SOURCE_ROLES = {
   polls: 'Socle obligatoire des scores',
   barometer: 'Dynamique des abonnés : bonus ou malus relatif',
-  polymarket: 'Tire le score vers le marché, sans dépasser son prix',
+  polymarket: 'Repondère les simulations selon ses probabilités',
   wikipedia: 'Dynamique des consultations : bonus ou malus relatif',
   trends: 'Recherches en forte hausse : bonus ou malus relatif',
 };
@@ -146,6 +146,20 @@ export default function Laboratory({ configurations, configurationId, setConfigu
           ))}
         </fieldset>
 
+        <label className="check-field" htmlFor="horizon">
+          <input
+            id="horizon"
+            name="horizon"
+            type="checkbox"
+            checked={settings.horizon}
+            onChange={event => setSettings(previous => ({ ...previous, horizon: event.target.checked }))}
+          />
+          <span>
+            <strong>Projeter au jour du vote</strong>
+            <small>Ajoute l’incertitude d’ici au scrutin, mesurée sur les campagnes passées. Décoché : photo du jour.</small>
+          </span>
+        </label>
+
         <details className="advanced-settings">
           <summary>Mémoire des sondages</summary>
           <div className="slider-field">
@@ -165,7 +179,7 @@ export default function Laboratory({ configurations, configurationId, setConfigu
 
       <div className="lab-footer">
         <strong>Des réglages exploratoires.</strong>
-        <p>Rien n’est encore calibré sur les élections passées.</p>
+        <p>Les marges et la force de Wikipédia sont mesurées sur les campagnes passées ; le reste est une hypothèse.</p>
         <Link to="/methode#signaux">Comprendre les sources <ArrowUpRightIcon aria-hidden="true" size={15} /></Link>
       </div>
     </div>

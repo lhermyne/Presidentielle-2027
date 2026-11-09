@@ -1,0 +1,5758 @@
+{
+ "halfLife": 21,
+ "firstRound": {
+  "floor": 6.503021514897413,
+  "driftPerSqrtDay": 0.45367288167550707,
+  "byHorizon": [
+   {
+    "horizon": 1,
+    "rms": 4.815905522757225,
+    "count": 22
+   },
+   {
+    "horizon": 7,
+    "rms": 5.4459750383648,
+    "count": 22
+   },
+   {
+    "horizon": 14,
+    "rms": 6.047394107083862,
+    "count": 22
+   },
+   {
+    "horizon": 30,
+    "rms": 7.195296077827269,
+    "count": 22
+   },
+   {
+    "horizon": 60,
+    "rms": 8.480844282958431,
+    "count": 20
+   },
+   {
+    "horizon": 90,
+    "rms": 9.299728927149497,
+    "count": 19
+   },
+   {
+    "horizon": 120,
+    "rms": 8.979823341918953,
+    "count": 18
+   },
+   {
+    "horizon": 150,
+    "rms": 9.180500247223808,
+    "count": 13
+   },
+   {
+    "horizon": 180,
+    "rms": 9.380106939101099,
+    "count": 13
+   },
+   {
+    "horizon": 240,
+    "rms": 8.607071474645812,
+    "count": 12
+   },
+   {
+    "horizon": 300,
+    "rms": 9.106836810937772,
+    "count": 13
+   }
+  ]
+ },
+ "secondRound": {
+  "floor": 3.534745619619298,
+  "driftPerSqrtDay": 0.0,
+  "byHorizon": [
+   {
+    "horizon": 1,
+    "rms": 4.445402229863792,
+    "count": 2
+   },
+   {
+    "horizon": 7,
+    "rms": 4.6995909821240565,
+    "count": 2
+   },
+   {
+    "horizon": 14,
+    "rms": 3.1959898427519087,
+    "count": 1
+   },
+   {
+    "horizon": 30,
+    "rms": 1.4130908179608126,
+    "count": 1
+   },
+   {
+    "horizon": 60,
+    "rms": 2.741009241590606,
+    "count": 1
+   },
+   {
+    "horizon": 90,
+    "rms": 2.3800238773110993,
+    "count": 1
+   },
+   {
+    "horizon": 120,
+    "rms": 2.2392654672585346,
+    "count": 1
+   },
+   {
+    "horizon": 150,
+    "rms": 2.78198655165549,
+    "count": 1
+   },
+   {
+    "horizon": 180,
+    "rms": 2.495813386462418,
+    "count": 1
+   },
+   {
+    "horizon": 240,
+    "rms": 3.3436285780675474,
+    "count": 1
+   },
+   {
+    "horizon": 300,
+    "rms": 4.814614769943071,
+    "count": 1
+   }
+  ]
+ },
+ "rows": {
+  "firstRound": [
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 26.181218167829574,
+    "result": 31.72,
+    "error": 5.538781832170425,
+    "standardized": 6.299497405956041,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 13.831021569118024,
+    "result": 15.57,
+    "error": 1.7389784308819767,
+    "standardized": 2.518613913915684,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 50.46876946282579,
+    "result": 44.65,
+    "error": -5.8187694628257915,
+    "standardized": -5.8190252085627225,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 6.744106841869774,
+    "result": 5.2,
+    "error": -1.544106841869774,
+    "standardized": -3.0785555023530664,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 25.651064519957394,
+    "result": 31.72,
+    "error": 6.0689354800426045,
+    "standardized": 6.9485222241105715,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 9.836665209124764,
+    "result": 15.57,
+    "error": 5.733334790875237,
+    "standardized": 9.625834237883547,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 55.30472846955818,
+    "result": 44.65,
+    "error": -10.65472846955818,
+    "standardized": -10.715204612348128,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 6.5784183935945375,
+    "result": 5.2,
+    "error": -1.3784183935945373,
+    "standardized": -2.7801402828122517,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 23.605656613444367,
+    "result": 31.72,
+    "error": 8.114343386555632,
+    "standardized": 9.553989131853097,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 6.211313226888741,
+    "result": 15.57,
+    "error": 9.358686773111259,
+    "standardized": 19.387328704117785,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 62.97171693277814,
+    "result": 44.65,
+    "error": -18.321716932778145,
+    "standardized": -18.971279331354253,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 6.211313226888741,
+    "result": 5.2,
+    "error": -1.011313226888741,
+    "standardized": -2.095022777003991,
+    "election": 1965,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 13.760053039948875,
+    "result": 21.27,
+    "error": 7.509946960051124,
+    "standardized": 10.900403631513763,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 7.975823931296146,
+    "result": 5.01,
+    "error": -2.9658239312961463,
+    "standardized": -5.473644927801219,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 34.36363622912231,
+    "result": 23.31,
+    "error": -11.053636229122308,
+    "standardized": -11.637330252478053,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 40.602765193852065,
+    "result": 44.47,
+    "error": 3.867234806147934,
+    "standardized": 3.9374008144266863,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 12.567948497060689,
+    "result": 21.27,
+    "error": 8.70205150293931,
+    "standardized": 13.12574984648895,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 8.334868124272317,
+    "result": 5.01,
+    "error": -3.3248681242723173,
+    "standardized": -6.014409281002906,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 35.60125094282019,
+    "result": 23.31,
+    "error": -12.291250942820188,
+    "standardized": -12.83496666382729,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 40.824546332477425,
+    "result": 44.47,
+    "error": 3.645453667522574,
+    "standardized": 3.7084301689058243,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 11.465233192801138,
+    "result": 21.27,
+    "error": 9.804766807198861,
+    "standardized": 15.387175363155569,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 8.033290999844914,
+    "result": 5.01,
+    "error": -3.023290999844914,
+    "standardized": -5.561448028056717,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 37.234092403754524,
+    "result": 23.31,
+    "error": -13.924092403754525,
+    "standardized": -14.401396527080493,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 41.65181300907612,
+    "result": 44.47,
+    "error": 2.818186990923877,
+    "standardized": 2.8583089692468233,
+    "election": 1969,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 41.98192183939552,
+    "result": 43.25,
+    "error": 1.2680781606044818,
+    "standardized": 1.2847043660966975,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 28.63515416849523,
+    "result": 32.6,
+    "error": 3.964845831504771,
+    "standardized": 4.38535121010379,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 21.17974208518645,
+    "result": 15.11,
+    "error": -6.069742085186451,
+    "standardized": -7.42781335625496,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 4.022009222916844,
+    "result": 3.17,
+    "error": -0.8520092229168439,
+    "standardized": -2.168237953668872,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 40.97942481506943,
+    "result": 43.25,
+    "error": 2.2705751849305713,
+    "standardized": 2.3084540988864903,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 27.485038576874995,
+    "result": 32.6,
+    "error": 5.114961423125006,
+    "standardized": 5.728624834487585,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 23.81603351716888,
+    "result": 15.11,
+    "error": -8.70603351716888,
+    "standardized": -10.21936315719298,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 4.617476123818502,
+    "result": 3.17,
+    "error": -1.447476123818502,
+    "standardized": -3.448614730271171,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 40.42135562930242,
+    "result": 43.25,
+    "error": 2.8286443706975817,
+    "standardized": 2.882024098872079,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 26.755891196035034,
+    "result": 32.6,
+    "error": 5.844108803964968,
+    "standardized": 6.600734082422618,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 25.608298231792382,
+    "result": 15.11,
+    "error": -10.498298231792383,
+    "standardized": -12.026418262341311,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 5.0,
+    "result": 3.17,
+    "error": -1.83,
+    "standardized": -4.19830792983128,
+    "election": 1974,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 18.18662730560988,
+    "result": 15.35,
+    "error": -2.8366273056098787,
+    "standardized": -3.6769189065545294,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 22.3767397800289,
+    "result": 25.85,
+    "error": 3.4732602199711025,
+    "standardized": 4.166899070178999,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "ecologistes",
+    "estimate": 3.494484945042457,
+    "result": 3.88,
+    "error": 0.3855150549575428,
+    "standardized": 1.0496480264985342,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 27.816943537928363,
+    "result": 28.32,
+    "error": 0.5030564620716369,
+    "standardized": 0.5613250170531406,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 17.96476047960824,
+    "result": 18.0,
+    "error": 0.035239520391758816,
+    "standardized": 0.045897502329418194,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 17.45733542861239,
+    "result": 15.35,
+    "error": -2.107335428612389,
+    "standardized": -2.775718707834381,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 23.186877294868424,
+    "result": 25.85,
+    "error": 2.6631227051315776,
+    "standardized": 3.1551669150525306,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "ecologistes",
+    "estimate": 3.4874486716951543,
+    "result": 3.88,
+    "error": 0.3925513283048456,
+    "standardized": 1.0698444675881011,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 28.22130965679642,
+    "result": 28.32,
+    "error": 0.09869034320357883,
+    "standardized": 0.10963729615951988,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 17.281885766527527,
+    "result": 18.0,
+    "error": 0.7181142334724733,
+    "standardized": 0.9496589412194233,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 16.400138449541185,
+    "result": 15.35,
+    "error": -1.0501384495411852,
+    "standardized": -1.418045049276976,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 24.305851909526464,
+    "result": 25.85,
+    "error": 1.5441480904735378,
+    "standardized": 1.7999994671297588,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "ecologistes",
+    "estimate": 3.4660770458377597,
+    "result": 3.88,
+    "error": 0.41392295416224023,
+    "standardized": 1.1314371422533676,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 29.068597120702535,
+    "result": 28.32,
+    "error": -0.7485971207025344,
+    "standardized": -0.8243029339081153,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 14.937620781903924,
+    "result": 18.0,
+    "error": 3.0623792180960763,
+    "standardized": 4.295557089516909,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-gauche",
+    "estimate": 16.400138449541185,
+    "result": 15.35,
+    "error": -1.0501384495411852,
+    "standardized": -1.418045049276976,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "gauche",
+    "estimate": 24.305851909526464,
+    "result": 25.85,
+    "error": 1.5441480904735378,
+    "standardized": 1.7999994671297588,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "ecologistes",
+    "estimate": 3.466077045837759,
+    "result": 3.88,
+    "error": 0.4139229541622407,
+    "standardized": 1.1314371422533689,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "centre",
+    "estimate": 29.068597120702524,
+    "result": 28.32,
+    "error": -0.7485971207025237,
+    "standardized": -0.8243029339081035,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "droite",
+    "estimate": 14.937620781903924,
+    "result": 18.0,
+    "error": 3.0623792180960763,
+    "standardized": 4.295557089516909,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-gauche",
+    "estimate": 16.7660872403517,
+    "result": 15.35,
+    "error": -1.4160872403516986,
+    "standardized": -1.8953699796203822,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "gauche",
+    "estimate": 23.809072592555463,
+    "result": 25.85,
+    "error": 2.0409274074445385,
+    "standardized": 2.395933128958746,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "ecologistes",
+    "estimate": 3.3566224180833855,
+    "result": 3.88,
+    "error": 0.5233775819166144,
+    "standardized": 1.4529404858923347,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "centre",
+    "estimate": 29.50891699151149,
+    "result": 28.32,
+    "error": -1.1889169915114906,
+    "standardized": -1.3034002840949857,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "droite",
+    "estimate": 12.301551991398659,
+    "result": 18.0,
+    "error": 5.698448008601341,
+    "standardized": 8.674624559022043,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-gauche",
+    "estimate": 16.351054958496533,
+    "result": 15.35,
+    "error": -1.0010549584965336,
+    "standardized": -1.3533957310918583,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "gauche",
+    "estimate": 21.5091263974662,
+    "result": 25.85,
+    "error": 4.340873602533801,
+    "standardized": 5.282337883900826,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "ecologistes",
+    "estimate": 3.148946853322943,
+    "result": 3.88,
+    "error": 0.7310531466770569,
+    "standardized": 2.093071749138111,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "centre",
+    "estimate": 32.373073291598494,
+    "result": 28.32,
+    "error": -4.053073291598494,
+    "standardized": -4.331144471794585,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "droite",
+    "estimate": 11.031146542387644,
+    "result": 18.0,
+    "error": 6.968853457612356,
+    "standardized": 11.122489709492838,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-gauche",
+    "estimate": 17.0,
+    "result": 15.35,
+    "error": -1.6500000000000004,
+    "standardized": -2.196293830768134,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "gauche",
+    "estimate": 18.75316181569184,
+    "result": 25.85,
+    "error": 7.096838184308162,
+    "standardized": 9.090639220921103,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "ecologistes",
+    "estimate": 3.424283576454349,
+    "result": 3.88,
+    "error": 0.4557164235456508,
+    "standardized": 1.2529849483699993,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "centre",
+    "estimate": 34.9112773039269,
+    "result": 28.32,
+    "error": -6.591277303926901,
+    "standardized": -6.913593551033775,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "droite",
+    "estimate": 11.088722696073093,
+    "result": 18.0,
+    "error": 6.911277303926907,
+    "standardized": 11.00548375023693,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-gauche",
+    "estimate": 17.0,
+    "result": 15.35,
+    "error": -1.6500000000000004,
+    "standardized": -2.196293830768134,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "gauche",
+    "estimate": 18.264401189948874,
+    "result": 25.85,
+    "error": 7.585598810051128,
+    "standardized": 9.81638381590613,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "ecologistes",
+    "estimate": 4.264401189948873,
+    "result": 3.88,
+    "error": -0.38440118994887307,
+    "standardized": -0.9512375173396379,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "centre",
+    "estimate": 34.73559881005113,
+    "result": 28.32,
+    "error": -6.415598810051129,
+    "standardized": -6.737233952391772,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "droite",
+    "estimate": 11.264401189948872,
+    "result": 18.0,
+    "error": 6.735598810051128,
+    "standardized": 10.652295826568164,
+    "election": 1981,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 6.5168856528310295,
+    "result": 6.76,
+    "error": 0.2431143471689703,
+    "standardized": 0.4924860767127554,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 36.0448007708463,
+    "result": 34.11,
+    "error": -1.9348007708463015,
+    "standardized": -2.0148699198444437,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "ecologistes",
+    "estimate": 2.378744188401337,
+    "result": 3.78,
+    "error": 1.4012558115986629,
+    "standardized": 4.597707789573231,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 16.881910173079923,
+    "result": 16.54,
+    "error": -0.3419101730799241,
+    "standardized": -0.45637669363564987,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 23.282007280501418,
+    "result": 19.96,
+    "error": -3.322007280501417,
+    "standardized": -3.930173819147855,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 11.339265123070648,
+    "result": 14.38,
+    "error": 3.0407348769293527,
+    "standardized": 4.795020206244137,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 6.208489348580146,
+    "result": 6.76,
+    "error": 0.5515106514198536,
+    "standardized": 1.1427445880330607,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 36.71174990679232,
+    "result": 34.11,
+    "error": -2.601749906792321,
+    "standardized": -2.6988047452876995,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "ecologistes",
+    "estimate": 2.3013404756258815,
+    "result": 3.78,
+    "error": 1.4786595243741183,
+    "standardized": 4.930641751837285,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 17.12570273818143,
+    "result": 16.54,
+    "error": -0.5857027381814319,
+    "standardized": -0.7773437813271136,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 23.142851510359392,
+    "result": 19.96,
+    "error": -3.1828515103593915,
+    "standardized": -3.7734257965773104,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 10.917484657785886,
+    "result": 14.38,
+    "error": 3.4625153422141146,
+    "standardized": 5.551421204779421,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 6.208489348580147,
+    "result": 6.76,
+    "error": 0.5515106514198527,
+    "standardized": 1.1427445880330587,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 36.71174990679231,
+    "result": 34.11,
+    "error": -2.601749906792314,
+    "standardized": -2.698804745287692,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "ecologistes",
+    "estimate": 2.3013404756258815,
+    "result": 3.78,
+    "error": 1.4786595243741183,
+    "standardized": 4.930641751837285,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 17.12570273818143,
+    "result": 16.54,
+    "error": -0.5857027381814319,
+    "standardized": -0.7773437813271136,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 23.142851510359392,
+    "result": 19.96,
+    "error": -3.1828515103593915,
+    "standardized": -3.7734257965773104,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 10.917484657785883,
+    "result": 14.38,
+    "error": 3.462515342214118,
+    "standardized": 5.551421204779428,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-gauche",
+    "estimate": 5.019721223611058,
+    "result": 6.76,
+    "error": 1.7402787763889416,
+    "standardized": 3.985036547698376,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "gauche",
+    "estimate": 37.627917192974316,
+    "result": 34.11,
+    "error": -3.5179171929743163,
+    "standardized": -3.6308257236071544,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "ecologistes",
+    "estimate": 1.614408498849517,
+    "result": 3.78,
+    "error": 2.165591501150483,
+    "standardized": 8.591600500535623,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "centre",
+    "estimate": 20.62843671417373,
+    "result": 16.54,
+    "error": -4.0884367141737314,
+    "standardized": -5.051980415750529,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "droite",
+    "estimate": 21.131780660152597,
+    "result": 19.96,
+    "error": -1.1717806601525957,
+    "standardized": -1.4351499006786974,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-droite",
+    "estimate": 9.90067439903958,
+    "result": 14.38,
+    "error": 4.47932560096042,
+    "standardized": 7.498760402876559,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-gauche",
+    "estimate": 4.4547792608460135,
+    "result": 6.76,
+    "error": 2.3052207391539863,
+    "standardized": 5.58682340408468,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "gauche",
+    "estimate": 37.22245205472442,
+    "result": 34.11,
+    "error": -3.1124520547244217,
+    "standardized": -3.2193486358201295,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "ecologistes",
+    "estimate": 1.1526489148994572,
+    "result": 3.78,
+    "error": 2.6273510851005426,
+    "standardized": 12.307138097485636,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "centre",
+    "estimate": 21.43797654251771,
+    "result": 16.54,
+    "error": -4.897976542517711,
+    "standardized": -5.967445744976799,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "droite",
+    "estimate": 20.633520109878148,
+    "result": 19.96,
+    "error": -0.6735201098781474,
+    "standardized": -0.8321763123702349,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-droite",
+    "estimate": 9.792437555614592,
+    "result": 14.38,
+    "error": 4.587562444385409,
+    "standardized": 7.717650616863554,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-gauche",
+    "estimate": 4.42079660302684,
+    "result": 6.76,
+    "error": 2.3392033969731596,
+    "standardized": 5.689918163108865,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "gauche",
+    "estimate": 35.81131466114744,
+    "result": 34.11,
+    "error": -1.7013146611474426,
+    "standardized": -1.7742518884958183,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "ecologistes",
+    "estimate": 1.2673621181452552,
+    "result": 3.78,
+    "error": 2.5126378818547446,
+    "standardized": 11.231019372990536,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "centre",
+    "estimate": 21.720989123528437,
+    "result": 16.54,
+    "error": -5.1809891235284375,
+    "standardized": -6.282322416729569,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "droite",
+    "estimate": 19.616898953192187,
+    "result": 19.96,
+    "error": 0.3431010468078135,
+    "standardized": 0.4320106881975887,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-droite",
+    "estimate": 9.61984681981596,
+    "result": 14.38,
+    "error": 4.760153180184041,
+    "standardized": 8.071798611537096,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-gauche",
+    "estimate": 4.351140364445818,
+    "result": 6.76,
+    "error": 2.4088596355541814,
+    "standardized": 5.903914421301513,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "gauche",
+    "estimate": 37.294225332508766,
+    "result": 34.11,
+    "error": -3.184225332508767,
+    "standardized": -3.2922987222317386,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "ecologistes",
+    "estimate": 0.8511403644458181,
+    "result": 3.78,
+    "error": 2.928859635554182,
+    "standardized": 14.718073446591337,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "centre",
+    "estimate": 23.56322762960398,
+    "result": 16.54,
+    "error": -7.02322762960398,
+    "standardized": -8.274431965487357,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "droite",
+    "estimate": 18.885460206304327,
+    "result": 19.96,
+    "error": 1.0745397936956742,
+    "standardized": 1.372711801343705,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-droite",
+    "estimate": 9.858845066501756,
+    "result": 14.38,
+    "error": 4.521154933498245,
+    "standardized": 7.583065623443733,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "gauche",
+    "estimate": 36.22155658074583,
+    "result": 34.11,
+    "error": -2.111556580745834,
+    "standardized": -2.1966062493848906,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "centre",
+    "estimate": 22.89940092267125,
+    "result": 16.54,
+    "error": -6.359400922671252,
+    "standardized": -7.567375301694964,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "droite",
+    "estimate": 18.71137736770167,
+    "result": 19.96,
+    "error": 1.248622632298332,
+    "standardized": 1.6007866202086507,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-droite",
+    "estimate": 9.644311316149167,
+    "result": 14.38,
+    "error": 4.735688683850833,
+    "standardized": 8.021208189968421,
+    "election": 1988,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 8.47309826187183,
+    "result": 8.64,
+    "error": 0.16690173812817122,
+    "standardized": 0.29966454466126896,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 21.106519233690182,
+    "result": 23.3,
+    "error": 2.1934807663098184,
+    "standardized": 2.6876639573480268,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "ecologistes",
+    "estimate": 3.4518670546053283,
+    "result": 3.32,
+    "error": -0.13186705460532844,
+    "standardized": -0.3611663996371127,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 18.56064650958679,
+    "result": 18.6,
+    "error": 0.039353490413212455,
+    "standardized": 0.05061037479867889,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 24.66539113789091,
+    "result": 20.84,
+    "error": -3.825391137890911,
+    "standardized": -4.437154791607476,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 12.757988158147139,
+    "result": 15.0,
+    "error": 2.242011841852861,
+    "standardized": 3.3601136978224906,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 8.20119118528913,
+    "result": 8.64,
+    "error": 0.4388088147108711,
+    "standardized": 0.7996286687949216,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 21.268109222856314,
+    "result": 23.3,
+    "error": 2.031890777143687,
+    "standardized": 2.482736229380599,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "ecologistes",
+    "estimate": 3.3067302598886283,
+    "result": 3.32,
+    "error": 0.013269740111371497,
+    "standardized": 0.037105211685453623,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 19.106272588001463,
+    "result": 18.6,
+    "error": -0.5062725880014618,
+    "standardized": -0.6438860398527777,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 24.84157601748586,
+    "result": 20.84,
+    "error": -4.00157601748586,
+    "standardized": -4.6304443696928415,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 12.429123383202956,
+    "result": 15.0,
+    "error": 2.570876616797044,
+    "standardized": 3.8962888019775033,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 8.0066515193583,
+    "result": 8.64,
+    "error": 0.6333484806417005,
+    "standardized": 1.1668339598689892,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 21.444451873544807,
+    "result": 23.3,
+    "error": 1.8555481264551936,
+    "standardized": 2.260457367487579,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "ecologistes",
+    "estimate": 3.3329354949575443,
+    "result": 3.32,
+    "error": -0.012935494957544424,
+    "standardized": -0.03603299287605936,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 20.21641157919915,
+    "result": 18.6,
+    "error": -1.6164115791991485,
+    "standardized": -2.0123945803591146,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 24.087383358267882,
+    "result": 20.84,
+    "error": -3.247383358267882,
+    "standardized": -3.7970977025184283,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 12.05745380435576,
+    "result": 15.0,
+    "error": 2.9425461956442405,
+    "standardized": 4.518205426700405,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-gauche",
+    "estimate": 7.966928252353639,
+    "result": 8.64,
+    "error": 0.6730717476463619,
+    "standardized": 1.2428363700752876,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "gauche",
+    "estimate": 21.336976258959105,
+    "result": 23.3,
+    "error": 1.963023741040896,
+    "standardized": 2.395762712102636,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "ecologistes",
+    "estimate": 3.1936534341657654,
+    "result": 3.32,
+    "error": 0.12634656583423443,
+    "standardized": 0.35928380231503,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "centre",
+    "estimate": 21.147381468097805,
+    "result": 18.6,
+    "error": -2.5473814680978037,
+    "standardized": -3.1190880134647108,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "droite",
+    "estimate": 23.30886195089684,
+    "result": 20.84,
+    "error": -2.468861950896841,
+    "standardized": -2.9196694443466895,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-droite",
+    "estimate": 11.718320192504242,
+    "result": 15.0,
+    "error": 3.281679807495758,
+    "standardized": 5.101504038028622,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-gauche",
+    "estimate": 6.628166661162902,
+    "result": 8.64,
+    "error": 2.011833338837098,
+    "standardized": 4.043499111305546,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "gauche",
+    "estimate": 20.301023869020334,
+    "result": 23.3,
+    "error": 2.998976130979667,
+    "standardized": 3.727843497826309,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "ecologistes",
+    "estimate": 3.6031657352412427,
+    "result": 3.32,
+    "error": -0.2831657352412429,
+    "standardized": -0.75969138073389,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "centre",
+    "estimate": 28.594502828324696,
+    "result": 18.6,
+    "error": -9.994502828324695,
+    "standardized": -11.059209901202744,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "droite",
+    "estimate": 16.87685061539805,
+    "result": 20.84,
+    "error": 3.963149384601948,
+    "standardized": 5.290585643979023,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-droite",
+    "estimate": 11.04653542442617,
+    "result": 15.0,
+    "error": 3.9534645755738307,
+    "standardized": 6.305991447329403,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-gauche",
+    "estimate": 5.928071889589377,
+    "result": 8.64,
+    "error": 2.711928110410623,
+    "standardized": 5.7419766692205405,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "ecologistes",
+    "estimate": 3.5480400156691676,
+    "result": 3.32,
+    "error": -0.22804001566916776,
+    "standardized": -0.6163555106443809,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "centre",
+    "estimate": 26.86496270660086,
+    "result": 18.6,
+    "error": -8.264962706600858,
+    "standardized": -9.322986127714826,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "droite",
+    "estimate": 15.3518191973025,
+    "result": 20.84,
+    "error": 5.488180802697499,
+    "standardized": 7.612190998580545,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-droite",
+    "estimate": 10.951099858496372,
+    "result": 15.0,
+    "error": 4.048900141503628,
+    "standardized": 6.4828193647148655,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-gauche",
+    "estimate": 4.965488301702601,
+    "result": 8.64,
+    "error": 3.6745116982973993,
+    "standardized": 8.45761639567754,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "ecologistes",
+    "estimate": 2.8900281708300364,
+    "result": 3.32,
+    "error": 0.42997182916996346,
+    "standardized": 1.283296632650156,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "centre",
+    "estimate": 25.467053267380393,
+    "result": 18.6,
+    "error": -6.867053267380392,
+    "standardized": -7.880920132986402,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "droite",
+    "estimate": 14.15304300946049,
+    "result": 20.84,
+    "error": 6.68695699053951,
+    "standardized": 9.592044133866478,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-droite",
+    "estimate": 9.17957610140429,
+    "result": 15.0,
+    "error": 5.82042389859571,
+    "standardized": 10.079095123768845,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-gauche",
+    "estimate": 4.937393842766128,
+    "result": 8.64,
+    "error": 3.7026061572338724,
+    "standardized": 8.545230454221233,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "ecologistes",
+    "estimate": 2.8005049311401176,
+    "result": 3.32,
+    "error": 0.5194950688598823,
+    "standardized": 1.5743498915104976,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "centre",
+    "estimate": 25.84726083434769,
+    "result": 18.6,
+    "error": -7.2472608343476885,
+    "standardized": -8.277001514027285,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "droite",
+    "estimate": 15.905740830833828,
+    "result": 20.84,
+    "error": 4.934259169166172,
+    "standardized": 6.745774755241491,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-droite",
+    "estimate": 8.51170501227466,
+    "result": 15.0,
+    "error": 6.4882949877253395,
+    "standardized": 11.625443826828931,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-gauche",
+    "estimate": 4.555381253949017,
+    "result": 8.64,
+    "error": 4.0846187460509835,
+    "standardized": 9.794526410327334,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "ecologistes",
+    "estimate": 1.7179180633898394,
+    "result": 3.32,
+    "error": 1.6020819366101604,
+    "standardized": 6.164762234832479,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "centre",
+    "estimate": 28.54992541645392,
+    "result": 18.6,
+    "error": -9.949925416453919,
+    "standardized": -11.015037941331505,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "droite",
+    "estimate": 14.614274783875008,
+    "result": 20.84,
+    "error": 6.225725216124992,
+    "standardized": 8.812085100134754,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-droite",
+    "estimate": 9.339312075648047,
+    "result": 15.0,
+    "error": 5.660687924351953,
+    "standardized": 9.726851110682551,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-gauche",
+    "estimate": 4.264456415822429,
+    "result": 8.64,
+    "error": 4.375543584177572,
+    "standardized": 10.827634186790574,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "ecologistes",
+    "estimate": 4.0661141039556075,
+    "result": 3.32,
+    "error": -0.7461141039556076,
+    "standardized": -1.8888586308335067,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "centre",
+    "estimate": 28.0,
+    "result": 18.6,
+    "error": -9.399999999999999,
+    "standardized": -10.467731974903286,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "droite",
+    "estimate": 16.132228207911215,
+    "result": 20.84,
+    "error": 4.707771792088785,
+    "standardized": 6.399420907458734,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-droite",
+    "estimate": 10.867771792088785,
+    "result": 15.0,
+    "error": 4.132228207911215,
+    "standardized": 6.638449646763475,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-gauche",
+    "estimate": 5.700804422120648,
+    "result": 8.64,
+    "error": 2.939195577879352,
+    "standardized": 6.338353034825921,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "ecologistes",
+    "estimate": 4.3721773232897245,
+    "result": 3.32,
+    "error": -1.0521773232897247,
+    "standardized": -2.572870481990265,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "centre",
+    "estimate": 28.604047149090952,
+    "result": 18.6,
+    "error": -10.004047149090951,
+    "standardized": -11.068663754363186,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "droite",
+    "estimate": 16.7386986532472,
+    "result": 20.84,
+    "error": 4.101301346752798,
+    "standardized": 5.492995488278222,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-droite",
+    "estimate": 10.255645353420553,
+    "result": 15.0,
+    "error": 4.744354646579447,
+    "standardized": 7.819195709818417,
+    "election": 1995,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 8.404510561102438,
+    "result": 5.72,
+    "error": -2.684510561102438,
+    "standardized": -4.837732646465691,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 19.541411620547922,
+    "result": 16.18,
+    "error": -3.3614116205479228,
+    "standardized": -4.238649744485756,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "ecologistes",
+    "estimate": 6.071005929561312,
+    "result": 5.25,
+    "error": -0.8210059295613119,
+    "standardized": -1.719040600015968,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 4.929822755880783,
+    "result": 6.84,
+    "error": 1.9101772441192173,
+    "standardized": 4.411698929963707,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 21.591493446533928,
+    "result": 19.88,
+    "error": -1.7114934465339289,
+    "standardized": -2.079803537269473,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 11.431444360975497,
+    "result": 16.86,
+    "error": 5.428555639024502,
+    "standardized": 8.530293284543673,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 8.723757934361748,
+    "result": 5.72,
+    "error": -3.003757934361748,
+    "standardized": -5.322360121549575,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 19.96863001791762,
+    "result": 16.18,
+    "error": -3.788630017917619,
+    "standardized": -4.738576970801154,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "ecologistes",
+    "estimate": 6.09370995648184,
+    "result": 5.25,
+    "error": -0.84370995648184,
+    "standardized": -1.763497901937157,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 4.630262558114061,
+    "result": 6.84,
+    "error": 2.209737441885939,
+    "standardized": 5.257782010429755,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 22.04081521828703,
+    "result": 19.88,
+    "error": -2.1608152182870306,
+    "standardized": -2.6063945740354786,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 10.8805067193693,
+    "result": 16.86,
+    "error": 5.979493280630699,
+    "standardized": 9.60115479164763,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 8.93783844650924,
+    "result": 5.72,
+    "error": -3.21783844650924,
+    "standardized": -5.639609233606691,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 20.583461290422306,
+    "result": 16.18,
+    "error": -4.403461290422307,
+    "standardized": -5.4456472563399085,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "ecologistes",
+    "estimate": 6.151879728779305,
+    "result": 5.25,
+    "error": -0.9018797287793046,
+    "standardized": -1.8767305454292496,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 4.24662588324552,
+    "result": 6.84,
+    "error": 2.5933741167544797,
+    "standardized": 6.430372505861278,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 22.62689947027102,
+    "result": 19.88,
+    "error": -2.746899470271021,
+    "standardized": -3.2825038645116367,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 10.547542728573317,
+    "result": 16.86,
+    "error": 6.312457271426682,
+    "standardized": 10.275351128140134,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-gauche",
+    "estimate": 8.032726220791957,
+    "result": 5.72,
+    "error": -2.3127262207919577,
+    "standardized": -4.254476113440295,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "gauche",
+    "estimate": 21.716312463941016,
+    "result": 16.18,
+    "error": -5.536312463941016,
+    "standardized": -6.713699818894183,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "ecologistes",
+    "estimate": 5.847695449939492,
+    "result": 5.25,
+    "error": -0.5976954499394918,
+    "standardized": -1.2736265493381012,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "centre",
+    "estimate": 3.7167581446935145,
+    "result": 6.84,
+    "error": 3.1232418553064853,
+    "standardized": 8.255019762149134,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "droite",
+    "estimate": 23.729962866767117,
+    "result": 19.88,
+    "error": -3.849962866767118,
+    "standardized": -4.524817181027886,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-droite",
+    "estimate": 9.750460403850157,
+    "result": 16.86,
+    "error": 7.109539596149842,
+    "standardized": 11.983299743509336,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-gauche",
+    "estimate": 6.3721597306096225,
+    "result": 5.72,
+    "error": -0.6521597306096227,
+    "standardized": -1.3349904326786526,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "gauche",
+    "estimate": 21.905058550078863,
+    "result": 16.18,
+    "error": -5.725058550078863,
+    "standardized": -6.920958990901344,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "ecologistes",
+    "estimate": 6.185799368188593,
+    "result": 5.25,
+    "error": -0.9357993681885928,
+    "standardized": -1.9423189433279942,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "centre",
+    "estimate": 3.670756206457697,
+    "result": 6.84,
+    "error": 3.169243793542303,
+    "standardized": 8.426918747479691,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "droite",
+    "estimate": 24.827353924639432,
+    "result": 19.88,
+    "error": -4.947353924639433,
+    "standardized": -5.7259539101768455,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-droite",
+    "estimate": 9.300848661948674,
+    "result": 16.86,
+    "error": 7.5591513380513256,
+    "standardized": 13.013081325390095,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-gauche",
+    "estimate": 6.347188890096459,
+    "result": 5.72,
+    "error": -0.6271888900964591,
+    "standardized": -1.2862258710036132,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "gauche",
+    "estimate": 22.35265482325082,
+    "result": 16.18,
+    "error": -6.17265482325082,
+    "standardized": -7.408224495666927,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "ecologistes",
+    "estimate": 6.758957314985833,
+    "result": 5.25,
+    "error": -1.5089573149858326,
+    "standardized": -3.0054087498951634,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "centre",
+    "estimate": 4.20258333176773,
+    "result": 6.84,
+    "error": 2.6374166682322695,
+    "standardized": 6.572244099193448,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "droite",
+    "estimate": 26.36416600793522,
+    "result": 19.88,
+    "error": -6.484166007935222,
+    "standardized": -7.358215548088533,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-droite",
+    "estimate": 8.621461743351714,
+    "result": 16.86,
+    "error": 8.238538256648285,
+    "standardized": 14.675996891468705,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-gauche",
+    "estimate": 6.473572417563711,
+    "result": 5.72,
+    "error": -0.7535724175637109,
+    "standardized": -1.5312842652695664,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "gauche",
+    "estimate": 22.273635291047313,
+    "result": 16.18,
+    "error": -6.093635291047313,
+    "standardized": -7.322623954410702,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "ecologistes",
+    "estimate": 6.866732085187178,
+    "result": 5.25,
+    "error": -1.616732085187178,
+    "standardized": -3.1965432803803813,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "centre",
+    "estimate": 4.257173745012257,
+    "result": 6.84,
+    "error": 2.5828262549877428,
+    "standardized": 6.396632312261684,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "droite",
+    "estimate": 26.271268296182626,
+    "result": 19.88,
+    "error": -6.391268296182627,
+    "standardized": -7.261028675617375,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-droite",
+    "estimate": 8.513932859037672,
+    "result": 16.86,
+    "error": 8.346067140962328,
+    "standardized": 14.952344301938481,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-gauche",
+    "estimate": 6.132230915082212,
+    "result": 5.72,
+    "error": -0.4122309150822119,
+    "standardized": -0.8590987051270461,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "gauche",
+    "estimate": 22.675538863156852,
+    "result": 16.18,
+    "error": -6.4955388631568525,
+    "standardized": -7.756180914887468,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "ecologistes",
+    "estimate": 6.610042213609825,
+    "result": 5.25,
+    "error": -1.360042213609825,
+    "standardized": -2.7369709425665145,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "centre",
+    "estimate": 4.686195058889502,
+    "result": 6.84,
+    "error": 2.153804941110498,
+    "standardized": 5.095517399581,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "droite",
+    "estimate": 26.18654723388627,
+    "result": 19.88,
+    "error": -6.3065472338862705,
+    "standardized": -7.172239396364146,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-droite",
+    "estimate": 8.503920946735985,
+    "result": 16.86,
+    "error": 8.356079053264015,
+    "standardized": 14.978271398913646,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-gauche",
+    "estimate": 6.120218811853703,
+    "result": 5.72,
+    "error": -0.4002188118537031,
+    "standardized": -0.8348298968635142,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "gauche",
+    "estimate": 23.330553872080475,
+    "result": 16.18,
+    "error": -7.150553872080476,
+    "standardized": -8.453489154051793,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "ecologistes",
+    "estimate": 6.063275401404079,
+    "result": 5.25,
+    "error": -0.8132754014040788,
+    "standardized": -1.703869335722353,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "centre",
+    "estimate": 5.245917285478722,
+    "result": 6.84,
+    "error": 1.594082714521278,
+    "standardized": 3.574959875163813,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "droite",
+    "estimate": 25.91548113058441,
+    "result": 19.88,
+    "error": -6.035481130584412,
+    "standardized": -6.887133959334388,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-droite",
+    "estimate": 8.094951246756224,
+    "result": 16.86,
+    "error": 8.765048753243775,
+    "standardized": 16.067471446297397,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-gauche",
+    "estimate": 6.648963826886129,
+    "result": 5.72,
+    "error": -0.9289638268861289,
+    "standardized": -1.8643706226668917,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "gauche",
+    "estimate": 26.636337107987664,
+    "result": 16.18,
+    "error": -10.456337107987665,
+    "standardized": -11.826924542976263,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "ecologistes",
+    "estimate": 3.8027947155383535,
+    "result": 5.25,
+    "error": 1.4472052844616465,
+    "standardized": 3.783271210576952,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "centre",
+    "estimate": 5.269411343075604,
+    "result": 6.84,
+    "error": 1.5705886569243956,
+    "standardized": 3.5148459221435147,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "droite",
+    "estimate": 28.52210325119342,
+    "result": 19.88,
+    "error": -8.642103251193422,
+    "standardized": -9.570018973125684,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-droite",
+    "estimate": 7.575585030135607,
+    "result": 16.86,
+    "error": 9.284414969864393,
+    "standardized": 17.543777218451467,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-gauche",
+    "estimate": 6.4040872999022955,
+    "result": 5.72,
+    "error": -0.6840872999022958,
+    "standardized": -1.3970902716388818,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "gauche",
+    "estimate": 27.073219723355898,
+    "result": 16.18,
+    "error": -10.893219723355898,
+    "standardized": -12.257807425590624,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "ecologistes",
+    "estimate": 4.376238146332275,
+    "result": 5.25,
+    "error": 0.873761853667725,
+    "standardized": 2.135648124793877,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "centre",
+    "estimate": 5.458193618904505,
+    "result": 6.84,
+    "error": 1.3818063810954948,
+    "standardized": 3.041450702418104,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "droite",
+    "estimate": 27.574981428131792,
+    "result": 19.88,
+    "error": -7.694981428131793,
+    "standardized": -8.60945496049919,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-droite",
+    "estimate": 7.9379377036522545,
+    "result": 16.86,
+    "error": 8.922062296347745,
+    "standardized": 16.502170229375796,
+    "election": 2002,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 5.321105662527737,
+    "result": 5.41,
+    "error": 0.08889433747226327,
+    "standardized": 0.19802342674093054,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 24.34500859282758,
+    "result": 25.87,
+    "error": 1.524991407172422,
+    "standardized": 1.7766981154749282,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "ecologistes",
+    "estimate": 1.1838301959345066,
+    "result": 1.57,
+    "error": 0.3861698040654935,
+    "standardized": 1.785211193861356,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 19.22321773826409,
+    "result": 18.57,
+    "error": -0.6532177382640896,
+    "standardized": -0.8288418221093639,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 28.29569345657693,
+    "result": 31.18,
+    "error": 2.884306543423069,
+    "standardized": 3.2016852009523857,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "souverainistes",
+    "estimate": 1.6157947562912038,
+    "result": 2.23,
+    "error": 0.6142052437087961,
+    "standardized": 2.4357220973810048,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 13.669477027905486,
+    "result": 10.44,
+    "error": -3.229477027905487,
+    "standardized": -4.700500122601247,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 5.242167744217954,
+    "result": 5.41,
+    "error": 0.16783225578204597,
+    "standardized": 0.3765151196547986,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 24.54314918572424,
+    "result": 25.87,
+    "error": 1.3268508142757618,
+    "standardized": 1.5416210012526435,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "ecologistes",
+    "estimate": 1.1181980861162775,
+    "result": 1.57,
+    "error": 0.4518019138837226,
+    "standardized": 2.1483276219330953,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 19.41172335826653,
+    "result": 18.57,
+    "error": -0.8417233582665311,
+    "standardized": -1.0640729487977567,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 28.688078282491006,
+    "result": 31.18,
+    "error": 2.491921717508994,
+    "standardized": 2.754689164550885,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "souverainistes",
+    "estimate": 1.4327452955328095,
+    "result": 2.23,
+    "error": 0.7972547044671905,
+    "standardized": 3.354410964950996,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 13.402613147176796,
+    "result": 10.44,
+    "error": -2.9626131471767962,
+    "standardized": -4.348082897476378,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 5.180918064173023,
+    "result": 5.41,
+    "error": 0.22908193582697756,
+    "standardized": 0.5167846599238342,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 24.638610073603186,
+    "result": 25.87,
+    "error": 1.2313899263968153,
+    "standardized": 1.4288381870732432,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "ecologistes",
+    "estimate": 1.0365417578878446,
+    "result": 1.57,
+    "error": 0.5334582421121554,
+    "standardized": 2.633538070671148,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 19.79907217591371,
+    "result": 18.57,
+    "error": -1.2290721759137107,
+    "standardized": -1.5421807426365701,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 28.861147108040758,
+    "result": 31.18,
+    "error": 2.318852891959242,
+    "standardized": 2.558780185503666,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "souverainistes",
+    "estimate": 1.395953421730408,
+    "result": 2.23,
+    "error": 0.834046578269592,
+    "standardized": 3.5544914706835558,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 13.203983049348011,
+    "result": 10.44,
+    "error": -2.7639830493480115,
+    "standardized": -4.08228200524438,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-gauche",
+    "estimate": 4.539531618558958,
+    "result": 5.41,
+    "error": 0.8704683814410421,
+    "standardized": 2.0907673132443554,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "gauche",
+    "estimate": 25.209245463554236,
+    "result": 25.87,
+    "error": 0.660754536445765,
+    "standardized": 0.7608626700284387,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "ecologistes",
+    "estimate": 1.0726535442922365,
+    "result": 1.57,
+    "error": 0.4973464557077636,
+    "standardized": 2.4140213990371775,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "centre",
+    "estimate": 19.46503276360692,
+    "result": 18.57,
+    "error": -0.8950327636069204,
+    "standardized": -1.130288021399187,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "droite",
+    "estimate": 29.65647750024089,
+    "result": 31.18,
+    "error": 1.5235224997591104,
+    "standardized": 1.6678117831449462,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "souverainistes",
+    "estimate": 1.2516847721252728,
+    "result": 2.23,
+    "error": 0.9783152278747271,
+    "standardized": 4.399835972929815,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-droite",
+    "estimate": 12.833873948236977,
+    "result": 10.44,
+    "error": -2.393873948236978,
+    "standardized": -3.578644233008769,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-gauche",
+    "estimate": 4.522469973306984,
+    "result": 5.41,
+    "error": 0.8875300266930157,
+    "standardized": 2.1355740034549973,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "gauche",
+    "estimate": 26.455067104135352,
+    "result": 25.87,
+    "error": -0.5850671041353515,
+    "standardized": -0.6632005425404242,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "ecologistes",
+    "estimate": 1.3630770002219883,
+    "result": 1.57,
+    "error": 0.20692299977801176,
+    "standardized": 0.8922751896022791,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "centre",
+    "estimate": 13.159383299367535,
+    "result": 18.57,
+    "error": 5.410616700632465,
+    "standardized": 8.002718766112872,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "droite",
+    "estimate": 32.61646166935138,
+    "result": 31.18,
+    "error": -1.436461669351381,
+    "standardized": -1.532035106092893,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "souverainistes",
+    "estimate": 1.3472543979501381,
+    "result": 2.23,
+    "error": 0.8827456020498619,
+    "standardized": 3.8284781567315,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-droite",
+    "estimate": 12.579507768866598,
+    "result": 10.44,
+    "error": -2.139507768866599,
+    "standardized": -3.2258593252796413,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-gauche",
+    "estimate": 3.230380248218523,
+    "result": 5.41,
+    "error": 2.1796197517814773,
+    "standardized": 6.163883174329535,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "gauche",
+    "estimate": 31.0336980026723,
+    "result": 25.87,
+    "error": -5.163698002672298,
+    "standardized": -5.580789020822389,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "ecologistes",
+    "estimate": 1.936460143618113,
+    "result": 1.57,
+    "error": -0.36646014361811297,
+    "standardized": -1.3296541315212795,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "centre",
+    "estimate": 8.670911293050287,
+    "result": 18.57,
+    "error": 9.899088706949714,
+    "standardized": 17.588479083870354,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "droite",
+    "estimate": 32.65985319989097,
+    "result": 31.18,
+    "error": -1.479853199890968,
+    "standardized": -1.577772915904932,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-droite",
+    "estimate": 13.07895484030912,
+    "result": 10.44,
+    "error": -2.63895484030912,
+    "standardized": -3.913388574194135,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-gauche",
+    "estimate": 3.769957117890084,
+    "result": 5.41,
+    "error": 1.640042882109916,
+    "standardized": 4.305282592750678,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "gauche",
+    "estimate": 33.8835669655863,
+    "result": 25.87,
+    "error": -8.013566965586296,
+    "standardized": -8.465382882654447,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "ecologistes",
+    "estimate": 1.7779289362043518,
+    "result": 1.57,
+    "error": -0.2079289362043517,
+    "standardized": -0.7867254386889267,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "centre",
+    "estimate": 7.752188540613106,
+    "result": 18.57,
+    "error": 10.817811459386895,
+    "standardized": 20.226428949450614,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "droite",
+    "estimate": 33.145919620105076,
+    "result": 31.18,
+    "error": -1.9659196201050761,
+    "standardized": -2.088126309452835,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-droite",
+    "estimate": 10.532803927108302,
+    "result": 10.44,
+    "error": -0.09280392710830299,
+    "standardized": -0.151158455401798,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-gauche",
+    "estimate": 4.139223809806917,
+    "result": 5.41,
+    "error": 1.2707761901930832,
+    "standardized": 3.189768376219593,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "gauche",
+    "estimate": 33.23057218929197,
+    "result": 25.87,
+    "error": -7.360572189291968,
+    "standardized": -7.8131082925753566,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "ecologistes",
+    "estimate": 1.4741642207592147,
+    "result": 1.57,
+    "error": 0.09583577924078535,
+    "standardized": 0.39760303044731155,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "centre",
+    "estimate": 7.0,
+    "result": 18.57,
+    "error": 11.57,
+    "standardized": 22.67320261329377,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "droite",
+    "estimate": 35.256287457086664,
+    "result": 31.18,
+    "error": -4.076287457086664,
+    "standardized": -4.26596922500572,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-droite",
+    "estimate": 11.765684225624494,
+    "result": 10.44,
+    "error": -1.325684225624494,
+    "standardized": -2.0572294731215335,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-gauche",
+    "estimate": 4.296628222296526,
+    "result": 5.41,
+    "error": 1.113371777703474,
+    "standardized": 2.745255086507531,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "gauche",
+    "estimate": 32.308704211627145,
+    "result": 25.87,
+    "error": -6.438704211627144,
+    "standardized": -6.884022716103876,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "ecologistes",
+    "estimate": 1.4449546648775944,
+    "result": 1.57,
+    "error": 0.12504533512240568,
+    "standardized": 0.5239272141221005,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "centre",
+    "estimate": 6.974017951735906,
+    "result": 18.57,
+    "error": 11.595982048264094,
+    "standardized": 22.763229473878926,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "droite",
+    "estimate": 36.702609814777986,
+    "result": 31.18,
+    "error": -5.5226098147779865,
+    "standardized": -5.728923055845349,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-droite",
+    "estimate": 10.331211708401467,
+    "result": 10.44,
+    "error": 0.10878829159853254,
+    "standardized": 0.1787128907862931,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-gauche",
+    "estimate": 4.561015324357178,
+    "result": 5.41,
+    "error": 0.8489846756428223,
+    "standardized": 2.034586622223619,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "gauche",
+    "estimate": 31.814223623017828,
+    "result": 25.87,
+    "error": -5.944223623017827,
+    "standardized": -6.38127680954901,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "ecologistes",
+    "estimate": 1.7099199724576095,
+    "result": 1.57,
+    "error": -0.13991997245760945,
+    "standardized": -0.5396435349192352,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "centre",
+    "estimate": 6.653903512848265,
+    "result": 18.57,
+    "error": 11.916096487151735,
+    "standardized": 23.90659285271419,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "droite",
+    "estimate": 33.97085753977673,
+    "result": 31.18,
+    "error": -2.790857539776731,
+    "standardized": -2.9463652868143844,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-droite",
+    "estimate": 11.594731285196415,
+    "result": 10.44,
+    "error": -1.1547312851964158,
+    "standardized": -1.8033562044101126,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-gauche",
+    "estimate": 5.71589634658335,
+    "result": 5.41,
+    "error": -0.3058963465833502,
+    "standardized": -0.6588444377968976,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "gauche",
+    "estimate": 31.4317926931667,
+    "result": 25.87,
+    "error": -5.561792693166698,
+    "standardized": -5.9901655929986966,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "ecologistes",
+    "estimate": 2.1420518267083253,
+    "result": 1.57,
+    "error": -0.5720518267083252,
+    "standardized": -1.9755696297805747,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "centre",
+    "estimate": 8.0,
+    "result": 18.57,
+    "error": 10.57,
+    "standardized": 19.480768456965784,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "droite",
+    "estimate": 31.852310960249955,
+    "result": 31.18,
+    "error": -0.6723109602499555,
+    "standardized": -0.7215129920525086,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-droite",
+    "estimate": 11.789740866458375,
+    "result": 10.44,
+    "error": -1.3497408664583759,
+    "standardized": -2.0927084259260997,
+    "election": 2007,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 12.419833224369295,
+    "result": 11.1,
+    "error": -1.3198332243692956,
+    "standardized": -2.000913411072232,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 27.85935922814026,
+    "result": 28.63,
+    "error": 0.770640771859739,
+    "standardized": 0.8595010808737134,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "ecologistes",
+    "estimate": 2.514033180687832,
+    "result": 2.31,
+    "error": -0.20403318068783216,
+    "standardized": -0.6516497754962791,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 11.018390322488939,
+    "result": 9.13,
+    "error": -1.888390322488938,
+    "standardized": -3.015453008477628,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 27.2273654587076,
+    "result": 27.18,
+    "error": -0.04736545870759912,
+    "standardized": -0.05320407447318541,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "souverainistes",
+    "estimate": 1.4144303906984577,
+    "result": 1.79,
+    "error": 0.3755696093015424,
+    "standardized": 1.590241130958927,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 16.10230641561843,
+    "result": 17.9,
+    "error": 1.7976935843815696,
+    "standardized": 2.4454940953538147,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 12.002298948812024,
+    "result": 11.1,
+    "error": -0.9022989488120245,
+    "standardized": -1.3882017024900166,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 27.922042766498507,
+    "result": 28.63,
+    "error": 0.7079572335014923,
+    "standardized": 0.7890457754577542,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "ecologistes",
+    "estimate": 2.530262310991944,
+    "result": 2.31,
+    "error": -0.22026231099194415,
+    "standardized": -0.701281728779945,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 11.209374805056541,
+    "result": 9.13,
+    "error": -2.07937480505654,
+    "standardized": -3.295554737508143,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 27.425159713730213,
+    "result": 27.18,
+    "error": -0.24515971373021372,
+    "standardized": -0.27475871893334486,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "souverainistes",
+    "estimate": 1.174036674924016,
+    "result": 1.79,
+    "error": 0.615963325075984,
+    "standardized": 2.8592260960534635,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 16.18476363055402,
+    "result": 17.9,
+    "error": 1.7152363694459787,
+    "standardized": 2.328516466584369,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 11.307956047504652,
+    "result": 11.1,
+    "error": -0.20795604750465202,
+    "standardized": -0.3283274329600744,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 28.02194794148338,
+    "result": 28.63,
+    "error": 0.6080520585166198,
+    "standardized": 0.6769577458745081,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "ecologistes",
+    "estimate": 2.543274583671198,
+    "result": 2.31,
+    "error": -0.2332745836711978,
+    "standardized": -0.7408578626377019,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 11.577698905378384,
+    "result": 9.13,
+    "error": -2.447698905378383,
+    "standardized": -3.825039868018372,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 27.448433157094925,
+    "result": 27.18,
+    "error": -0.26843315709492543,
+    "standardized": -0.30076270786665404,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "souverainistes",
+    "estimate": 1.0,
+    "result": 1.79,
+    "error": 0.79,
+    "standardized": 3.9698993702738883,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 16.34283694238136,
+    "result": 17.9,
+    "error": 1.557163057618638,
+    "standardized": 2.1056627092911575,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-gauche",
+    "estimate": 9.41633945333504,
+    "result": 11.1,
+    "error": 1.6836605466649601,
+    "standardized": 2.8824285648783663,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "gauche",
+    "estimate": 28.809596312110408,
+    "result": 28.63,
+    "error": -0.17959631211040872,
+    "standardized": -0.19828419777682424,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "ecologistes",
+    "estimate": 2.664283463148786,
+    "result": 2.31,
+    "error": -0.3542834631487861,
+    "standardized": -1.1000047382865525,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "centre",
+    "estimate": 12.359364107393683,
+    "result": 9.13,
+    "error": -3.229364107393682,
+    "standardized": -4.906097728046178,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "droite",
+    "estimate": 26.526100058374972,
+    "result": 27.18,
+    "error": 0.6538999416250277,
+    "standardized": 0.7405903604190603,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-droite",
+    "estimate": 16.982122557088847,
+    "result": 17.9,
+    "error": 0.917877442911152,
+    "standardized": 1.2222861855718588,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-gauche",
+    "estimate": 7.95958534200352,
+    "result": 11.1,
+    "error": 3.1404146579964793,
+    "standardized": 5.801262203956193,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "gauche",
+    "estimate": 29.73344027520082,
+    "result": 28.63,
+    "error": -1.1034402752008212,
+    "standardized": -1.2070406870474861,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "ecologistes",
+    "estimate": 2.88287598312581,
+    "result": 2.31,
+    "error": -0.5728759831258099,
+    "standardized": -1.7118658700882197,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "centre",
+    "estimate": 12.111644318489182,
+    "result": 9.13,
+    "error": -2.981644318489181,
+    "standardized": -4.569394088746094,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "droite",
+    "estimate": 24.988050352646823,
+    "result": 27.18,
+    "error": 2.1919496473531765,
+    "standardized": 2.5314488987326036,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-droite",
+    "estimate": 18.022459814611057,
+    "result": 17.9,
+    "error": -0.1224598146110587,
+    "standardized": -0.159297561473898,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-gauche",
+    "estimate": 7.210665392664081,
+    "result": 11.1,
+    "error": 3.8893346073359183,
+    "standardized": 7.518108874498194,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "gauche",
+    "estimate": 28.532331024742756,
+    "result": 28.63,
+    "error": 0.09766897525724261,
+    "standardized": 0.1081441919382624,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "ecologistes",
+    "estimate": 3.4048725245067812,
+    "result": 2.31,
+    "error": -1.0948725245067812,
+    "standardized": -3.018599691354125,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "centre",
+    "estimate": 12.280178072314651,
+    "result": 9.13,
+    "error": -3.1501780723146506,
+    "standardized": -4.799034870175276,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "droite",
+    "estimate": 24.206942948942952,
+    "result": 27.18,
+    "error": 2.9730570510570473,
+    "standardized": 3.4704721369000735,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-droite",
+    "estimate": 19.010256540940773,
+    "result": 17.9,
+    "error": -1.1102565409407745,
+    "standardized": -1.4147651207814647,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-gauche",
+    "estimate": 6.53505441991809,
+    "result": 11.1,
+    "error": 4.564945580081909,
+    "standardized": 9.235419474086303,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "gauche",
+    "estimate": 30.88107874743636,
+    "result": 28.63,
+    "error": -2.2510787474363596,
+    "standardized": -2.4362170875255424,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "ecologistes",
+    "estimate": 4.296792699191411,
+    "result": 2.31,
+    "error": -1.9867926991914113,
+    "standardized": -4.898770713120628,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "centre",
+    "estimate": 9.452871937014933,
+    "result": 9.13,
+    "error": -0.32287193701493244,
+    "standardized": -0.5517992124675207,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "droite",
+    "estimate": 25.39386102026899,
+    "result": 27.18,
+    "error": 1.7861389797310103,
+    "standardized": 2.051793270404742,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-droite",
+    "estimate": 17.1774327186255,
+    "result": 17.9,
+    "error": 0.7225672813744985,
+    "standardized": 0.9578440910934221,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-gauche",
+    "estimate": 6.0690879779528,
+    "result": 11.1,
+    "error": 5.0309120220471995,
+    "standardized": 10.53539300565925,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "gauche",
+    "estimate": 32.91381194474994,
+    "result": 28.63,
+    "error": -4.283811944749939,
+    "standardized": -4.558214438455469,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "ecologistes",
+    "estimate": 4.75349901011483,
+    "result": 2.31,
+    "error": -2.4434990101148295,
+    "standardized": -5.741838232350662,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "centre",
+    "estimate": 6.83056139993627,
+    "result": 9.13,
+    "error": 2.2994386000637306,
+    "standardized": 4.55750215535737,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "droite",
+    "estimate": 25.740291346170956,
+    "result": 27.18,
+    "error": 1.4397086538290438,
+    "standardized": 1.6464982362981435,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 150,
+    "name": "extreme-droite",
+    "estimate": 17.276552346694793,
+    "result": 17.9,
+    "error": 0.623447653305206,
+    "standardized": 0.8245692702484922,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-gauche",
+    "estimate": 6.051670257519994,
+    "result": 11.1,
+    "error": 5.048329742480005,
+    "standardized": 10.586089430401659,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "gauche",
+    "estimate": 34.62470509437257,
+    "result": 28.63,
+    "error": -5.9947050943725735,
+    "standardized": -6.299962370329359,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "ecologistes",
+    "estimate": 4.776033561609217,
+    "result": 2.31,
+    "error": -2.466033561609217,
+    "standardized": -5.7817880670436,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "centre",
+    "estimate": 7.317141014431755,
+    "result": 9.13,
+    "error": 1.812858985568246,
+    "standardized": 3.480676046378447,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "droite",
+    "estimate": 23.641772366819318,
+    "result": 27.18,
+    "error": 3.538227633180682,
+    "standardized": 4.163780614702098,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 180,
+    "name": "extreme-droite",
+    "estimate": 16.35313053590121,
+    "result": 17.9,
+    "error": 1.546869464098787,
+    "standardized": 2.0912134960985593,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-gauche",
+    "estimate": 4.554275510672871,
+    "result": 11.1,
+    "error": 6.545724489327129,
+    "standardized": 15.69783778271406,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "gauche",
+    "estimate": 27.445724489327134,
+    "result": 28.63,
+    "error": 1.1842755106728653,
+    "standardized": 1.326947982330089,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "ecologistes",
+    "estimate": 6.722862244663565,
+    "result": 2.31,
+    "error": -4.412862244663565,
+    "standardized": -8.81100936730421,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "centre",
+    "estimate": 6.4578533165023275,
+    "result": 9.13,
+    "error": 2.6721466834976733,
+    "standardized": 5.436038757813479,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "droite",
+    "estimate": 22.76804113495504,
+    "result": 27.18,
+    "error": 4.411958865044959,
+    "standardized": 5.260658379781148,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 240,
+    "name": "extreme-droite",
+    "estimate": 20.277137755336433,
+    "result": 17.9,
+    "error": -2.3771377553364346,
+    "standardized": -2.9561712373356355,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-gauche",
+    "estimate": 6.0,
+    "result": 11.1,
+    "error": 5.1,
+    "standardized": 10.737436993598116,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "gauche",
+    "estimate": 26.000000000000004,
+    "result": 28.63,
+    "error": 2.6299999999999955,
+    "standardized": 2.997941948263157,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "ecologistes",
+    "estimate": 6.0,
+    "result": 2.31,
+    "error": -3.69,
+    "standardized": -7.768851471838637,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "centre",
+    "estimate": 6.347921538346484,
+    "result": 9.13,
+    "error": 2.7820784616535166,
+    "standardized": 5.705121437876269,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "droite",
+    "estimate": 22.163019615413383,
+    "result": 27.18,
+    "error": 5.016980384586617,
+    "standardized": 6.039555161354832,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 300,
+    "name": "extreme-droite",
+    "estimate": 21.0,
+    "result": 17.9,
+    "error": -3.1000000000000014,
+    "standardized": -3.805471775086833,
+    "election": 2012,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-gauche",
+    "estimate": 15.891009930720804,
+    "result": 19.58,
+    "error": 3.6889900692791944,
+    "standardized": 5.04522491541291,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "gauche",
+    "estimate": 10.081948924257478,
+    "result": 6.36,
+    "error": -3.721948924257478,
+    "standardized": -6.180800477101141,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "centre",
+    "estimate": 23.803615929635225,
+    "result": 24.01,
+    "error": 0.20638407036477702,
+    "standardized": 0.24230229606544515,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "droite",
+    "estimate": 19.08831476890718,
+    "result": 20.01,
+    "error": 0.9216852310928232,
+    "standardized": 1.1726359798721182,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "souverainistes",
+    "estimate": 3.5721368331284302,
+    "result": 4.7,
+    "error": 1.12786316687157,
+    "standardized": 3.038513033512431,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "extreme-droite",
+    "estimate": 24.114841052206785,
+    "result": 21.3,
+    "error": -2.814841052206784,
+    "standardized": -3.2900557312315764,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-gauche",
+    "estimate": 15.049291623544056,
+    "result": 19.58,
+    "error": 4.530708376455943,
+    "standardized": 6.335699670091387,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "gauche",
+    "estimate": 10.760754885610213,
+    "result": 6.36,
+    "error": -4.400754885610213,
+    "standardized": -7.100646149263101,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "centre",
+    "estimate": 23.804548962252973,
+    "result": 24.01,
+    "error": 0.20545103774702866,
+    "standardized": 0.24120363194993624,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "droite",
+    "estimate": 18.97294531088484,
+    "result": 20.01,
+    "error": 1.0370546891151626,
+    "standardized": 1.3224804482267478,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "souverainistes",
+    "estimate": 3.449347941509981,
+    "result": 4.7,
+    "error": 1.2506520584900191,
+    "standardized": 3.4265762367143067,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 7,
+    "name": "extreme-droite",
+    "estimate": 24.598840760986228,
+    "result": 21.3,
+    "error": -3.298840760986227,
+    "standardized": -3.8298787463748645,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-gauche",
+    "estimate": 13.963190196941289,
+    "result": 19.58,
+    "error": 5.616809803058709,
+    "standardized": 8.102615793011683,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "gauche",
+    "estimate": 11.551926604396726,
+    "result": 6.36,
+    "error": -5.191926604396726,
+    "standardized": -8.121329845705935,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "centre",
+    "estimate": 24.021968401982246,
+    "result": 24.01,
+    "error": -0.011968401982244359,
+    "standardized": -0.014007410528231517,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "droite",
+    "estimate": 18.82595001684872,
+    "result": 20.01,
+    "error": 1.184049983151283,
+    "standardized": 1.5144431749882752,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "souverainistes",
+    "estimate": 3.420462364363024,
+    "result": 4.7,
+    "error": 1.2795376356369763,
+    "standardized": 3.5199630109999043,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 14,
+    "name": "extreme-droite",
+    "estimate": 25.1744014318568,
+    "result": 21.3,
+    "error": -3.8744014318568,
+    "standardized": -4.463442500718369,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-gauche",
+    "estimate": 11.719420277310345,
+    "result": 19.58,
+    "error": 7.860579722689653,
+    "standardized": 12.219091820035398,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "gauche",
+    "estimate": 13.332431248365728,
+    "result": 6.36,
+    "error": -6.972431248365727,
+    "standardized": -10.255840586551123,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "centre",
+    "estimate": 23.84619910269366,
+    "result": 24.01,
+    "error": 0.1638008973063414,
+    "standardized": 0.1921900527016862,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "droite",
+    "estimate": 19.186112643870644,
+    "result": 20.01,
+    "error": 0.823887356129358,
+    "standardized": 1.0461677990631157,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "souverainistes",
+    "estimate": 3.116898801771261,
+    "result": 4.7,
+    "error": 1.5831011982287393,
+    "standardized": 4.555051745646203,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 30,
+    "name": "extreme-droite",
+    "estimate": 25.920565508544872,
+    "result": 21.3,
+    "error": -4.620565508544871,
+    "standardized": -5.27222663575131,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-gauche",
+    "estimate": 11.413715296529325,
+    "result": 19.58,
+    "error": 8.166284703470673,
+    "standardized": 12.84096787724969,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "gauche",
+    "estimate": 14.260115877632996,
+    "result": 6.36,
+    "error": -7.900115877632996,
+    "standardized": -11.296671304581952,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "centre",
+    "estimate": 20.69821513390886,
+    "result": 24.01,
+    "error": 3.3117848660911413,
+    "standardized": 4.0871840242658,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "droite",
+    "estimate": 19.782503198891177,
+    "result": 20.01,
+    "error": 0.2274968011088241,
+    "standardized": 0.2855420831237715,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "souverainistes",
+    "estimate": 2.641359510154754,
+    "result": 4.7,
+    "error": 2.058640489845246,
+    "standardized": 6.4187358888757124,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 60,
+    "name": "extreme-droite",
+    "estimate": 25.838352385822173,
+    "result": 21.3,
+    "error": -4.538352385822172,
+    "standardized": -5.183774788992329,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-gauche",
+    "estimate": 13.006302921232452,
+    "result": 19.58,
+    "error": 6.573697078767546,
+    "standardized": 9.771446658333407,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "gauche",
+    "estimate": 6.845186752584719,
+    "result": 6.36,
+    "error": -0.48518675258471866,
+    "standardized": -0.960690814919633,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "centre",
+    "estimate": 19.420623814937585,
+    "result": 24.01,
+    "error": 4.589376185062417,
+    "standardized": 5.80069623847156,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "droite",
+    "estimate": 25.707750382754146,
+    "result": 20.01,
+    "error": -5.697750382754144,
+    "standardized": -6.5188296393882155,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "souverainistes",
+    "estimate": 1.964753728511004,
+    "result": 4.7,
+    "error": 2.7352462714889962,
+    "standardized": 9.854197361766216,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 90,
+    "name": "extreme-droite",
+    "estimate": 25.219137448140252,
+    "result": 21.3,
+    "error": -3.9191374481402512,
+    "standardized": -4.512322690174266,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-gauche",
+    "estimate": 12.653547585585184,
+    "result": 19.58,
+    "error": 6.926452414414815,
+    "standardized": 10.417225672064601,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "gauche",
+    "estimate": 7.499733412387295,
+    "result": 6.36,
+    "error": -1.1397334123872946,
+    "standardized": -2.163609498160947,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "centre",
+    "estimate": 15.211450831852977,
+    "result": 24.01,
+    "error": 8.798549168147025,
+    "standardized": 12.249747832851718,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "droite",
+    "estimate": 28.175571030615394,
+    "result": 20.01,
+    "error": -8.165571030615393,
+    "standardized": -9.075783159810614,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "souverainistes",
+    "estimate": 2.2901202395262423,
+    "result": 4.7,
+    "error": 2.409879760473758,
+    "standardized": 8.05502692937571,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 120,
+    "name": "extreme-droite",
+    "estimate": 24.09823625537978,
+    "result": 21.3,
+    "error": -2.7982362553797806,
+    "standardized": -3.2714163565965073,
+    "election": 2017,
+    "level": "camp"
+   },
+   {
+    "horizon": 1,
+    "name": "Emmanuel Macron",
+    "estimate": 27.463920378606748,
+    "result": 27.85,
+    "error": 0.3860796213932538,
+    "standardized": 0.4325024556385185,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Marine Le Pen",
+    "estimate": 19.500584746076154,
+    "result": 23.15,
+    "error": 3.649415253923845,
+    "standardized": 4.605460982612568,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 13.761029741087548,
+    "result": 21.95,
+    "error": 8.188970258912452,
+    "standardized": 11.885625725526928,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Valérie Pécresse",
+    "estimate": 10.932891660989512,
+    "result": 4.78,
+    "error": -6.1528916609895115,
+    "standardized": -9.858777696515668,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Yannick Jadot",
+    "estimate": 5.330788366226335,
+    "result": 4.63,
+    "error": -0.7007883662263348,
+    "standardized": -1.5597564382678029,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Jean Lassalle",
+    "estimate": 2.20255454011256,
+    "result": 3.13,
+    "error": 0.9274454598874398,
+    "standardized": 3.15959409008333,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Fabien Roussel",
+    "estimate": 3.3885092199355036,
+    "result": 2.28,
+    "error": -1.1085092199355038,
+    "standardized": -3.0633074446837205,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 1.9210806754274186,
+    "result": 2.06,
+    "error": 0.1389193245725815,
+    "standardized": 0.5060250655150461,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Anne Hidalgo",
+    "estimate": 2.229597489427035,
+    "result": 1.75,
+    "error": -0.47959748942703495,
+    "standardized": -1.624164338162028,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Philippe Poutou",
+    "estimate": 0.9820636640536506,
+    "result": 0.77,
+    "error": -0.21206366405365062,
+    "standardized": -1.0656600080817227,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 1,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.547670069608973,
+    "result": 0.56,
+    "error": 0.012329930391027033,
+    "standardized": 0.06196023151247986,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Emmanuel Macron",
+    "estimate": 27.76421029415485,
+    "result": 27.85,
+    "error": 0.08578970584515133,
+    "standardized": 0.09578253080244846,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Marine Le Pen",
+    "estimate": 18.375463591077402,
+    "result": 23.15,
+    "error": 4.774536408922597,
+    "standardized": 6.164128698950376,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 12.737393622360255,
+    "result": 21.95,
+    "error": 9.212606377639744,
+    "standardized": 13.816503291023176,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Valérie Pécresse",
+    "estimate": 11.780395371915137,
+    "result": 4.78,
+    "error": -7.000395371915137,
+    "standardized": -10.857506214173275,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Yannick Jadot",
+    "estimate": 5.426927000932504,
+    "result": 4.63,
+    "error": -0.796927000932504,
+    "standardized": -1.7588459597893142,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Jean Lassalle",
+    "estimate": 2.072069680514851,
+    "result": 3.13,
+    "error": 1.0579303194851488,
+    "standardized": 3.713398881449307,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Fabien Roussel",
+    "estimate": 3.566704224782887,
+    "result": 2.28,
+    "error": -1.2867042247828873,
+    "standardized": -3.4689790598592114,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 1.8219512465975705,
+    "result": 2.06,
+    "error": 0.2380487534024296,
+    "standardized": 0.8899392100436586,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Anne Hidalgo",
+    "estimate": 2.287272877262609,
+    "result": 1.75,
+    "error": -0.537272877262609,
+    "standardized": -1.7969267093034451,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Philippe Poutou",
+    "estimate": 0.9895880843104505,
+    "result": 0.77,
+    "error": -0.21958808431045052,
+    "standardized": -1.1034716425616544,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 7,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.5690503892036322,
+    "result": 0.56,
+    "error": -0.009050389203632103,
+    "standardized": -0.04547991696231985,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Emmanuel Macron",
+    "estimate": 27.834940286298586,
+    "result": 27.85,
+    "error": 0.015059713701415234,
+    "standardized": 0.01680072740299917,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Marine Le Pen",
+    "estimate": 17.61354915653116,
+    "result": 23.15,
+    "error": 5.536450843468838,
+    "standardized": 7.266915624691265,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 11.935114069502223,
+    "result": 21.95,
+    "error": 10.014885930497776,
+    "standardized": 15.445477383655879,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Valérie Pécresse",
+    "estimate": 12.421604483753605,
+    "result": 4.78,
+    "error": -7.641604483753604,
+    "standardized": -11.584231271689735,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Yannick Jadot",
+    "estimate": 5.513076325565844,
+    "result": 4.63,
+    "error": -0.8830763255658445,
+    "standardized": -1.934574188411709,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Jean Lassalle",
+    "estimate": 1.951689916543866,
+    "result": 3.13,
+    "error": 1.178310083456134,
+    "standardized": 4.258965607122723,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Fabien Roussel",
+    "estimate": 3.6845830350392745,
+    "result": 2.28,
+    "error": -1.4045830350392747,
+    "standardized": -3.7279951981429487,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 1.798872788869694,
+    "result": 2.06,
+    "error": 0.261127211130306,
+    "standardized": 0.9823441702286498,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Anne Hidalgo",
+    "estimate": 2.3997973872510734,
+    "result": 1.75,
+    "error": -0.6497973872510734,
+    "standardized": -2.1229282555133575,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Philippe Poutou",
+    "estimate": 0.9656726412836262,
+    "result": 0.77,
+    "error": -0.19567264128362616,
+    "standardized": -0.9832920195084758,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 14,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.5675619232240185,
+    "result": 0.56,
+    "error": -0.007561923224018496,
+    "standardized": -0.03800009398112724,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Emmanuel Macron",
+    "estimate": 26.578445746654463,
+    "result": 27.85,
+    "error": 1.2715542533455384,
+    "standardized": 1.4392237662899245,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Marine Le Pen",
+    "estimate": 17.062503883190715,
+    "result": 23.15,
+    "error": 6.087496116809284,
+    "standardized": 8.091179947568964,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 10.709803052249283,
+    "result": 21.95,
+    "error": 11.240196947750716,
+    "standardized": 18.174032173799937,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Valérie Pécresse",
+    "estimate": 14.074708787565376,
+    "result": 4.78,
+    "error": -9.294708787565376,
+    "standardized": -13.363664885693264,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Yannick Jadot",
+    "estimate": 5.3833109382983295,
+    "result": 4.63,
+    "error": -0.7533109382983296,
+    "standardized": -1.6689205870605088,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Jean Lassalle",
+    "estimate": 1.4286694978633467,
+    "result": 3.13,
+    "error": 1.7013305021366532,
+    "standardized": 7.168321858781055,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Fabien Roussel",
+    "estimate": 3.642013138682322,
+    "result": 2.28,
+    "error": -1.3620131386823222,
+    "standardized": -3.6352701322358594,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 1.7503121109493798,
+    "result": 2.06,
+    "error": 0.3096878890506203,
+    "standardized": 1.1807851630803297,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Anne Hidalgo",
+    "estimate": 2.5723972115861877,
+    "result": 1.75,
+    "error": -0.8223972115861877,
+    "standardized": -2.597416589314264,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Philippe Poutou",
+    "estimate": 0.8475207748143143,
+    "result": 0.77,
+    "error": -0.0775207748143143,
+    "standardized": -0.38955655078289897,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 30,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.4778979104859568,
+    "result": 0.56,
+    "error": 0.08210208951404324,
+    "standardized": 0.4125785233670515,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Emmanuel Macron",
+    "estimate": 24.583004849875994,
+    "result": 27.85,
+    "error": 3.266995150124007,
+    "standardized": 3.793729820194395,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Marine Le Pen",
+    "estimate": 16.900885504414916,
+    "result": 23.15,
+    "error": 6.249114495585083,
+    "standardized": 8.33749446056212,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 9.711782416657758,
+    "result": 21.95,
+    "error": 12.23821758334224,
+    "standardized": 20.664417273018696,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Valérie Pécresse",
+    "estimate": 16.040322036090362,
+    "result": 4.78,
+    "error": -11.260322036090361,
+    "standardized": -15.341890962859114,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Yannick Jadot",
+    "estimate": 5.723715475214479,
+    "result": 4.63,
+    "error": -1.0937154752144789,
+    "standardized": -2.354149904026875,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Jean Lassalle",
+    "estimate": 1.0584940153834312,
+    "result": 3.13,
+    "error": 2.071505984616569,
+    "standardized": 10.120983922654604,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Fabien Roussel",
+    "estimate": 2.773762918692378,
+    "result": 2.28,
+    "error": -0.493762918692378,
+    "standardized": -1.5033568059822464,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 1.7539617774492697,
+    "result": 2.06,
+    "error": 0.3060382225507303,
+    "standardized": 1.165676629893056,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Anne Hidalgo",
+    "estimate": 3.1571480568524044,
+    "result": 1.75,
+    "error": -1.4071480568524044,
+    "standardized": -4.02372730242249,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Philippe Poutou",
+    "estimate": 0.8474998244912243,
+    "result": 0.77,
+    "error": -0.07749982449122428,
+    "standardized": -0.38945127144816216,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 60,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.2905100922905402,
+    "result": 0.56,
+    "error": 0.26948990770945985,
+    "standardized": 1.3542377403936112,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Emmanuel Macron",
+    "estimate": 25.067751590793918,
+    "result": 27.85,
+    "error": 2.7822484092060833,
+    "standardized": 3.2097694101706455,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Marine Le Pen",
+    "estimate": 17.102284327882046,
+    "result": 23.15,
+    "error": 6.047715672117953,
+    "standardized": 8.030877964521308,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 9.637957329091083,
+    "result": 21.95,
+    "error": 12.312042670908916,
+    "standardized": 20.86001406233371,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Valérie Pécresse",
+    "estimate": 15.572678379590352,
+    "result": 4.78,
+    "error": -10.792678379590352,
+    "standardized": -14.882506352144047,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Yannick Jadot",
+    "estimate": 7.153101871746686,
+    "result": 4.63,
+    "error": -2.523101871746686,
+    "standardized": -4.895238833588665,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Jean Lassalle",
+    "estimate": 0.8141062565290123,
+    "result": 3.13,
+    "error": 2.315893743470988,
+    "standardized": 11.6378039415528,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Fabien Roussel",
+    "estimate": 2.247518311593091,
+    "result": 2.28,
+    "error": 0.032481688406909015,
+    "standardized": 0.10957035907902038,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 2.243062148169341,
+    "result": 2.06,
+    "error": -0.18306214816934085,
+    "standardized": -0.6181218713268507,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Anne Hidalgo",
+    "estimate": 4.319489320124925,
+    "result": 1.75,
+    "error": -2.5694893201249247,
+    "standardized": -6.319589613766356,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Philippe Poutou",
+    "estimate": 1.1281619690332365,
+    "result": 0.77,
+    "error": -0.3581619690332365,
+    "standardized": -1.695615749274399,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 90,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.7292213699847465,
+    "result": 0.56,
+    "error": -0.16922136998474646,
+    "standardized": -0.850369379923202,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Emmanuel Macron",
+    "estimate": 25.28448463223429,
+    "result": 27.85,
+    "error": 2.5655153677657125,
+    "standardized": 2.951291952596159,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Marine Le Pen",
+    "estimate": 18.434319494745303,
+    "result": 23.15,
+    "error": 4.715680505254696,
+    "standardized": 6.080609176622043,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 9.242414732981795,
+    "result": 21.95,
+    "error": 12.707585267018205,
+    "standardized": 21.938091540346868,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Valérie Pécresse",
+    "estimate": 13.231226775719025,
+    "result": 4.78,
+    "error": -8.451226775719025,
+    "standardized": -12.471192264774915,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Yannick Jadot",
+    "estimate": 7.650956838946872,
+    "result": 4.63,
+    "error": -3.020956838946872,
+    "standardized": -5.6825131418369725,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Jean Lassalle",
+    "estimate": 0.7611371960541765,
+    "result": 3.13,
+    "error": 2.3688628039458233,
+    "standardized": 11.903983485632608,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Fabien Roussel",
+    "estimate": 2.0646895520788338,
+    "result": 2.28,
+    "error": 0.21531044792116605,
+    "standardized": 0.7570735554086053,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 2.686142923782804,
+    "result": 2.06,
+    "error": -0.6261429237828038,
+    "standardized": -1.9363844197284548,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Anne Hidalgo",
+    "estimate": 5.007111367789795,
+    "result": 1.75,
+    "error": -3.257111367789795,
+    "standardized": -7.467297256298124,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Philippe Poutou",
+    "estimate": 1.2361418612319888,
+    "result": 0.77,
+    "error": -0.46614186123198875,
+    "standardized": -2.109380514328773,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 120,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.8285326568738154,
+    "result": 0.56,
+    "error": -0.26853265687381533,
+    "standardized": -1.3494273739510552,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Emmanuel Macron",
+    "estimate": 25.663059616538288,
+    "result": 27.85,
+    "error": 2.186940383461714,
+    "standardized": 2.5035161139223794,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Marine Le Pen",
+    "estimate": 18.825701381375623,
+    "result": 23.15,
+    "error": 4.3242986186243755,
+    "standardized": 5.530963928408127,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 8.920761942757299,
+    "result": 21.95,
+    "error": 13.0292380572427,
+    "standardized": 22.854848883427227,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Valérie Pécresse",
+    "estimate": 10.749853639990597,
+    "result": 4.78,
+    "error": -5.969853639990597,
+    "standardized": -9.636691232354602,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Yannick Jadot",
+    "estimate": 7.856642786149143,
+    "result": 4.63,
+    "error": -3.226642786149143,
+    "standardized": -5.99612079058448,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Jean Lassalle",
+    "estimate": 0.808571953277667,
+    "result": 3.13,
+    "error": 2.3214280467223327,
+    "standardized": 11.665614861796367,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Fabien Roussel",
+    "estimate": 2.026361392558364,
+    "result": 2.28,
+    "error": 0.2536386074416357,
+    "standardized": 0.9000617264906585,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 2.873170517296965,
+    "result": 2.06,
+    "error": -0.8131705172969648,
+    "standardized": -2.4338921042021795,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Anne Hidalgo",
+    "estimate": 5.42870914046039,
+    "result": 1.75,
+    "error": -3.6787091404603904,
+    "standardized": -8.117784357010908,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Philippe Poutou",
+    "estimate": 1.1653202208193225,
+    "result": 0.77,
+    "error": -0.3953202208193225,
+    "standardized": -1.8417967938759519,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 150,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.8950141081548522,
+    "result": 0.56,
+    "error": -0.3350141081548521,
+    "standardized": -1.6835092367048299,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Emmanuel Macron",
+    "estimate": 25.90770972270539,
+    "result": 27.85,
+    "error": 1.9422902772946102,
+    "standardized": 2.216578515860196,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Marine Le Pen",
+    "estimate": 20.790104662835407,
+    "result": 23.15,
+    "error": 2.359895337164591,
+    "standardized": 2.907667143224565,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 9.132157231729964,
+    "result": 21.95,
+    "error": 12.817842768270035,
+    "standardized": 22.248111131196996,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Valérie Pécresse",
+    "estimate": 11.736032767186394,
+    "result": 4.78,
+    "error": -6.956032767186394,
+    "standardized": -10.80635535666663,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Yannick Jadot",
+    "estimate": 7.93845122821182,
+    "result": 4.63,
+    "error": -3.30845122821182,
+    "standardized": -6.119102277902015,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Jean Lassalle",
+    "estimate": 0.975524789261995,
+    "result": 3.13,
+    "error": 2.154475210738005,
+    "standardized": 10.826645294151277,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Fabien Roussel",
+    "estimate": 2.0430009627136796,
+    "result": 2.28,
+    "error": 0.2369990372863202,
+    "standardized": 0.8376538031748988,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 3.279367250378451,
+    "result": 2.06,
+    "error": -1.219367250378451,
+    "standardized": -3.423339244707035,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Anne Hidalgo",
+    "estimate": 5.8462115983753336,
+    "result": 1.75,
+    "error": -4.0962115983753336,
+    "standardized": -8.729637755308788,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Philippe Poutou",
+    "estimate": 1.0664418958785746,
+    "result": 0.77,
+    "error": -0.2964418958785746,
+    "standardized": -1.4430094426820954,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 180,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.9400510968684356,
+    "result": 0.56,
+    "error": -0.3800510968684355,
+    "standardized": -1.9098286204175983,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Emmanuel Macron",
+    "estimate": 26.436348988896572,
+    "result": 27.85,
+    "error": 1.413651011103429,
+    "standardized": 1.602801855677803,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Marine Le Pen",
+    "estimate": 25.958442456336876,
+    "result": 23.15,
+    "error": -2.808442456336877,
+    "standardized": -3.2030111156118624,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 9.61225343231631,
+    "result": 21.95,
+    "error": 12.33774656768369,
+    "standardized": 20.928517395841713,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Valérie Pécresse",
+    "estimate": 11.699208420353347,
+    "result": 4.78,
+    "error": -6.919208420353347,
+    "standardized": -10.763806441817604,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Yannick Jadot",
+    "estimate": 7.3292847254589795,
+    "result": 4.63,
+    "error": -2.6992847254589796,
+    "standardized": -5.178651038776915,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Jean Lassalle",
+    "estimate": 1.3868915777393465,
+    "result": 3.13,
+    "error": 1.7431084222606534,
+    "standardized": 7.452565915954042,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Fabien Roussel",
+    "estimate": 2.2898280150799715,
+    "result": 2.28,
+    "error": -0.009828015079971664,
+    "standardized": -0.03285220297541266,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 4.17632997076105,
+    "result": 2.06,
+    "error": -2.11632997076105,
+    "standardized": -5.289560442979102,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Anne Hidalgo",
+    "estimate": 6.61997355222039,
+    "result": 1.75,
+    "error": -4.86997355222039,
+    "standardized": -9.793580186083789,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Philippe Poutou",
+    "estimate": 1.2550879280671516,
+    "result": 0.77,
+    "error": -0.4850879280671516,
+    "standardized": -2.1786929661920786,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 240,
+    "name": "Nathalie Arthaud",
+    "estimate": 0.9225949270138184,
+    "result": 0.56,
+    "error": -0.36259492701381835,
+    "standardized": -1.8221080663502074,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Emmanuel Macron",
+    "estimate": 26.59530474228549,
+    "result": 27.85,
+    "error": 1.2546952577145127,
+    "standardized": 1.4198545428818055,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Marine Le Pen",
+    "estimate": 27.88258962297551,
+    "result": 23.15,
+    "error": -4.73258962297551,
+    "standardized": -5.27694097350714,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Jean-Luc Mélenchon",
+    "estimate": 11.576994554109868,
+    "result": 21.95,
+    "error": 10.373005445890131,
+    "standardized": 16.21041225041113,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Valérie Pécresse",
+    "estimate": 10.232009684414539,
+    "result": 4.78,
+    "error": -5.452009684414539,
+    "standardized": -8.99467343834951,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Yannick Jadot",
+    "estimate": 6.689185361198616,
+    "result": 4.63,
+    "error": -2.059185361198616,
+    "standardized": -4.121097036473698,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Jean Lassalle",
+    "estimate": 1.0857228208166052,
+    "result": 3.13,
+    "error": 2.0442771791833945,
+    "standardized": 9.863267479669778,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Fabien Roussel",
+    "estimate": 2.045455560065627,
+    "result": 2.28,
+    "error": 0.23454443993437302,
+    "standardized": 0.8284910623356148,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Nicolas Dupont-Aignan",
+    "estimate": 4.323912795960451,
+    "result": 2.06,
+    "error": -2.2639127959604513,
+    "standardized": -5.565312200644957,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Anne Hidalgo",
+    "estimate": 6.729666266154814,
+    "result": 1.75,
+    "error": -4.979666266154814,
+    "standardized": -9.938062252301469,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Philippe Poutou",
+    "estimate": 1.399165813864896,
+    "result": 0.77,
+    "error": -0.6291658138648959,
+    "standardized": -2.6783062450637978,
+    "election": 2022,
+    "level": "candidat"
+   },
+   {
+    "horizon": 300,
+    "name": "Nathalie Arthaud",
+    "estimate": 1.0819677858265928,
+    "result": 0.56,
+    "error": -0.5219677858265928,
+    "standardized": -2.5227185783837807,
+    "election": 2022,
+    "level": "candidat"
+   }
+  ],
+  "secondRound": [
+   {
+    "horizon": 1,
+    "name": "Emmanuel Macron",
+    "estimate": 55.16654209456664,
+    "result": 58.55,
+    "error": 3.3834579054333602,
+    "standardized": 3.4016668871980076,
+    "election": 2022
+   },
+   {
+    "horizon": 7,
+    "name": "Emmanuel Macron",
+    "estimate": 54.998495703177134,
+    "result": 58.55,
+    "error": 3.5515042968228627,
+    "standardized": 3.5693852737079053,
+    "election": 2022
+   },
+   {
+    "horizon": 14,
+    "name": "Emmanuel Macron",
+    "estimate": 55.37251346692303,
+    "result": 58.55,
+    "error": 3.1774865330769657,
+    "standardized": 3.1959898427519087,
+    "election": 2022
+   },
+   {
+    "horizon": 30,
+    "name": "Emmanuel Macron",
+    "estimate": 57.151437828487545,
+    "result": 58.55,
+    "error": 1.3985621715124523,
+    "standardized": 1.4130908179608126,
+    "election": 2022
+   },
+   {
+    "horizon": 60,
+    "name": "Emmanuel Macron",
+    "estimate": 55.827672323436346,
+    "result": 58.55,
+    "error": 2.7223276765636513,
+    "standardized": 2.741009241590606,
+    "election": 2022
+   },
+   {
+    "horizon": 90,
+    "name": "Emmanuel Macron",
+    "estimate": 56.18827495039286,
+    "result": 58.55,
+    "error": 2.361725049607138,
+    "standardized": 2.3800238773110993,
+    "election": 2022
+   },
+   {
+    "horizon": 120,
+    "name": "Emmanuel Macron",
+    "estimate": 56.3287448255626,
+    "result": 58.55,
+    "error": 2.2212551744373954,
+    "standardized": 2.2392654672585346,
+    "election": 2022
+   },
+   {
+    "horizon": 150,
+    "name": "Emmanuel Macron",
+    "estimate": 55.78670777218193,
+    "result": 58.55,
+    "error": 2.76329222781807,
+    "standardized": 2.78198655165549,
+    "election": 2022
+   },
+   {
+    "horizon": 180,
+    "name": "Emmanuel Macron",
+    "estimate": 56.07266273974204,
+    "result": 58.55,
+    "error": 2.477337260257954,
+    "standardized": 2.495813386462418,
+    "election": 2022
+   },
+   {
+    "horizon": 240,
+    "name": "Emmanuel Macron",
+    "estimate": 55.22467589034156,
+    "result": 58.55,
+    "error": 3.325324109658439,
+    "standardized": 3.3436285780675474,
+    "election": 2022
+   },
+   {
+    "horizon": 300,
+    "name": "Emmanuel Macron",
+    "estimate": 53.74893773787375,
+    "result": 58.55,
+    "error": 4.801062262126244,
+    "standardized": 4.814614769943071,
+    "election": 2022
+   },
+   {
+    "horizon": 1,
+    "name": "Emmanuel Macron",
+    "estimate": 60.94118000189822,
+    "result": 66.1,
+    "error": 5.158819998101777,
+    "standardized": 5.28695227509163,
+    "election": 2017
+   },
+   {
+    "horizon": 7,
+    "name": "Emmanuel Macron",
+    "estimate": 60.621553316001126,
+    "result": 66.1,
+    "error": 5.478446683998868,
+    "standardized": 5.606407010408774,
+    "election": 2017
+   }
+  ]
+ }
+}

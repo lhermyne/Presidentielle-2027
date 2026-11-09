@@ -14,7 +14,7 @@ import Results from '../components/Results.jsx';
 import SourceBreakdown from '../components/SourceBreakdown.jsx';
 
 const OBSOLETE_PARAMS = ['reseaux', 'amplification', 'incertitude', 'incertitude-ajoutee'];
-const SETTING_PARAMS = ['candidats', 'memoire', ...SOURCE_IDS.map(id => `poids-${id}`)];
+const SETTING_PARAMS = ['candidats', 'memoire', 'echeance', ...SOURCE_IDS.map(id => `poids-${id}`)];
 const MESSAGE_DURATION = 6000;
 const SHARE_IMAGE_DELAY = 400;
 const DEFAULT_SHARE_SENTENCE = 'Présidentielle 2027 : sondages, marchés et signaux en ligne réunis dans une projection expérimentale.';
@@ -25,7 +25,7 @@ function initialSettings() {
   const weights = query.has('poids-barometer')
     ? Object.fromEntries(SOURCE_IDS.map(id => [id, query.get(`poids-${id}`) ?? 0]))
     : undefined;
-  return settingsFrom({ halfLife: query.get('memoire') ?? DEFAULT_SETTINGS.halfLife, weights });
+  return settingsFrom({ halfLife: query.get('memoire') ?? DEFAULT_SETTINGS.halfLife, weights, horizon: query.get('echeance') !== 'non' });
 }
 
 // L'adresse reste nue tant que les réglages sont ceux de la référence ; seul un réglage modifié y apparaît.
@@ -35,6 +35,7 @@ function syncUrl(configurationId, defaultConfigurationId, settings) {
 
   if (configurationId !== defaultConfigurationId) url.searchParams.set('candidats', configurationId ?? '');
   if (settings.halfLife !== DEFAULT_SETTINGS.halfLife) url.searchParams.set('memoire', settings.halfLife);
+  if (!settings.horizon) url.searchParams.set('echeance', 'non');
   if (SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id])) {
     for (const id of SOURCE_IDS) url.searchParams.set(`poids-${id}`, settings.weights[id]);
   }
@@ -127,7 +128,7 @@ export default function Overview({ data, labOpen, onLabChange }) {
     if (shareMessage) notify(shareMessage);
   };
   const exportScenario = () => downloadJson({ generatedAt: data.generatedAt, observations: data, result }, `lhermyne-scenario-${data.asOf}.json`);
-  const isPersonal = !activePresetId(settings.weights) || configurationId !== configurations[0]?.id;
+  const isPersonal = !activePresetId(settings.weights) || !settings.horizon || configurationId !== configurations[0]?.id;
 
   return (
     <div className="home">

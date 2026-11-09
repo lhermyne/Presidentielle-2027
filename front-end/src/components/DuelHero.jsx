@@ -36,7 +36,7 @@ function HeroDuel({ pair, finalists }) {
       </div>
       {projection
         ? <DuelBar left={left} right={right} score={projection.scores[left.id]} lower={projection.lower[left.id]} upper={projection.upper[left.id]} />
-        : <p className="hero-missing">Ce duel n’a pas été sondé récemment : aucun score n’est projeté.</p>}
+        : <p className="hero-missing">Ce duel n’a pas été sondé et aucun report de voix n’est mesuré : aucun score n’est projeté.</p>}
       <p className="hero-chance">Ce duel ressort dans {percent(pair.probability)} des simulations.</p>
     </>
   );
@@ -70,7 +70,7 @@ export default function DuelHero({ result, data, isPersonal }) {
         {result && !hasDuel && <p className="hero-missing">{result.error ?? 'Aucun duel de second tour ne ressort de ce scénario.'}</p>}
 
         <p className="hero-lede">Une estimation qui réunit les sondages, Polymarket, le baromètre des réseaux et Wikipédia. Vous pouvez changer chaque hypothèse.</p>
-        <p className="hero-note"><FlaskIcon aria-hidden="true" size={15} />Projection expérimentale, pas un pronostic : le modèle n’est pas encore calibré sur les élections passées.</p>
+        <p className="hero-note"><FlaskIcon aria-hidden="true" size={15} />Projection expérimentale, pas un pronostic : seules les marges d’erreur sont calées sur les élections passées.</p>
         <a className="hero-jump" href="#projections" onClick={event => jumpTo(event, 'projections')}>Voir le détail <ArrowDownIcon aria-hidden="true" size={16} /></a>
       </div>
     </section>

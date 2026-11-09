@@ -14,12 +14,12 @@ function UncertaintyTable({ rows }) {
     <>
       <h2 className="signal-heading">Incertitude mesurée</h2>
       <p className="metric-description">
-        Écart-type en points : précision de la moyenne des sondages, puis bruit de chaque source sur la mémoire des sondages. Rien n’est fixé à la main.
-        Cette marge décrit la photo d’aujourd’hui, pas ce que la campagne peut encore changer d’ici au scrutin.
+        Écart-type en points. D’abord la mesure du jour : précision de la moyenne des sondages et bruit de chaque source.
+        Puis l’incertitude d’ici au scrutin, mesurée sur les présidentielles de 2002 à 2022 : c’est elle qui domine.
       </p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Incertitude mesurée par candidat">
         <table>
-          <thead><tr><th scope="col">Candidat</th><th scope="col">Sondages</th><th scope="col">Polymarket</th><th scope="col">Baromètre</th><th scope="col">Wikipédia</th><th scope="col">Total</th><th scope="col">Largeur à 90 %</th></tr></thead>
+          <thead><tr><th scope="col">Candidat</th><th scope="col">Sondages</th><th scope="col">Polymarket</th><th scope="col">Baromètre</th><th scope="col">Wikipédia</th><th scope="col">Mesure du jour</th><th scope="col">D’ici au scrutin</th><th scope="col">Largeur à 90 %</th></tr></thead>
           <tbody>
             {rows.map(row => (
               <tr key={row.id}>
@@ -27,6 +27,7 @@ function UncertaintyTable({ rows }) {
                 <td>{number(row.uncertainty.polls)}</td><td>{number(row.uncertainty.polymarket)}</td>
                 <td>{number(row.uncertainty.barometer)}</td><td>{number(row.uncertainty.wikipedia)}</td>
                 <td><strong>{number(row.uncertainty.base)}</strong></td>
+                <td><strong>{number(row.uncertainty.horizon)}</strong></td>
                 <td>{number(row.upper - row.lower)} pts</td>
               </tr>
             ))}
@@ -43,9 +44,9 @@ function ForecastEffects({ result, names }) {
   return (
     <>
       <p className="metric-description">
-        Socle issu de tous les sondages, puis bonus ou malus relatifs (Polymarket, baromètre, Wikipédia, Google Trends). Une dynamique proche de zéro
+        Socle issu de tous les sondages, puis bonus ou malus relatifs du baromètre, de Wikipédia et de Google Trends. Une dynamique proche de zéro
         n’a pas d’effet et les très fortes variations sont comprimées en douceur. Les scores sont ensuite ramenés à 100 %. Polymarket
-        corrige aussi les qualifications et les victoires après les simulations.
+        ne modifie pas ce centre : il repondère les simulations selon ses probabilités, ce qui déplace les scores, les qualifications et les victoires.
       </p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Effets des sources par candidat">
         <table>

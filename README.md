@@ -198,19 +198,21 @@ reste en alpha sur invitation (vérifié le 1er novembre 2026). Aucun contournem
 
 16 000 trajectoires reproductibles avec une graine fixe : premier tour autour du socle
 corrigé (scores positifs, total 100 %), puis sondages de second tour par paire exacte.
-Les duels non documentés conservent des bornes de victoire, sans reports inventés.
-Avant les simulations, le score est tiré vers la cible du marché (victoire finale pour moitié, places
-cumulées pour l'autre moitié) selon `1 − (1 − part de Polymarket)²`, sans dépasser le prix de victoire. Le marché de la victoire déplace aussi les duels : l'écart entre son prix
-et la fréquence de victoire simulée et l'élan du baromètre et de Wikipédia déplacent le score du duel, qui peut basculer. Après les
-simulations, la qualification repondère les trajectoires, pour les candidats cotés ayant au moins dix occurrences simulées
-(au moins deux candidats comparables). Le rapport prix relatif/fréquence de victoire est plafonné à
-[0,05 ; 20], puis élevé à la puissance `poids marché / 100`. Les multiplicateurs sont
-normalisés pour conserver la masse des trajectoires comparées. Les autres trajectoires
-restent inchangées. Les prix bruts, le sous-ensemble comparé et la taille effective des
-tirages sont conservés pour audit. Le premier tour et la qualification peuvent évoluer
-indirectement puisque les moyennes sont recalculées sur les trajectoires repondérées.
-Cette fusion est une sensibilité heuristique, pas une calibration bayésienne démontrée :
-les univers de candidature diffèrent et les marchés peuvent déjà incorporer les sondages.
+Les duels jamais sondés sont estimés par les reports de voix entre camps (`model/transfers.mjs`),
+recalés sur les duels sondés ; deux finalistes du même camp restent sans score.
+
+Chaque tirage ajoute l'incertitude d'ici au scrutin, mesurée sur les présidentielles 2002 à 2022 :
+écart-type de 2,1 points la veille et 6,8 points à long terme au premier tour, 3,5 points au second.
+Le réglage `horizon` la retire pour revenir à la photo du jour. Mesures et limites : `docs/BACKTEST.md`.
+
+Polymarket n'est jamais converti en score. Après les simulations, chaque marché repondère les trajectoires
+qui réalisent son événement (victoire finale, vainqueur du premier tour, deuxième et troisième place,
+qualification), pour les candidats cotés ayant au moins dix occurrences simulées. Le rapport prix relatif /
+fréquence simulée est plafonné à [0,05 ; 20], puis élevé à la puissance `1 − (1 − part de Polymarket)²`
+(partagée entre les marchés du premier tour). Les multiplicateurs conservent la masse des trajectoires
+comparées. Les prix bruts, le sous-ensemble comparé et la taille effective des tirages sont conservés pour audit.
+Cette force est un réglage non validé : les univers de candidature diffèrent et les marchés peuvent déjà
+incorporer les sondages.
 
 Les intervalles sont les quantiles pondérés à 5 et 95 %. Le moteur du navigateur et
 celui de GitHub Actions sont identiques. Les scripts de collecte/calcul sont déterministes
@@ -245,6 +247,18 @@ un export JSON inclut les observations exactes et les réglages du scénario.
   repondèrent les simulations ; le dernier est consultatif.
 - **Portraits** : ressources existantes du baromètre fournies dans le projet utilisateur ;
   leur réutilisation publique reste soumise aux droits des images d'origine.
+
+## Mesures historiques
+
+Le dossier `backtest/` rejoue les campagnes passées : erreur des sondages selon l'échéance, valeur
+prédictive de Wikipédia (2017, 2022) et du baromètre (2026), reports de voix. Résultats dans `docs/BACKTEST.md`.
+
+```powershell
+python backtest/echeance.py
+python backtest/wikipedia.py
+node backtest/soutiens.mjs; python backtest/barometre.py
+node backtest/reports.mjs
+```
 
 ## Étapes scientifiques suivantes
 

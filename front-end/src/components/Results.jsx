@@ -6,8 +6,8 @@ import { dateLabel, integer, percent, shortName } from '../lib/format.js';
 import { activePresetId, PRESETS } from '../lib/presets.js';
 
 const TABS = [
-  { id: 'score', label: 'Premier tour', description: 'Score estimé de chaque candidat. Le repère montre l’intervalle simulé à 90 %.' },
-  { id: 'qualification', label: 'Qualification', description: 'Part des simulations où le candidat termine dans les deux premiers.' },
+  { id: 'score', label: 'Premier tour', description: 'Score estimé de chaque candidat. Le repère montre où ce score peut se situer le jour du vote, 9 fois sur 10 d’après les campagnes passées.' },
+  { id: 'qualification', label: 'Qualification', description: 'Chances de finir dans les deux premiers le jour du vote, selon les simulations.' },
   { id: 'runoff', label: 'Second tour probable', short: 'Second tour', extra: 'probable', description: 'Les duels qui ressortent des simulations, avec le score estimé de chaque finaliste. La zone hachurée montre où il peut varier.' },
 ];
 const VISIBLE_ROWS = 8;
@@ -145,7 +145,7 @@ function DuelList({ result }) {
               score={pair.projection?.scores[left.id]}
               lower={pair.projection?.lower[left.id]}
               upper={pair.projection?.upper[left.id]}
-              caption={`Ressort dans ${percent(pair.probability)} des simulations`}
+              caption={`Ressort dans ${percent(pair.probability)} des simulations${pair.basis === 'transfers' ? ' · jamais sondé, estimé par les reports de voix' : ''}`}
             />
           );
         })}

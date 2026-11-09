@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS, allConfigurations, fitSupport, FIELD_ID, DYNAMIC_SATURATION } from '../model/forecast.mjs';
+import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS, allConfigurations, fitSupport, FIELD_ID, DYNAMIC_SATURATION, HORIZON_SPREAD, horizonSpread } from '../model/forecast.mjs';
+import { transferScore } from '../model/transfers.mjs';
 
 const effect = value => Math.exp(DYNAMIC_SATURATION * Math.tanh(value / DYNAMIC_SATURATION)) - 1;
 
@@ -104,7 +105,9 @@ test('missing, stale and future social signals cannot create a correction', () =
 
 test('Google trend attention affects the first round without assigning zero to absent candidates', () => {
   const data = addSignals(dataset(firstRound));
-  const result = forecast(data, key, { simulations: 1000 });
+  // Google Trends, jamais validé, est à 0 par défaut : le test l'active explicitement.
+  assert.equal(DEFAULT_WEIGHTS.trends, 0);
+  const result = forecast(data, key, { weights: { ...DEFAULT_WEIGHTS, trends: 10 }, simulations: 1000 });
   assert.ok(result.sourceMix.trends.available);
   assert.ok(result.rows.find(row => row.id === 'a').corrections.trends < 0);
   assert.ok(result.rows.find(row => row.id === 'b').corrections.trends > 0);
@@ -114,19 +117,18 @@ test('Google trend attention affects the first round without assigning zero to a
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.trends.effective, 0);
 });
 
-test('market winner prices affect documented trajectories and propagate to scores and qualification', () => {
+test('market winner prices reweight documented trajectories and propagate to scores and qualification', () => {
   const data = addSignals(dataset([...firstRound, ...completeDuels()]));
   const first = forecast(data, key, { simulations: 6000, uncertainty: 4 });
   const altered = structuredClone(data);
   altered.market.markets = [{ id: 'a', probability: 80 }, { id: 'b', probability: 5 }, { id: 'c', probability: 10 }, { id: 'd', probability: 5 }];
   const second = forecast(altered, key, { simulations: 6000, uncertainty: 4 });
-  assert.ok(Object.keys(first.duelShifts).length > 0 && Object.keys(second.duelShifts).length > 0);
-  assert.ok(first.rows.find(row => row.id === 'b').winLower > second.rows.find(row => row.id === 'b').winLower);
-  assert.notEqual(first.rows.find(row => row.id === 'b').score, second.rows.find(row => row.id === 'b').score);
-  assert.notEqual(first.rows.find(row => row.id === 'b').qualification, second.rows.find(row => row.id === 'b').qualification);
-  // Avant les simulations, le marché agit sur le centre ; le total reste à 100 %.
-  assert.ok(first.rows.find(row => row.id === 'b').center > second.rows.find(row => row.id === 'b').center);
-  assert.ok(Math.abs(first.rows.reduce((total, row) => total + row.center, 0) - 100) < 1e-8);
+  const b = result => result.rows.find(row => row.id === 'b');
+  assert.ok(b(first).winLower > b(second).winLower);
+  assert.notEqual(b(first).score, b(second).score);
+  assert.notEqual(b(first).qualification, b(second).qualification);
+  // Le marché ne touche pas au centre des scores : il repondère seulement les simulations.
+  assert.equal(b(first).center, b(second).center);
   assert.ok(Math.abs(first.rows.reduce((total, row) => total + row.score, 0) - 100) < 1e-8);
   assert.ok(Math.abs(first.rows.reduce((total, row) => total + row.qualification, 0) - 200) < 1e-8);
   assert.ok(first.rows.every(row => row.winLower <= row.winUpper && row.winUpper <= row.qualification + 1e-8));
@@ -136,7 +138,7 @@ test('market winner prices affect documented trajectories and propagate to score
 test('market prices cannot invent a missing runoff or a simulated winner', () => {
   const data = addSignals(dataset(firstRound));
   // Un petit poids évite une majorité dès le premier tour : sans duel sondé, aucun vainqueur n'est inventé.
-  const result = forecast(data, key, { weights: { polls: 100, polymarket: 5 }, simulations: 2000 });
+  const result = forecast(data, key, { weights: { polls: 100, polymarket: 5 }, simulations: 2000, horizon: false });
   assert.equal(result.marketFusion.active, false);
   assert.ok(result.unresolved > 90);
   assert.ok(result.rows.every(row => row.winLower === 0));
@@ -174,7 +176,8 @@ test('historical polling averages do not use later observations', () => {
 });
 
 test('query settings are finite and constrained', () => {
-  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 0, simulations: 1000 });
+  assert.deepEqual(settingsFrom({ halfLife: 'oops', uncertainty: -1, simulations: 1 }), { halfLife: 21, weights: DEFAULT_WEIGHTS, uncertainty: 0, simulations: 1000, horizon: true });
+  assert.equal(settingsFrom({ horizon: false }).horizon, false);
 });
 
 test('60 per mille with x2 gives about a 12 percent relative boost, not twelve points', () => {
@@ -223,7 +226,7 @@ test('an unavailable source is excluded from the shares instead of counting as z
 });
 
 test('second-round scores come from documented duel polls only', () => {
-  const documented = forecast(dataset([...firstRound, ...completeDuels()]), key, { simulations: 3000 });
+  const documented = forecast(dataset([...firstRound, ...completeDuels()]), key, { simulations: 3000, horizon: false });
   const leader = documented.rows.find(row => row.id === 'a');
   assert.ok(leader.runoff.score > 45 && leader.runoff.score < 60);
   assert.ok(leader.runoff.lower <= leader.runoff.score && leader.runoff.score <= leader.runoff.upper);
@@ -248,7 +251,7 @@ test('Wikipedia dynamics since the last poll act like the barometer', () => {
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
 });
 
-test('the qualification market corrects qualifications, the place markets act before the simulations', () => {
+test('the qualification and place markets reweight the simulations they describe', () => {
   const data = addSignals(dataset([...firstRound, ...completeDuels()]));
   const stamp = `${data.asOf}T12:00:00Z`;
   const board = prices => ({ capturedAt: stamp, markets: Object.entries(prices).map(([id, probability]) => ({ id, probability })) });
@@ -260,18 +263,18 @@ test('the qualification market corrects qualifications, the place markets act be
   const boards = Object.fromEntries(result.marketFusion.boards.map(item => [item.id, item]));
   assert.ok(boards.advance.active);
   assert.equal(boards.other, undefined);
-  assert.equal(result.marketBonus.boards.length, 0);
   const qualification = (output, id) => output.rows.find(row => row.id === id).qualification;
   assert.ok(qualification(result, 'c') > qualification(plain, 'c'));
   assert.ok(Math.abs(result.rows.reduce((total, row) => total + row.qualification, 0) - 200) < 1e-8);
   assert.ok(result.marketFusion.effectiveSampleSize > 1000);
   assert.equal(forecast(data, key, { ...settings, weights: { polls: 100 } }).marketFusion.active, false);
-  // Les places sont comparées au score des sondages, de façon cumulée.
-  data.marketEvents = { winner: board({ a: 80, b: 10, c: 5, d: 5 }), second: board({ a: 10, b: 60, c: 20, d: 10 }) };
+  // Le marché du vainqueur du premier tour favorise les simulations où son favori arrive en tête.
+  data.marketEvents = { winner: board({ a: 5, b: 5, c: 5, d: 85 }) };
   const places = forecast(data, key, settings);
-  assert.deepEqual(places.marketBonus.boards, ['winner', 'second']);
-  assert.ok(places.marketBonus.targets.a > 35);
-  assert.ok(places.marketBonus.targets.d < 18);
+  assert.ok(places.marketFusion.boards.find(item => item.id === 'winner').active);
+  const score = (output, id) => output.rows.find(row => row.id === id).score;
+  assert.ok(score(places, 'd') > score(plain, 'd'));
+  assert.ok(places.rows.find(row => row.id === 'd').corrections.polymarket > 0);
 });
 
 const trueSupport = { a: 40, b: 30, c: 20, d: 10 };
@@ -332,31 +335,31 @@ test('an extra candidate splits its own political bloc instead of diluting every
   assert.ok(Math.abs(score(result, 'c') - 20) < 1e-3);
 });
 
-test('a market price above the poll score gives a bonus, below it a malus', () => {
+test('a win probability is never converted into a first-round score', () => {
   const data = dataset(firstRound);
   data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 45 }, { id: 'b', probability: 35 }, { id: 'c', probability: 15 }, { id: 'd', probability: 5 }] };
-  const result = forecast(data, key, { weights: { polls: 100, polymarket: 50 }, simulations: 2000 });
-  const row = id => result.rows.find(item => item.id === id);
-  assert.ok(row('a').corrections.polymarket > 0 && row('a').center > row('a').pollScore);
-  assert.ok(row('a').center < 45);
-  assert.ok(row('d').corrections.polymarket < 0 && row('d').center < row('d').pollScore);
+  const run = weights => forecast(data, key, { weights, simulations: 2000 });
+  const market = run({ polls: 100, polymarket: 100 });
+  const pollsOnly = run({ polls: 100 });
+  for (const row of market.rows) {
+    assert.equal(row.center, pollsOnly.rows.find(item => item.id === row.id).center);
+    assert.ok(Math.abs(row.center - row.pollScore) < 1e-9);
+  }
 });
 
-test('Polymarket acts before the simulations: backed candidates gain, the polls-only scenario stays untouched', () => {
+test('the victory market reweights the simulations: a backed candidate wins more often, polls-only stays untouched', () => {
   const data = dataset([...firstRound, ...completeDuels()]);
   const stamp = `${data.asOf}T12:00:00Z`;
   data.market = { capturedAt: stamp, markets: [{ id: 'a', probability: 40 }, { id: 'b', probability: 10 }, { id: 'c', probability: 5 }, { id: 'd', probability: 45 }] };
-  const backed = forecast(data, key, { weights: { polls: 100, polymarket: 50 }, simulations: 4000 });
-  const row = id => backed.rows.find(item => item.id === id);
-  assert.ok(row('d').corrections.polymarket > 0);
-  assert.ok(row('d').center > row('d').pollScore);
-  assert.ok(row('d').score > 18);
-  assert.ok(backed.marketBonus.targets.d > row('d').pollScore);
-  const pollsOnly = forecast(data, key, { weights: { polls: 100 }, simulations: 4000 });
+  const run = weights => forecast(data, key, { weights, simulations: 4000 });
+  const win = (result, id) => result.rows.find(item => item.id === id).winLower;
+  const pollsOnly = run({ polls: 100 });
+  const backed = run({ polls: 100, polymarket: 50 });
+  const stronger = run({ polls: 100, polymarket: 100 });
   assert.ok(pollsOnly.rows.every(item => item.corrections.polymarket === 0));
-  assert.equal(pollsOnly.marketBonus.boards.length, 0);
-  const stronger = forecast(data, key, { weights: { polls: 100, polymarket: 100 }, simulations: 4000 });
-  assert.ok(stronger.rows.find(item => item.id === 'd').corrections.polymarket > row('d').corrections.polymarket);
+  assert.ok(win(backed, 'd') > win(pollsOnly, 'd'));
+  assert.ok(win(stronger, 'd') > win(backed, 'd'));
+  assert.ok(backed.rows.find(item => item.id === 'd').corrections.polymarket > 0);
 });
 
 test('candidates of one party report fully to their titular, in polls and in markets', () => {
@@ -373,32 +376,16 @@ test('candidates of one party report fully to their titular, in polls and in mar
   assert.equal(result.sourceMix.polymarket.prices['marine-le-pen'], 45);
 });
 
-test('the victory market moves the duels: a favourite the market doubts loses ground, without it the polls decide', () => {
+test('the market leaves the polled duel scores alone: only dynamics shift a duel', () => {
   const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 70, b: 30 }, { round: 2 })]);
   data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 40 }, { id: 'b', probability: 55 }, { id: 'c', probability: 5 }] };
   const run = weights => forecast(data, 'a|b|c', { weights, simulations: 4000 });
-  const row = (result, id) => result.rows.find(item => item.id === id);
+  const duel = result => result.polledDuels.find(item => item.key === 'a|b');
   const pollsOnly = run({ polls: 100 });
-  assert.deepEqual(pollsOnly.duelShifts, {});
-  assert.ok(row(pollsOnly, 'a').winLower > 99);
-  const market = run({ polls: 100, polymarket: 20 });
-  assert.ok(market.duelShifts['a|b'] < 0);
-  assert.ok(row(market, 'a').runoff.score < row(pollsOnly, 'a').runoff.score);
-  // Le score affiché du duel reste celui des sondages.
-  assert.equal(market.pairs.find(pair => pair.key === 'a|b').estimate.scores.a, pollsOnly.pairs.find(pair => pair.key === 'a|b').estimate.scores.a);
-});
-
-test('Polymarket pulls a score towards the market without ever exceeding its price', () => {
-  const data = dataset(firstRound);
-  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 45 }, { id: 'b', probability: 10 }, { id: 'c', probability: 5 }, { id: 'd', probability: 2 }] };
-  const center = (weights, id) => forecast(data, key, { weights, simulations: 1000 }).rows.find(row => row.id === id).center;
-  const low = center({ polls: 100, polymarket: 20 }, 'a');
-  const high = center({ polls: 100, polymarket: 100 }, 'a');
-  const extreme = center({ polls: 1, polymarket: 100 }, 'a');
-  assert.ok(35 < low && low < high && high <= extreme);
-  assert.ok(extreme <= 45 + 1e-9);
-  // Un candidat mieux placé dans les sondages que sur le marché descend, sans être bloqué par ce plafond.
-  assert.ok(center({ polls: 1, polymarket: 100 }, 'c') < 22);
+  const market = run({ polls: 100, polymarket: 100 });
+  assert.deepEqual(market.duelShifts, {});
+  assert.equal(duel(market).projection.scores.a, duel(pollsOnly).projection.scores.a);
+  assert.equal(duel(market).estimate.scores.a, 70);
 });
 
 test('each probable duel exposes the projected score of both finalists', () => {
@@ -432,6 +419,8 @@ test('uncertainty is measured: more surveys tighten it, and only irregular sourc
   assert.ok(Math.abs(off.base - off.polls) < 1e-9);
 });
 
+const wikipediaWindow = (data, signals) => ({ asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals } } });
+
 test('every polled duel gets the same source adjustment as a simulated duel', () => {
   // Le duel a|c n'est presque jamais simulé : c est loin derrière au premier tour.
   const data = dataset([
@@ -439,30 +428,68 @@ test('every polled duel gets the same source adjustment as a simulated duel', ()
     poll('duel-ab', { a: 60, b: 40 }, { round: 2 }),
     poll('duel-ac', { a: 60, c: 40 }, { round: 2 }),
   ]);
-  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 20 }, { id: 'b', probability: 40 }, { id: 'c', probability: 30 }, { id: 'd', probability: 10 }] };
+  data.wikipedia = wikipediaWindow(data, { a: { dynamic: -0.5 }, b: { dynamic: 0.4 }, c: { dynamic: 0.8 } });
   const run = weights => forecast(data, 'a|b|c|d', { weights, simulations: 4000 });
   const polled = (result, key) => result.polledDuels.find(duel => duel.key === key);
 
   const pollsOnly = run({ polls: 100 });
   assert.ok(Math.abs(polled(pollsOnly, 'a|c').projection.scores.a - polled(pollsOnly, 'a|c').estimate.scores.a) < 1e-9);
 
-  const market = run({ polls: 100, polymarket: 20 });
-  const rare = polled(market, 'a|c');
+  const dynamic = run({ polls: 100, wikipedia: 100 });
+  const rare = polled(dynamic, 'a|c');
   assert.ok(rare.projection.scores.a < polled(pollsOnly, 'a|c').projection.scores.a);
   assert.ok(Math.abs(rare.projection.scores.a + rare.projection.scores.c - 100) < 1e-9);
   assert.ok(rare.projection.lower.a <= rare.projection.scores.a && rare.projection.scores.a <= rare.projection.upper.a);
   assert.equal(rare.estimate.scores.a, polled(pollsOnly, 'a|c').estimate.scores.a);
 
   // Pour un duel simulé, le calcul direct retrouve le résultat des simulations.
-  const simulated = market.pairs.find(pair => pair.key === 'a|b').projection;
-  assert.ok(Math.abs(polled(market, 'a|b').projection.scores.a - simulated.scores.a) < 0.5);
-  assert.ok(Math.abs(polled(market, 'a|b').projection.lower.a - simulated.lower.a) < 1);
+  const simulated = dynamic.pairs.find(pair => pair.key === 'a|b').projection;
+  assert.ok(Math.abs(polled(dynamic, 'a|b').projection.scores.a - simulated.scores.a) < 0.5);
+  assert.ok(Math.abs(polled(dynamic, 'a|b').projection.lower.a - simulated.lower.a) < 1);
 });
 
-test('sources can overturn a polled duel when they all point the same way', () => {
+test('strong dynamics can overturn a polled duel', () => {
   const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 51, b: 49 }, { round: 2 })]);
-  data.market = { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 90 }, { id: 'c', probability: 5 }] };
+  data.wikipedia = wikipediaWindow(data, { a: { dynamic: -1 }, b: { dynamic: 1 } });
   const run = weights => forecast(data, 'a|b|c', { weights, simulations: 4000 }).pairs.find(pair => pair.key === 'a|b').projection;
   assert.ok(run({ polls: 100 }).scores.a > 50);
-  assert.ok(run({ polls: 100, polymarket: 10 }).scores.a < 50);
+  assert.ok(run({ polls: 100, wikipedia: 100 }).scores.a < 50);
+});
+
+test('the election horizon widens the intervals and removes false certainties', () => {
+  const data = dataset([poll('p1', { a: 34, b: 17, c: 10, d: 39 })]);
+  const run = horizon => forecast(data, key, { weights: { polls: 100 }, simulations: 6000, horizon });
+  const row = (result, id) => result.rows.find(item => item.id === id);
+  const today = run(false);
+  const election = run(true);
+  assert.ok(election.election.daysToElection > 150);
+  assert.ok(row(election, 'a').upper - row(election, 'a').lower > 3 * (row(today, 'a').upper - row(today, 'a').lower));
+  assert.ok(row(election, 'a').today.upper - row(election, 'a').today.lower < 5);
+  assert.equal(row(today, 'b').qualification, 0);
+  assert.ok(row(election, 'b').qualification > 1 && row(election, 'b').qualification < 30);
+  assert.ok(Math.abs(row(election, 'a').score - 34) < 1.5);
+  // Écart-type calibré : près de 2 points la veille, plus de 6 à cinq mois, proportionnel sous 10 %.
+  assert.equal(horizonSpread(30, 0), HORIZON_SPREAD.floor);
+  assert.ok(horizonSpread(30, 160) > 6 && horizonSpread(30, 160) < HORIZON_SPREAD.plateau);
+  assert.ok(Math.abs(horizonSpread(5, 160) - horizonSpread(30, 160) / 2) < 1e-9);
+});
+
+test('an unpolled duel is estimated from vote transfers between political blocs', () => {
+  const ids = ['le-pen', 'macron', 'melenchon', 'pecresse'];
+  const data = dataset([poll('p1', { 'le-pen': 30, macron: 34, melenchon: 24, pecresse: 12 })]);
+  const parties = { 'le-pen': 'RN', macron: 'RE', melenchon: 'LFI', pecresse: 'LR' };
+  data.candidates = ids.map(id => ({ id, name: id, party: parties[id], family: parties[id] }));
+  const result = forecast(data, candidateKey(ids), { weights: { polls: 100 }, simulations: 4000 });
+  const duel = result.pairs.find(pair => pair.key === 'le-pen|macron');
+  assert.equal(duel.basis, 'transfers');
+  assert.equal(duel.estimate, null);
+  assert.ok(duel.projection.scores.macron > 50 && duel.projection.scores.macron < 70);
+  assert.ok(duel.projection.upper.macron - duel.projection.lower.macron > 10);
+  assert.ok(result.unresolved < 100);
+  // La matrice reconstitue le second tour 2022 à partir du premier tour officiel, à moins de 3 points.
+  const blocs = { Macron: 'centre', 'Le Pen': 'extreme-droite', Mélenchon: 'extreme-gauche', Zemmour: 'extreme-droite', Pécresse: 'droite', Jadot: 'gauche' };
+  const scores = { Macron: 27.85, 'Le Pen': 23.15, Mélenchon: 21.95, Zemmour: 7.07, Pécresse: 4.78, Jadot: 4.63 };
+  assert.ok(Math.abs(transferScore('Macron', 'Le Pen', scores, id => blocs[id]) - 58.55) < 3);
+  // Deux finalistes du même camp : aucun report mesuré, donc aucun score.
+  assert.equal(transferScore('Le Pen', 'Zemmour', scores, id => blocs[id]), null);
 });
