@@ -1,7 +1,7 @@
 // Shared by browser and Actions. Signals retain their units and roles; the fusion is an explicit heuristic.
 import { hasTransferTable, transferScore } from './transfers.mjs';
 
-export const MODEL_VERSION = '0.14.0-election-horizon-experimental';
+export const MODEL_VERSION = '0.15.0-shrinking-memory-experimental';
 export const SOURCE_IDS = Object.freeze(['polls', 'polymarket', 'barometer', 'wikipedia', 'trends']);
 export const SIGNAL_IDS = SOURCE_IDS;
 export const DYNAMIC_IDS = Object.freeze(['barometer', 'wikipedia', 'trends']);
@@ -73,7 +73,24 @@ export const DEFAULT_SETTINGS = Object.freeze({ halfLife: 21, weights: DEFAULT_W
 const DAY = 86400000;
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const daysBetween = (a, b) => (Date.parse(a) - Date.parse(b)) / DAY;
+const shiftDays = (day, days) => new Date(Date.parse(day) + days * DAY).toISOString().slice(0, 10);
 const sum = values => values.reduce((a, b) => a + b, 0);
+
+// Mémoire de référence des sondages : 7 jours la veille du scrutin, un jour de plus par tranche de 10 jours
+// d'échéance (22 jours à 159 jours du vote). Réglage expérimental, non calibré.
+export const HALF_LIFE_SCHEDULE = Object.freeze({ floor: 7, daysPerStep: 10 });
+// Fenêtre du baromètre : la mémoire des sondages, bornée aux fenêtres préparées par la collecte (7 à 30 jours).
+export const BAROMETER_WINDOW = Object.freeze({ min: 7, max: 30 });
+
+export function referenceHalfLife(asOf) {
+  const { floor, daysPerStep } = HALF_LIFE_SCHEDULE;
+  const daysToElection = Math.max(0, daysBetween(ELECTION.firstRound, asOf));
+  return floor + Math.floor(daysToElection / daysPerStep);
+}
+
+export function barometerWindowDays(halfLife) {
+  return clamp(Math.round(halfLife), BAROMETER_WINDOW.min, BAROMETER_WINDOW.max);
+}
 export const candidateKey = ids => [...ids].sort().join('|');
 const titularOf = id => SAME_PARTY_REPORTS[id] ?? id;
 
@@ -115,10 +132,12 @@ export function sourceShares(weights, available = SOURCE_IDS) {
   return Object.fromEntries(SOURCE_IDS.map(key => [key, active.includes(key) ? normalized[key] * 100 / total : 0]));
 }
 
-export function settingsFrom(input = {}) {
-  const finite = (key, fallback) => Number.isFinite(Number(input[key])) ? Number(input[key]) : fallback;
+// Sans mémoire choisie, la référence suit l'échéance quand la date des données est connue.
+export function settingsFrom(input = {}, asOf = null) {
+  const finite = (key, fallback) => input[key] !== null && input[key] !== '' && Number.isFinite(Number(input[key])) ? Number(input[key]) : fallback;
+  const halfLifeFallback = asOf ? referenceHalfLife(asOf) : DEFAULT_SETTINGS.halfLife;
   return {
-    halfLife: clamp(finite('halfLife', DEFAULT_SETTINGS.halfLife), 3, 90),
+    halfLife: clamp(finite('halfLife', halfLifeFallback), 3, 90),
     weights: normalizeWeights(input.weights ?? DEFAULT_WEIGHTS),
     uncertainty: clamp(finite('uncertainty', DEFAULT_SETTINGS.uncertainty), 0, 8),
     simulations: Math.round(clamp(finite('simulations', 16000), 1000, 50000)),
@@ -451,21 +470,27 @@ function dynamicsSinceLastPoll(windows, ids, latest, isUsable) {
   return { periods, anchors, observed, missing: ids.filter(id => !observed.includes(id)), anchor: Object.values(anchors).sort().at(-1) };
 }
 
-export function sourceComponents(data, ids) {
+export function sourceComponents(data, ids, halfLife = referenceHalfLife(data.asOf)) {
   const latest = latestFieldDates(data);
   const components = {
     polls: { available: ids.some(id => id in latest), latest: ids.map(id => latest[id]).filter(Boolean).sort().at(-1),
       reason: 'Socle électoral : tous les sondages de premier tour, toutes listes confondues, ramenés à des niveaux de soutien cohérents.' },
-    barometer: { available: false, reason: 'Deux candidats avec une dynamique mesurable depuis le dernier terrain, sur au moins deux plateformes récentes, sont nécessaires.' },
+    barometer: { available: false, reason: 'Deux candidats avec une dynamique mesurable sur la fenêtre du baromètre, sur au moins deux plateformes récentes, sont nécessaires.' },
     polymarket: { available: false, reason: 'Deux candidats cotés et une capture de moins de 7 jours sont nécessaires.' },
     wikipedia: { available: false, reason: 'Moins de deux candidats avec assez de consultations Wikipédia autour du dernier terrain, ou relevé de plus de 3 jours.' },
     trends: { available: false, reason: 'aucun candidat de cette liste dans les recherches en forte hausse des 28 derniers jours.' },
   };
   if (recent(data.asOf, data.social?.asOf, 3)) {
-    const dynamics = dynamicsSinceLastPoll(data.social.windows, ids, latest, signal => signal.coverage >= 2 && Number.isFinite(signal.score));
-    if (dynamics.observed.length >= 2) components.barometer = { ...dynamics, available: true, latest: data.social.asOf,
-      raw: Object.fromEntries(dynamics.observed.map(id => [id, dynamics.periods[id].score])),
-      reason: 'Dynamique pondérée depuis le dernier sondage de chaque candidat, en ‰, appliquée en bonus ou malus relatif. Une dynamique proche de zéro n’a pas d’effet ; une perte d’abonnés tire vers le bas.' };
+    // Même durée que la mémoire des sondages : le baromètre couvre la période que leur moyenne lisse encore.
+    const windowDays = barometerWindowDays(halfLife);
+    const anchor = shiftDays(data.asOf, -windowDays);
+    const signals = data.social.windows?.[anchor]?.signals ?? {};
+    const observed = ids.filter(id => signals[id]?.coverage >= 2 && Number.isFinite(signals[id].score));
+    if (observed.length >= 2) components.barometer = { available: true, latest: data.social.asOf, anchor, windowDays,
+      observed, missing: ids.filter(id => !observed.includes(id)),
+      periods: Object.fromEntries(observed.map(id => [id, signals[id]])),
+      raw: Object.fromEntries(observed.map(id => [id, signals[id].score])),
+      reason: `Dynamique pondérée des abonnés sur les ${windowDays} derniers jours (la mémoire des sondages), en ‰, appliquée en bonus ou malus relatif. Une dynamique proche de zéro n’a pas d’effet ; une perte d’abonnés tire vers le bas.` };
   }
   const boards = {};
   const boardSources = { president: data.market, ...(data.marketEvents ?? {}) };
@@ -629,7 +654,7 @@ const ignoreNoise = (value, threshold) => Math.sign(value) * Math.max(0, Math.ab
 const relativeEffect = value => Math.exp(DYNAMIC_SATURATION * Math.tanh(value / DYNAMIC_SATURATION)) - 1;
 
 export function forecast(data, configurationId, rawSettings = {}) {
-  const settings = settingsFrom(rawSettings);
+  const settings = settingsFrom(rawSettings, data.asOf);
   const configurations = allConfigurations(data);
   const configuration = configurations.find(c => c.id === configurationId) ?? configurations[0];
   if (!configuration) return { error: 'Aucune configuration de premier tour exploitable.', rows: [], settings };
@@ -638,7 +663,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
   const scores = fit && scoresForList(fit, ids);
   if (!scores || ids.some(id => !Number.isFinite(scores[id]))) return { error: `Aucun sondage compatible depuis ${POLL_WINDOW_DAYS} jours.`, rows: [], settings, configuration };
   const baseline = { scores, pollCount: fit.pollCount, instituteCount: fit.instituteCount, latest: fit.latest };
-  const components = sourceComponents(data, ids);
+  const components = sourceComponents(data, ids, settings.halfLife);
   const available = SOURCE_IDS.filter(id => components[id].available);
   const shares = sourceShares(settings.weights, available);
   const sourceMix = Object.fromEntries(SOURCE_IDS.map(id => [id, { ...components[id], requested: settings.weights[id], effective: shares[id] }]));
@@ -779,7 +804,7 @@ export function forecast(data, configurationId, rawSettings = {}) {
     polledDuels,
     pairs: [...pairCounts].map(([key, count]) => ({ key, probability: count / totalWeight * 100, estimate: duels[key] ?? null,
       basis: duels[key] ? 'polls' : pairSamples.has(key) ? 'transfers' : null, projection: duelProjection(key, pairSamples.get(key)) })).sort((a, b) => b.probability - a.probability),
-    isPersonal: settings.halfLife !== DEFAULT_SETTINGS.halfLife || settings.uncertainty !== DEFAULT_SETTINGS.uncertainty || settings.horizon !== DEFAULT_SETTINGS.horizon || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };
+    isPersonal: settings.halfLife !== referenceHalfLife(data.asOf) || settings.uncertainty !== DEFAULT_SETTINGS.uncertainty || settings.horizon !== DEFAULT_SETTINGS.horizon || SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id]), experimental: true };
 }
 
 // Tous les duels sondés, ajustés par les mêmes sources que les duels simulés, même si le premier tour
@@ -828,7 +853,7 @@ function summarizeRunoff(samples, qualifiedWeight) {
   };
 }
 
-export function pollingHistory(data, configurationId, halfLife = DEFAULT_SETTINGS.halfLife) {
+export function pollingHistory(data, configurationId, halfLife = referenceHalfLife(data.asOf)) {
   const ids = configurationId === FIELD_ID
     ? allConfigurations(data).find(item => item.id === FIELD_ID)?.candidateIds ?? []
     : configurationId.split('|');

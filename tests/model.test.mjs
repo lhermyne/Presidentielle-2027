@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS, allConfigurations, fitSupport, FIELD_ID, DYNAMIC_SATURATION, HORIZON_SPREAD, horizonSpread } from '../model/forecast.mjs';
+import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS, allConfigurations, fitSupport, FIELD_ID, DYNAMIC_SATURATION, HORIZON_SPREAD, horizonSpread, referenceHalfLife, barometerWindowDays } from '../model/forecast.mjs';
 import { transferScore } from '../model/transfers.mjs';
 
 const effect = value => Math.exp(DYNAMIC_SATURATION * Math.tanh(value / DYNAMIC_SATURATION)) - 1;
@@ -54,8 +54,10 @@ const completeDuels = () => {
   const ids = ['a', 'b', 'c', 'd'];
   return ids.flatMap((id, i) => ids.slice(i + 1).map(other => poll(`duel-${id}-${other}`, { [id]: 52, [other]: 48 }, { round: 2 })));
 };
+// Au 20 octobre 2026 (180 jours du vote), la mémoire de référence est de 25 jours : la fenêtre du baromètre part du 25 septembre.
+const BAROMETER_START = '2026-09-25';
 const addSignals = data => ({ ...data,
-  social: { asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals: { a: {score:1,coverage:4}, b: {score:-2,coverage:4}, c: {score:0,coverage:2}, d: {score:60,coverage:4} } } }, signals: { a: { barometerScore: 1, barometerCoverage: 4 }, b: { barometerScore: -2, barometerCoverage: 4 }, c: { barometerScore: 0, barometerCoverage: 2 }, d: { barometerScore: 100, barometerCoverage: 4 } } },
+  social: { asOf: data.asOf, windows: { [BAROMETER_START]: { anchor: BAROMETER_START, signals: { a: {score:1,coverage:4}, b: {score:-2,coverage:4}, c: {score:0,coverage:2}, d: {score:60,coverage:4} } } }, signals: { a: { barometerScore: 1, barometerCoverage: 4 }, b: { barometerScore: -2, barometerCoverage: 4 }, c: { barometerScore: 0, barometerCoverage: 2 }, d: { barometerScore: 100, barometerCoverage: 4 } } },
   market: { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 80 }, { id: 'c', probability: 10 }, { id: 'd', probability: 5 }] },
   trends: { asOf: data.asOf, interest: { a: 100, b: 500 } },
   wikipedia: { asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals: { a: { dynamic: 0.6 }, b: { dynamic: -0.4 }, d: { dynamic: 0.1 } } } } },
@@ -93,7 +95,7 @@ test('the barometer is active by default as a bounded correction, never a vote-s
 
 test('missing, stale and future social signals cannot create a correction', () => {
   const data = addSignals(dataset(firstRound));
-  delete data.social.windows['2026-10-19'].signals.d;
+  delete data.social.windows[BAROMETER_START].signals.d;
   assert.equal(forecast(data, key, { simulations: 1000 }).rows.find(row => row.id === 'd').corrections.barometer, 0);
   for (const asOf of ['2026-10-10', '2026-10-21']) {
     data.social.asOf = asOf;
@@ -187,12 +189,32 @@ test('60 per mille with x2 gives about a 12 percent relative boost, not twelve p
   assert.ok(Math.abs(row.corrections.barometer - 10 * effect(0.0595 * 2)) < 1e-10);
   assert.equal(result.adjustmentLimits.barometerScale, 2);
   assert.ok(row.center < 11.3);
-  // A new survey at the same date resets the measurement window.
+  // A new survey does not reset the window: the barometer keeps measuring the memory of the polls.
   data.polls[0].fieldEnd = '2026-10-20';
-  data.social.windows['2026-10-20'] = {anchor:'2026-10-20', signals:{a:{score:0,coverage:4},b:{score:0,coverage:4},c:{score:0,coverage:4},d:{score:0,coverage:4}}};
-  const reset = forecast(data, key, { weights: { polls: 100, barometer: 40 }, simulations: 1000 });
-  assert.ok(reset.rows.every(row => row.corrections.barometer === 0));
-  assert.equal(reset.sourceMix.barometer.anchor, '2026-10-20');
+  const after = forecast(data, key, { weights: { polls: 100, barometer: 40 }, simulations: 1000 });
+  assert.ok(Math.abs(after.rows.find(row => row.id === 'd').corrections.barometer - row.corrections.barometer) < 1e-10);
+  assert.equal(after.sourceMix.barometer.anchor, BAROMETER_START);
+});
+
+test('the reference memory shrinks by one day every ten days, down to 7 days on election eve', () => {
+  assert.equal(referenceHalfLife('2026-11-10'), 22);
+  assert.equal(referenceHalfLife('2027-01-18'), 16);
+  assert.equal(referenceHalfLife('2027-04-17'), 7);
+  assert.equal(referenceHalfLife('2027-05-01'), 7);
+  assert.equal(settingsFrom({}, '2027-01-18').halfLife, 16);
+  assert.equal(settingsFrom({ halfLife: 30 }, '2027-01-18').halfLife, 30);
+  assert.equal(barometerWindowDays(3), 7);
+  assert.equal(barometerWindowDays(60), 30);
+});
+
+test('the barometer window follows the memory of the polls', () => {
+  const data = addSignals(dataset([poll('p', {a: 40, b: 30, c: 20, d: 10})]));
+  const short = forecast(data, key, { halfLife: 10, weights: { polls: 100, barometer: 40 }, simulations: 1000 });
+  assert.equal(short.sourceMix.barometer.available, false, 'aucune fenêtre de 10 jours dans les données');
+  data.social.windows['2026-10-10'] = { anchor: '2026-10-10', signals: { a: { score: 0, coverage: 4 }, d: { score: 30, coverage: 4 } } };
+  const result = forecast(data, key, { halfLife: 10, weights: { polls: 100, barometer: 40 }, simulations: 1000 });
+  assert.equal(result.sourceMix.barometer.windowDays, 10);
+  assert.ok(result.rows.find(row => row.id === 'd').corrections.barometer > 0);
 });
 
 test('the barometer slider is a direct x0 to x5 multiplier that also takes room in the influence bar', () => {
@@ -313,7 +335,7 @@ test('the coherent field keeps candidates backed by the ballot or victory market
 
 test('near-zero dynamics have no effect, losses pull down, and strong dynamics are not clipped', () => {
   const data = addSignals(dataset(firstRound));
-  const window = data.social.windows['2026-10-19'].signals;
+  const window = data.social.windows[BAROMETER_START].signals;
   Object.assign(window, { a: { score: 0.4, coverage: 4 }, b: { score: -40, coverage: 4 }, c: { score: 400, coverage: 4 }, d: { score: -0.3, coverage: 4 } });
   const result = forecast(data, key, { weights: { polls: 100, barometer: 100 }, simulations: 1000 });
   const row = id => result.rows.find(item => item.id === id);

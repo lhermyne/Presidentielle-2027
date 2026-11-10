@@ -4,6 +4,7 @@ import {
   MULTIPLIER_IDS,
   WEIGHT_PER_MULTIPLIER,
   DEFAULT_SETTINGS,
+  referenceHalfLife,
   DEFAULT_WEIGHTS,
   MIN_POLL_WEIGHT,
   SOURCE_IDS,
@@ -104,7 +105,8 @@ function SourceSlider({ id, value, share, component, onChange }) {
 export default function Laboratory({ configurations, configurationId, setConfigurationId, settings, setSettings, data }) {
   const names = Object.fromEntries(data.candidates.map(candidate => [candidate.id, candidate.name]));
   const configuration = configurations.find(item => item.id === configurationId);
-  const components = sourceComponents(data, configuration?.candidateIds ?? []);
+  const components = sourceComponents(data, configuration?.candidateIds ?? [], settings.halfLife);
+  const referenceMemory = referenceHalfLife(data.asOf);
   const available = SOURCE_IDS.filter(id => components[id].available);
   const shares = sourceShares(settings.weights, available);
 
@@ -114,7 +116,7 @@ export default function Laboratory({ configurations, configurationId, setConfigu
     weights: { ...previous.weights, [id]: Number(value) },
   }));
   const applyWeights = weights => setSettings(previous => ({ ...previous, weights: { ...weights } }));
-  const reset = () => setSettings({ ...DEFAULT_SETTINGS, weights: { ...DEFAULT_WEIGHTS } });
+  const reset = () => setSettings({ ...DEFAULT_SETTINGS, halfLife: referenceMemory, weights: { ...DEFAULT_WEIGHTS } });
 
   return (
     <div id="laboratoire" className="laboratory">
@@ -168,7 +170,7 @@ export default function Laboratory({ configurations, configurationId, setConfigu
               <output htmlFor="half-life">{settings.halfLife} jours</output>
             </div>
             <input name="half-life" id="half-life" type="range" min="3" max="90" step="1" value={settings.halfLife} onChange={event => setNumber('halfLife', event.target.value)} />
-            <p>Un sondage compte deux fois moins après cette durée.</p>
+            <p>Un sondage compte deux fois moins après cette durée, qui fixe aussi la fenêtre du baromètre (de 7 à 30 jours). Référence du jour : {referenceMemory} jours, un jour de moins tous les 10 jours jusqu’à 7 jours la veille du scrutin.</p>
           </div>
         </details>
 

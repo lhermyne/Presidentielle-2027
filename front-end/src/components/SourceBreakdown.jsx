@@ -76,7 +76,7 @@ function ForecastEffects({ result, names }) {
       </div>
       <p className="source-caption">
         Corrections en points, et en % du score sondé dessous. * Signal manquant : aucune correction, la dynamique n’est pas comptée comme nulle.
-        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} et Wikipédia à ×{limits.wikipediaScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}, mesurés depuis le dernier sondage de chaque candidat.
+        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} et Wikipédia à ×{limits.wikipediaScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}. Baromètre mesuré sur {mix.barometer.windowDays ?? '—'} jours glissants, Wikipédia depuis le dernier sondage de chaque candidat.
         Chaque actualisation repart du socle sondé.
       </p>
       <p className="metric-description">
@@ -123,22 +123,26 @@ function WikipediaDynamics({ result, names }) {
 
 export default function SourceBreakdown({ result, data }) {
   const names = Object.fromEntries(data.candidates.map(candidate => [candidate.id, candidate.name]));
-  const dynamics = Object.entries(data.social.signals ?? {})
-    .filter(([id, value]) => names[id] && Number.isFinite(value.barometerScore))
-    .sort((a, b) => b[1].barometerScore - a[1].barometerScore);
+  const barometer = result?.sourceMix?.barometer;
+  const dynamics = Object.entries(barometer?.periods ?? {})
+    .filter(([id]) => names[id])
+    .sort((a, b) => b[1].score - a[1].score);
   return (
     <section className="source-breakdown">
       <details key={result?.error ? 'signals' : 'forecast'} open={Boolean(result?.error)}>
         <summary>Vérifier l’effet de chaque source et consulter les dynamiques</summary>
         {result?.rows?.length > 0 && <><ForecastEffects result={result} names={names} /><UncertaintyTable rows={result.rows} /></>}
         <h2 className="signal-heading">Dynamique du baromètre</h2>
-        <p className="metric-description">Repère hebdomadaire en ‰ sur 7 relevés. Être premier de ce classement ne signifie pas être favori à l’élection.</p>
+        <p className="metric-description">
+          Dynamique pondérée en ‰ sur les {barometer?.windowDays ?? '—'} derniers jours, la mémoire des sondages : c’est elle qui donne le bonus ou malus.
+          Être premier de ce classement ne signifie pas être favori à l’élection.
+        </p>
         <div className="table-scroll" tabIndex={0} role="region" aria-label="Dynamique brute du baromètre">
           <table>
             <thead><tr><th scope="col">Personnalité</th><th scope="col">Dynamique pondérée</th><th scope="col">Plateformes</th></tr></thead>
             <tbody>
               {dynamics.map(([id, signal]) => (
-                <tr key={id}><th scope="row">{names[id] ?? id}</th><td>{signed(signal.barometerScore)} ‰</td><td>{signal.barometerCoverage}/4</td></tr>
+                <tr key={id}><th scope="row">{names[id] ?? id}</th><td>{signed(signal.score)} ‰</td><td>{signal.coverage}/4</td></tr>
               ))}
             </tbody>
           </table>

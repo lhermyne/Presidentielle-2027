@@ -64,6 +64,23 @@ le test porte sur la seule campagne 2026 (18 dates, juin à octobre).
 | Pente sans David Lisnard | +0,0026 par ‰ (corrélation 0,14) |
 
 Le signal repose surtout sur un candidat. La pente robuste (0,0026) est proche de la force utilisée (×2, soit 0,002).
+
+### Fenêtre de mesure (10 novembre 2026)
+
+`node backtest/soutiens.mjs && python backtest/barometre_fenetres.py`. Trois fenêtres comparées à l'évolution du
+soutien sondé sur les 14 et 28 jours suivants (environ 200 observations, mi-mai à novembre 2026, 2 plateformes minimum).
+
+| Fenêtre | r à 14 j (t) | Sans Lisnard | r à 28 j (t) | Sans Lisnard | Rangs 14 j / 28 j |
+|---|---|---|---|---|---|
+| Depuis le dernier sondage (ancienne) | +0,51 (8,7) | +0,11 (1,6) | +0,48 (7,6) | +0,12 (1,7) | +0,18 / +0,16 |
+| 21 jours glissants (retenue) | +0,34 (5,1) | +0,09 (1,2) | +0,53 (8,5) | +0,13 (1,7) | +0,24 / +0,23 |
+| Tous les relevés, demi-vie 21 jours | +0,28 (4,3) | +0,07 (1,0) | +0,46 (7,5) | +0,11 (1,5) | +0,16 / +0,15 |
+
+Avec la fenêtre de 21 jours, la pente observée vaut 0,6 à 3 fois l'effet du réglage ×2 : la force est conservée.
+Corrélation médiane par candidat proche de zéro pour les trois fenêtres (nette pour Lisnard et Tondelier, négative
+pour Glucksmann, Ruffin, Retailleau). Une seule campagne, un signal dominé par un candidat : pas une validation.
+La fenêtre suit la mémoire des sondages, 7 jours plus un jour par tranche de 10 jours d'échéance (22 jours le
+10 novembre 2026, 7 jours la veille du scrutin) ; cette décroissance n'est pas calibrée.
 Social Blade : la collecte automatique de son site est interdite par ses conditions ; son API est payante
 (1 à 5 crédits par profil et par plateforme) et ne remonte qu'à la première consultation de chaque profil. Non utilisé.
 

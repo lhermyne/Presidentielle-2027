@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { allConfigurations, DEFAULT_SETTINGS, DEFAULT_WEIGHTS, forecast, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
+import { allConfigurations, DEFAULT_WEIGHTS, forecast, referenceHalfLife, settingsFrom, SOURCE_IDS } from '../../../model/forecast.mjs';
 import { downloadJson } from '../lib/format.js';
 import { activePresetId } from '../lib/presets.js';
 import { shareForecast } from '../lib/share.js';
@@ -19,22 +19,22 @@ const MESSAGE_DURATION = 6000;
 const SHARE_IMAGE_DELAY = 400;
 const DEFAULT_SHARE_SENTENCE = 'Présidentielle 2027 : sondages, marchés et signaux en ligne réunis dans une projection expérimentale.';
 
-function initialSettings() {
+function initialSettings(asOf) {
   const query = new URLSearchParams(window.location.search);
   // Les liens antérieurs aux curseurs indépendants (sans poids du baromètre) reviennent à la référence.
   const weights = query.has('poids-barometer')
     ? Object.fromEntries(SOURCE_IDS.map(id => [id, query.get(`poids-${id}`) ?? 0]))
     : undefined;
-  return settingsFrom({ halfLife: query.get('memoire') ?? DEFAULT_SETTINGS.halfLife, weights, horizon: query.get('echeance') !== 'non' });
+  return settingsFrom({ halfLife: query.get('memoire'), weights, horizon: query.get('echeance') !== 'non' }, asOf);
 }
 
 // L'adresse reste nue tant que les réglages sont ceux de la référence ; seul un réglage modifié y apparaît.
-function syncUrl(configurationId, defaultConfigurationId, settings) {
+function syncUrl(configurationId, defaultConfigurationId, settings, asOf) {
   const url = new URL(window.location.href);
   for (const name of [...OBSOLETE_PARAMS, ...SETTING_PARAMS]) url.searchParams.delete(name);
 
   if (configurationId !== defaultConfigurationId) url.searchParams.set('candidats', configurationId ?? '');
-  if (settings.halfLife !== DEFAULT_SETTINGS.halfLife) url.searchParams.set('memoire', settings.halfLife);
+  if (settings.halfLife !== referenceHalfLife(asOf)) url.searchParams.set('memoire', settings.halfLife);
   if (!settings.horizon) url.searchParams.set('echeance', 'non');
   if (SOURCE_IDS.some(id => settings.weights[id] !== DEFAULT_WEIGHTS[id])) {
     for (const id of SOURCE_IDS) url.searchParams.set(`poids-${id}`, settings.weights[id]);
@@ -49,7 +49,7 @@ export default function Overview({ data, labOpen, onLabChange }) {
     const requested = new URLSearchParams(window.location.search).get('candidats');
     return configurations.some(c => c.id === requested) ? requested : configurations[0]?.id;
   });
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState(() => initialSettings(data.asOf));
   const [result, setResult] = useState(null);
   const [pending, setPending] = useState(true);
   const [shareImage, setShareImage] = useState(null);
@@ -95,7 +95,7 @@ export default function Overview({ data, labOpen, onLabChange }) {
         setPending(false);
       }
     }, 140);
-    syncUrl(configurationId, configurations[0]?.id, settings);
+    syncUrl(configurationId, configurations[0]?.id, settings, data.asOf);
     return () => clearTimeout(timer);
   }, [data, configurations, configurationId, settings]);
 

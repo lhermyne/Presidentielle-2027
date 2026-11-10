@@ -15,7 +15,7 @@ from sources import (ATTRIBUTION, BAROMETER_BASE, GAMMA_EVENTS, MARKET_EVENTS, M
                      WIKIPEDIA_DOCUMENTATION, normalize_history, parse_market, parse_polls, social_signals,
                      parse_trends, merge_trends, trend_signals,
                      merge_pageviews, parse_pageviews, wikipedia_signals, wikipedia_url,
-                     barometer_daily, market_history, recent_series, _history_dates)
+                     barometer_anchors, barometer_daily, market_history, recent_series, _history_dates)
 from market_history import collect_market_history, fill_history, long_series
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -198,7 +198,7 @@ def main():
                0 <= (date_check.date() - datetime.fromisoformat(p["fieldEnd"]).date()).days <= 120]
     result = {"schemaVersion": 1, "generatedAt": captured_at, "asOf": as_of,
               "candidates": candidates, "polls": poll_data["polls"],
-              "social": social_signals(histories, as_of, anchors), "market": market_data, "marketEvents": market_events,
+              "social": social_signals(histories, as_of, barometer_anchors(as_of)), "market": market_data, "marketEvents": market_events,
               "trends": trend_signals(trends_data, candidates, as_of, trends_status.get("fetchedAt")),
               "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt"), anchors),
               "history": {"polymarket": fill_history(market_history(archived_market_snapshots(as_of, market_data), as_of),

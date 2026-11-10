@@ -152,8 +152,18 @@ def normalize_history(raw):
     return [by_date[day] for day in sorted(by_date)]
 
 
-def barometer_window(histories, anchor, as_of):
-    """Relative barometer dynamic since a known poll field-end, without bot imports."""
+# Durées de fenêtre du baromètre lues par le modèle : sa mémoire des sondages, bornée à la plage testée.
+BAROMETER_WINDOW_DAYS = range(7, 31)
+
+
+def barometer_anchors(as_of, durations=BAROMETER_WINDOW_DAYS):
+    """Début de chaque fenêtre glissante du baromètre, de 7 à 30 jours avant la date des données."""
+    end = date.fromisoformat(as_of)
+    return [(end - timedelta(days=days)).isoformat() for days in durations]
+
+
+def barometer_window(histories, anchor, as_of, kind="windowStart"):
+    """Dynamique relative du baromètre depuis une date de départ, sans import du bot."""
     values = defaultdict(list)
     for platform, history in histories.items():
         rows = [row for row in history if row["date"] <= as_of]
@@ -181,7 +191,7 @@ def barometer_window(histories, anchor, as_of):
         signals[candidate] = {"score": sum(item["value"] * weight for item, weight in zip(observations, weights)) / sum(weights),
                               "coverage": len(observations),
                               "periods": [{key: item[key] for key in ("platform", "from", "through")} for item in observations]}
-    return {"anchor": anchor, "anchorKind": "fieldEnd", "signals": signals}
+    return {"anchor": anchor, "anchorKind": kind, "signals": signals}
 
 
 def social_signals(histories, as_of, anchors=()):

@@ -148,7 +148,8 @@ fusionnent les dates pour conserver l'historique même si la source le raccourci
 à deux niveaux (`fitSupport`) : poids de chaque camp politique, puis répartition dans le camp.
 Un absent reporte ses voix d'abord dans son camp, au prorata. La liste par défaut (`field`) réunit
 les candidats testés avec au moins 15 % sur le bulletin ou 1 % de victoire sur Polymarket ; chaque
-liste réellement testée reste choisissable. Décroissance exponentielle (demi-vie 21 jours), poids
+liste réellement testée reste choisissable. Décroissance exponentielle (demi-vie de référence décroissante,
+voir ci-dessous), poids
 d'échantillon en racine carrée et atténuation des instituts fréquents. Pas de biais d'institut appris.
 
 Depuis le 1er novembre 2026, **chaque source a un curseur indépendant** (0 à 100, baromètre de ×0 à ×5) :
@@ -158,18 +159,23 @@ leur curseur ne descend pas sous **1**. Une source sans signal exploitable pour 
 choisie est **verrouillée** et sort du calcul des parts.
 Référence : **sondages 100, Polymarket 50, baromètre ×2, Wikipédia ×1, Trends 10**, soit sans
 Google Trends environ **48 % sondages, 24 % Polymarket, 19 % baromètre, 10 % Wikipédia**.
-Mémoire des sondages 21 jours. Incertitude mesurée par candidat, sans réglage manuel : précision de la moyenne des sondages et bruit
+Mémoire des sondages (demi-vie) : 7 jours la veille du scrutin, un jour de plus par tranche de 10 jours
+d'échéance (`referenceHalfLife`) : 22 jours le 10 novembre 2026 (159 jours du vote), 16 jours à
+90 jours du vote. Réglage expérimental, non calibré. Incertitude mesurée par candidat, sans réglage manuel : précision de la moyenne des sondages et bruit
 irrégulier de chaque source sur la mémoire, en somme quadratique. Elle ne couvre pas les évolutions de campagne. « Sondages seuls » met toutes les autres sources à 0.
 Les liens partagés avant ce changement (sans `poids-barometer`) reviennent à la référence.
 La répartition est expérimentale, pas optimisée historiquement.
 
 Le signal social reprend la formule autonome de dynamique pondérée du baromètre :
 variation en ‰ × audience/max plateforme, moyenne entre plateformes pondérée par les
-audiences relatives du candidat. **La fenêtre part du dernier sondage de chaque candidat**,
-faute de date de publication dans le CSV, jusqu’au dernier relevé. Le relevé de départ
-peut précéder le terrain de trois jours au maximum ; les dates réelles sont conservées.
+audiences relatives du candidat. **La fenêtre glisse sur la mémoire des sondages** (22 jours
+le 10 novembre 2026, bornée entre 7 et 30 jours) jusqu’au dernier relevé : le baromètre couvre la période
+que la moyenne des sondages lisse encore, et un nouveau sondage ne le remet plus à zéro.
+La collecte calcule une fenêtre par durée de 7 à 30 jours. Le relevé de départ peut précéder
+la date de début de trois jours au maximum ; les dates réelles sont conservées.
+Choix fondé sur `backtest/barometre_fenetres.py` (voir `docs/BACKTEST.md`).
 Au moins deux plateformes récentes par candidat et deux candidats observés sont requis.
-Le score hebdomadaire sur sept relevés reste un repère consultable séparément.
+Le détail des sources affiche cette dynamique, celle qui produit le bonus ou malus.
 
 Le boost relatif est `dynamique / 1 000 × multiplicateur`, réglé directement de **×0 à ×5**
 (×2 par défaut). Dans la barre d’influence, ×5 pèse autant qu’un curseur à 100.

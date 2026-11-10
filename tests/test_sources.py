@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import collect
 from sources import normalize_history, parse_market, parse_polls, slug, social_signals, parse_trends, merge_trends, trend_signals, barometer_window
-from sources import parse_pageviews, wikipedia_signals, wikipedia_url, wikipedia_window, barometer_daily, market_history, recent_series
+from sources import parse_pageviews, wikipedia_signals, wikipedia_url, wikipedia_window, barometer_daily, market_history, recent_series, barometer_anchors
 
 HEADER = "sondage_id,institut,terrain_debut,terrain_fin,echantillon,tour,configuration,configuration_principale,echantillon_configuration,candidat,parti,score,url_source\n"
 
@@ -141,6 +141,18 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(signals["asOf"], "2026-10-30")
         self.assertIn("Jean-Luc_M%C3%A9lenchon", wikipedia_url({"id": "jlm", "name": "Jean-Luc Mélenchon"},
                                                               date(2026, 10, 1), date(2026, 10, 30)))
+
+    def test_barometer_windows_start_7_to_30_days_before_the_data(self):
+        anchors = barometer_anchors("2026-11-10")
+        self.assertEqual(len(anchors), 24)
+        self.assertEqual(anchors[0], "2026-11-03")
+        self.assertEqual(anchors[-1], "2026-10-11")
+        rows = [{"date": (date(2026, 10, 5) + timedelta(days=day)).isoformat(), "accounts": {"a": 1000 + 10 * day, "b": 2000}}
+                for day in range(37)]
+        window = barometer_window({"instagram": rows, "twitter": rows}, anchors[-1], "2026-11-10")
+        self.assertEqual(window["anchorKind"], "windowStart")
+        self.assertGreater(window["signals"]["a"]["score"], 0)
+        self.assertEqual(window["signals"]["b"]["score"], 0)
 
     def test_history_series_cover_the_recent_window_only(self):
         snapshots = {"2026-01-01": [{"id": "a", "probability": 10}], "2026-10-30": [{"id": "a", "probability": 40.123}], "2026-11-01": [{"id": "a", "probability": 45}]}
