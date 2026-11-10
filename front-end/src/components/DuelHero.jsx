@@ -4,6 +4,19 @@ import DuelBar from './DuelBar.jsx';
 import Portrait from './Portrait.jsx';
 import { dateLabel, percent } from '../lib/format.js';
 
+const TIME_FORMAT = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+
+// Heure des prix Polymarket lus au chargement ; rien si seul le relevé de la nuit est disponible.
+function LiveMarketNote({ liveMarket }) {
+  if (!liveMarket) return null;
+  return (
+    <span className="hero-live">
+      <span className="live-dot" aria-hidden="true" />
+      Polymarket en direct à {TIME_FORMAT.format(new Date(liveMarket.capturedAt))}
+    </span>
+  );
+}
+
 function pairRows(pair, rows) {
   const ids = pair?.key.split('|') ?? [];
   return rows.filter(row => ids.includes(row.id));
@@ -60,8 +73,11 @@ export default function DuelHero({ result, data, isPersonal }) {
       <div className="hero-glow" aria-hidden="true"><span /><span /></div>
       <div className="hero-inner">
         <p className="hero-eyebrow">
-          <span className="live-dot" aria-hidden="true" />
-          {isPersonal ? 'Votre simulation' : 'Actualisé chaque nuit'} · données du {dateLabel(data.asOf)}
+          <span className="hero-eyebrow-main">
+            {!data.liveMarket && <span className="live-dot" aria-hidden="true" />}
+            {isPersonal ? 'Votre simulation' : 'Actualisé chaque nuit'} · données du {dateLabel(data.asOf)}
+          </span>
+          <LiveMarketNote liveMarket={data.liveMarket} />
         </p>
         <h1>Présidentielle 2027 : le second tour le plus probable</h1>
 

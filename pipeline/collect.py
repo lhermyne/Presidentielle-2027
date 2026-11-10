@@ -15,11 +15,13 @@ from sources import (ATTRIBUTION, BAROMETER_BASE, GAMMA_EVENTS, MARKET_EVENTS, M
                      WIKIPEDIA_DOCUMENTATION, normalize_history, parse_market, parse_polls, social_signals,
                      parse_trends, merge_trends, trend_signals,
                      merge_pageviews, parse_pageviews, wikipedia_signals, wikipedia_url,
-                     barometer_daily, market_history, recent_series)
+                     barometer_daily, market_history, recent_series, _history_dates)
+from market_history import collect_market_history, fill_history, long_series
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 CACHE = DATA / "cache"
+MARKET_HISTORY = DATA / "historique" / "polymarket"
 
 
 def write_json(path, value):
@@ -180,6 +182,7 @@ def main():
         lambda raw: parse_market(json.loads(raw), captured_at), captured_at, args.offline)
     statuses.append(status)
     market_events = collect_market_events(captured_at, args.offline)
+    history_statuses = collect_market_history(fetch, MARKET_HISTORY, captured_at, args.offline)
     trends_data, trends_status = collect_source("google-trends", "Google Trends · recherches en hausse", TRENDS_URL,
         parse_trends, captured_at, args.offline)
     trends_status["note"] = "Flux public Trending Now en France, archivé quotidiennement. Signal actif avec au moins deux candidats identifiés dans les 28 derniers jours. Ce n’est pas l’API comparative Google Trends."
@@ -198,7 +201,8 @@ def main():
               "social": social_signals(histories, as_of, anchors), "market": market_data, "marketEvents": market_events,
               "trends": trend_signals(trends_data, candidates, as_of, trends_status.get("fetchedAt")),
               "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt"), anchors),
-              "history": {"polymarket": market_history(archived_market_snapshots(as_of, market_data), as_of),
+              "history": {"polymarket": fill_history(market_history(archived_market_snapshots(as_of, market_data), as_of),
+                                                     long_series(MARKET_HISTORY), _history_dates(as_of)[0], as_of),
                           "barometer": barometer_daily(histories, as_of), "wikipedia": recent_series(pageviews, as_of)},
               "sources": statuses, "rejectedPolls": poll_data.get("rejected", []),
               "limitations": ["Modèle expérimental, paramètres non calibrés historiquement.",
@@ -208,7 +212,7 @@ def main():
     archive = DATA / "archive" / as_of
     # Exact normalized inputs used on this day, not a rolling cache or Actions artifact.
     write_json(archive / "observations.json", {key: value for key, value in result.items() if key != "history"})
-    for status in statuses:
+    for status in statuses + history_statuses:
         print(f"{status['title']}: {status['status']}")
     print(f"{len(result['polls'])} configurations-sondages ; {len(candidates)} personnalités ; {len(poll_data.get('rejected', []))} groupes/lignes rejetés.")
     return 0

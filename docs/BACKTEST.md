@@ -88,7 +88,9 @@ Deux cases ne sont pas mesurées et sont signalées comme hypothèses dans le fi
 
 ## 5. Polymarket
 
-Aucun historique exploitable pour une présidentielle française. Le marché n'est plus converti en score :
+Aucun historique exploitable pour une présidentielle passée. Pour 2027, l'historique quotidien complet de chaque
+marché est désormais conservé (`data/historique/polymarket/`, victoire depuis le 14 novembre 2025) : il permettra
+de tester si les mouvements du marché précèdent ceux des sondages. Le marché n'est plus converti en score :
 il repondère les simulations selon ses probabilités (victoire, places, qualification).
 Sa force reste un réglage, non validé.
 

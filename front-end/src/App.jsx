@@ -7,10 +7,13 @@ import Method from './pages/Method.jsx';
 import ShareCardPage from './components/ShareCardPage.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import { dateLabel } from './lib/format.js';
+import { fetchLiveMarkets, withLiveMarkets } from './lib/liveMarket.js';
 
 const BAROMETER_URL = 'https://lhermyne.github.io/L_Hermyne/monitor_dashboard.html';
 const SITE_NAME = 'L’Hermyne - Présidentielle 2027';
 const PAGE_TITLES = { '/sources': 'Les sources', '/methode': 'La méthode' };
+// Attente maximale des prix Polymarket du moment avant d'afficher le relevé de la nuit.
+const LIVE_GRACE_MS = 1500;
 
 function validateData(data) {
   const complete = data.schemaVersion === 1
@@ -78,16 +81,36 @@ export default function App() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // Un échec ou une annulation de Polymarket laisse simplement le relevé de la nuit.
+    const live = fetchLiveMarkets(controller.signal).catch(() => null);
+    let grace;
+
+    const show = data => {
+      if (!controller.signal.aborted) setState({ data, error: null });
+    };
+
+    // Le relevé de la nuit s'affiche dès que Polymarket tarde ; les prix du moment le remplacent à leur arrivée.
+    const showWithLiveMarkets = nightly => {
+      grace = setTimeout(() => show(nightly), LIVE_GRACE_MS);
+      live.then(markets => {
+        clearTimeout(grace);
+        show(markets ? withLiveMarkets(nightly, markets) : nightly);
+      });
+    };
+
     fetch(`${import.meta.env.BASE_URL}data/latest.json`, { signal: controller.signal, cache: 'no-cache' })
       .then(response => {
         if (!response.ok) throw new Error('Données temporairement indisponibles.');
         return response.json();
       })
-      .then(data => setState({ data: validateData(data), error: null }))
+      .then(data => showWithLiveMarkets(validateData(data)))
       .catch(error => {
         if (error.name !== 'AbortError') setState({ data: null, error: error.message });
       });
-    return () => controller.abort();
+    return () => {
+      clearTimeout(grace);
+      controller.abort();
+    };
   }, [attempt]);
 
   useEffect(() => {

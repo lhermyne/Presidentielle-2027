@@ -214,6 +214,10 @@ comparées. Les prix bruts, le sous-ensemble comparé et la taille effective des
 Cette force est un réglage non validé : les univers de candidature diffèrent et les marchés peuvent déjà
 incorporer les sondages.
 
+Prix en direct : au chargement, la page relit les six tableaux Polymarket (`front-end/src/lib/liveMarket.js`)
+et relance le calcul avec ces prix. Le relevé de la nuit reste la référence archivée et sert de repli pour
+chaque tableau que l'API ne renvoie pas dans les six secondes. Les autres sources ne changent qu'avec la collecte.
+
 Les intervalles sont les quantiles pondérés à 5 et 95 %. Le moteur du navigateur et
 celui de GitHub Actions sont identiques. Les scripts de collecte/calcul sont déterministes
 hors données téléchargées, sans IA et sans saisie manuelle quotidienne des sondages.
@@ -245,6 +249,10 @@ un export JSON inclut les observations exactes et les réglages du scénario.
   qualification au second tour, présence sur le bulletin (API Gamma, `data/cache/polymarket-*.json`).
   Les lignes de remplissage (« Candidate A », « Other ») sont écartées. Les quatre premiers
   repondèrent les simulations ; le dernier est consultatif.
+- **Polymarket, historique complet** : prix quotidien de chaque marché depuis son ouverture
+  (14 novembre 2025 pour la victoire), API publique `clob.polymarket.com/prices-history`.
+  Un fichier par tableau dans `data/historique/polymarket/`, complété chaque nuit ; les marchés
+  clos y restent. Il complète aussi l'historique récent utilisé par le modèle, sans remplacer un relevé du site.
 - **Portraits** : ressources existantes du baromètre fournies dans le projet utilisateur ;
   leur réutilisation publique reste soumise aux droits des images d'origine.
 

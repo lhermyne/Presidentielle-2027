@@ -352,7 +352,7 @@ function campaignUncertainty(data, ids, fit, scores, halfLife, strengths, target
 }
 
 function marketPrices(data, source, combine) {
-  return recent(data.asOf, source?.capturedAt, 7) ? reportedPrices(source.markets, combine) : null;
+  return recentMarket(data.asOf, source) ? reportedPrices(source.markets, combine) : null;
 }
 
 export function eligibleCandidates(data, fit) {
@@ -397,7 +397,13 @@ function normalGenerator(random) {
   };
 }
 
-const recent = (asOf, observed, maxAge) => observed && Number.isFinite(Date.parse(observed)) && daysBetween(asOf, observed.slice(0, 10)) >= 0 && daysBetween(asOf, observed.slice(0, 10)) <= maxAge;
+// Un prix Polymarket lu en direct dans la page peut dater du lendemain du relevé de la nuit : il reste recevable.
+// Les autres sources n'ont pas de lecture en direct : une date future y reste refusée.
+const LIVE_MARKET_TOLERANCE_DAYS = 2;
+const recent = (asOf, observed, maxAge, tolerance = 0) => observed && Number.isFinite(Date.parse(observed)) && daysBetween(asOf, observed.slice(0, 10)) >= -tolerance && daysBetween(asOf, observed.slice(0, 10)) <= maxAge;
+const recentMarket = (asOf, source) => source?.live
+  ? recent(asOf, source.capturedAt, 7, LIVE_MARKET_TOLERANCE_DAYS)
+  : recent(asOf, source?.capturedAt, 7);
 // A relative dynamic is a bounded correction, never a candidate's vote share.
 function centeredSignal(ids, values) {
   const observed = ids.filter(id => Number.isFinite(values[id]));
@@ -465,7 +471,7 @@ export function sourceComponents(data, ids) {
   const boardSources = { president: data.market, ...(data.marketEvents ?? {}) };
   for (const key of Object.keys(MARKET_BOARDS)) {
     const source = boardSources[key];
-    if (!recent(data.asOf, source?.capturedAt, 7)) continue;
+    if (!recentMarket(data.asOf, source)) continue;
     const allPrices = reportedPrices(source.markets);
     const prices = Object.fromEntries(ids.filter(id => id in allPrices).map(id => [id, allPrices[id]]));
     if (Object.keys(prices).length >= 2 && sum(Object.values(prices)) > 0) boards[key] = { prices, latest: source.capturedAt.slice(0, 10) };
