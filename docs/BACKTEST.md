@@ -53,6 +53,24 @@ L'effet reste présent une fois retirée la tendance passée des sondages, et la
 Limites : les observations hebdomadaires se recouvrent, ce qui surestime la significativité ;
 la corrélation reste faible (environ 0,3).
 
+### Fenêtre de mesure (10 novembre 2026)
+
+`node backtest/soutiens.mjs && python backtest/wikipedia_fenetres.py`. Évolution des sondages sur 14 jours :
+
+| Mesure | 2017 + 2022, r (t) | 2026, r (t) | Pente / réglage ×1 |
+|---|---|---|---|
+| Depuis le dernier sondage (ancienne) | +0,13 (2,2) | +0,19 (2,6) | ×0,3 |
+| Glissante = mémoire des sondages | +0,23 (4,0) | +0,18 (2,2) | ×0,5 |
+| Glissante fixe 21 jours | +0,27 (4,6) | +0,25 (3,2) | ×0,6 |
+| Tous les relevés, demi-vie 21 jours | +0,40 (7,6) | +0,24 (3,5) | ×0,9 |
+| Tous les relevés, demi-vie = mémoire (retenue) | +0,36 (6,6) | +0,24 (3,6) | ×0,8 |
+| 7 jours face aux 28 précédents | +0,28 (5,0) | +0,23 (3,3) | ×0,6 |
+
+À 28 jours, même classement (tous les relevés : +0,39 à +0,42 sur 2017 et 2022). L'effet reste net une fois
+retirée la tendance des sondages (t = 6,4 sur 2017 et 2022). La demi-vie exacte compte peu (14, 21 ou 30 jours
+donnent des résultats proches) : celle des sondages est retenue par cohérence avec le baromètre. La pente vaut
+0,8 à 1,5 fois le réglage ×1, conservé. En 2026, sans David Lisnard, la corrélation tombe à +0,12 (t = 1,7).
+
 ## 3. Baromètre des réseaux
 
 `node backtest/soutiens.mjs && python backtest/barometre.py`. Aucun historique sur les élections passées :

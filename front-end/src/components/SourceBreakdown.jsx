@@ -76,7 +76,7 @@ function ForecastEffects({ result, names }) {
       </div>
       <p className="source-caption">
         Corrections en points, et en % du score sondé dessous. * Signal manquant : aucune correction, la dynamique n’est pas comptée comme nulle.
-        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} et Wikipédia à ×{limits.wikipediaScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}. Baromètre mesuré sur {mix.barometer.windowDays ?? '—'} jours glissants, Wikipédia depuis le dernier sondage de chaque candidat.
+        Baromètre réglé à ×{limits.barometerScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} et Wikipédia à ×{limits.wikipediaScale.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}. Baromètre mesuré sur {mix.barometer.windowDays ?? '—'} jours glissants, Wikipédia face à sa moyenne passée sur la même demi-vie.
         Chaque actualisation repart du socle sondé.
       </p>
       <p className="metric-description">
@@ -99,18 +99,18 @@ function WikipediaDynamics({ result, names }) {
     <>
       <h2 className="signal-heading">Dynamique Wikipédia</h2>
       <p className="metric-description">
-        Consultations quotidiennes depuis le dernier sondage de chaque candidat, comparées aux 28 jours précédents.
-        Les médianes neutralisent les pics d’un seul jour. C’est cette évolution qui donne le bonus ou malus.
+        Consultations des 7 derniers jours (médiane, pics d’un jour neutralisés) face à la moyenne passée, où chaque jour
+        compte deux fois moins tous les {result.sourceMix.wikipedia.halfLife} jours, comme les sondages. C’est cette évolution qui donne le bonus ou malus.
       </p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Dynamique des consultations Wikipédia">
         <table>
-          <thead><tr><th scope="col">Personnalité</th><th scope="col">Avant le terrain</th><th scope="col">Depuis le terrain</th><th scope="col">Évolution</th></tr></thead>
+          <thead><tr><th scope="col">Personnalité</th><th scope="col">Moyenne passée</th><th scope="col">7 derniers jours</th><th scope="col">Évolution</th></tr></thead>
           <tbody>
             {rows.map(([id, signal]) => (
               <tr key={id}>
                 <th scope="row">{names[id] ?? id}</th>
                 <td>{daily(signal.referenceDaily)} / jour</td>
-                <td>{signal.days ? `${daily(signal.currentDaily)} / jour` : 'Pas encore de recul'}</td>
+                <td>{daily(signal.currentDaily)} / jour</td>
                 <td>{signed(signal.change, 0)} %</td>
               </tr>
             ))}

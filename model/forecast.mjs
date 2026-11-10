@@ -456,18 +456,40 @@ function latestFieldDates(data) {
   return latest;
 }
 
-function dynamicsSinceLastPoll(windows, ids, latest, isUsable) {
-  const periods = {};
-  const anchors = {};
-  for (const id of ids) {
-    const signal = windows?.[latest[id]]?.signals?.[id];
-    if (signal && isUsable(signal)) {
-      periods[id] = signal;
-      anchors[id] = latest[id];
+// Wikipédia : consultations des 7 derniers jours face à la moyenne de tous les jours précédents, chaque jour
+// comptant deux fois moins par demi-vie (celle des sondages). Testé sur 2017, 2022 et 2026 (backtest/wikipedia_fenetres.py).
+export const WIKIPEDIA_SIGNAL = Object.freeze({ recentDays: 7, minRecentDays: 4, minWeight: 5, minDaily: 30 });
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+export function wikipediaDynamic(series, end, halfLife) {
+  const { recentDays, minRecentDays, minWeight, minDaily } = WIKIPEDIA_SIGNAL;
+  const recent = [];
+  let total = 0;
+  let weights = 0;
+  let days = 0;
+  for (const [day, views] of Object.entries(series ?? {})) {
+    const age = daysBetween(end, day);
+    if (!(views > 0) || age < 0) continue;
+    if (age < recentDays) {
+      recent.push(views);
+    } else {
+      const weight = 0.5 ** ((age - recentDays) / halfLife);
+      total += weight * Math.log(views);
+      weights += weight;
+      days++;
     }
   }
-  const observed = ids.filter(id => id in periods);
-  return { periods, anchors, observed, missing: ids.filter(id => !observed.includes(id)), anchor: Object.values(anchors).sort().at(-1) };
+  if (recent.length < minRecentDays || weights < minWeight) return null;
+  const referenceDaily = Math.exp(total / weights);
+  if (referenceDaily < minDaily) return null;
+  const currentDaily = median(recent);
+  const dynamic = Math.log(currentDaily / referenceDaily);
+  return { dynamic, change: (currentDaily / referenceDaily - 1) * 100, referenceDaily, currentDaily, days };
 }
 
 export function sourceComponents(data, ids, halfLife = referenceHalfLife(data.asOf)) {
@@ -477,7 +499,7 @@ export function sourceComponents(data, ids, halfLife = referenceHalfLife(data.as
       reason: 'Socle électoral : tous les sondages de premier tour, toutes listes confondues, ramenés à des niveaux de soutien cohérents.' },
     barometer: { available: false, reason: 'Deux candidats avec une dynamique mesurable sur la fenêtre du baromètre, sur au moins deux plateformes récentes, sont nécessaires.' },
     polymarket: { available: false, reason: 'Deux candidats cotés et une capture de moins de 7 jours sont nécessaires.' },
-    wikipedia: { available: false, reason: 'Moins de deux candidats avec assez de consultations Wikipédia autour du dernier terrain, ou relevé de plus de 3 jours.' },
+    wikipedia: { available: false, reason: 'Moins de deux candidats avec assez de consultations Wikipédia sur la mémoire des sondages, ou relevé de plus de 3 jours.' },
     trends: { available: false, reason: 'aucun candidat de cette liste dans les recherches en forte hausse des 28 derniers jours.' },
   };
   if (recent(data.asOf, data.social?.asOf, 3)) {
@@ -505,10 +527,16 @@ export function sourceComponents(data, ids, halfLife = referenceHalfLife(data.as
     latest: Object.values(boards).map(board => board.latest).sort().at(-1),
     reason: 'Anticipations des marchés (victoire finale, vainqueur du premier tour, deuxième et troisième place, qualification). Chaque marché repondère les simulations selon l’écart entre son prix et la fréquence simulée.' };
   if (recent(data.asOf, data.wikipedia?.asOf, 3)) {
-    const dynamics = dynamicsSinceLastPoll(data.wikipedia.windows, ids, latest, signal => Number.isFinite(signal.dynamic));
-    if (dynamics.observed.length >= 2) components.wikipedia = { ...dynamics, available: true, latest: data.wikipedia.asOf,
-      raw: Object.fromEntries(dynamics.observed.map(id => [id, dynamics.periods[id].dynamic])),
-      reason: 'Dynamique des consultations Wikipédia depuis le dernier sondage de chaque candidat (médianes, pics d’un jour neutralisés), appliquée en bonus ou malus relatif. Une consultation peut traduire un soutien, une polémique ou de la curiosité.' };
+    const periods = {};
+    for (const id of ids) {
+      const signal = wikipediaDynamic(data.history?.wikipedia?.[id], data.wikipedia.asOf, halfLife);
+      if (signal) periods[id] = signal;
+    }
+    const observed = ids.filter(id => id in periods);
+    if (observed.length >= 2) components.wikipedia = { available: true, latest: data.wikipedia.asOf, halfLife,
+      periods, observed, missing: ids.filter(id => !observed.includes(id)),
+      raw: Object.fromEntries(observed.map(id => [id, periods[id].dynamic])),
+      reason: `Consultations Wikipédia des 7 derniers jours (médiane, pics d’un jour neutralisés) face à leur moyenne passée, chaque jour comptant deux fois moins tous les ${halfLife} jours comme les sondages ; appliquée en bonus ou malus relatif. Une consultation peut traduire un soutien, une polémique ou de la curiosité.` };
   }
   if (recent(data.asOf, data.trends?.asOf, 3)) {
     const signal = centeredSignal(ids, data.trends.interest ?? {});

@@ -1,5 +1,4 @@
 import json
-import math
 import sys
 import tempfile
 import unittest
@@ -10,7 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import collect
 from sources import normalize_history, parse_market, parse_polls, slug, social_signals, parse_trends, merge_trends, trend_signals, barometer_window
-from sources import parse_pageviews, wikipedia_signals, wikipedia_url, wikipedia_window, barometer_daily, market_history, recent_series, barometer_anchors
+from sources import parse_pageviews, wikipedia_signals, wikipedia_url, barometer_daily, market_history, recent_series, barometer_anchors
 
 HEADER = "sondage_id,institut,terrain_debut,terrain_fin,echantillon,tour,configuration,configuration_principale,echantillon_configuration,candidat,parti,score,url_source\n"
 
@@ -128,16 +127,8 @@ class SourceTests(unittest.TestCase):
         raw = json.dumps({"items": [{"timestamp": "2026102900", "views": 120}, {"timestamp": "bad", "views": 5}]})
         self.assertEqual(parse_pageviews(raw), {"2026-10-29": 120})
         pageviews = {"a": series(100, 200), "b": series(100, 50, spike=167000), "small": series(10, 10)}
-        window = wikipedia_window(pageviews, "2026-10-22", "2026-10-31")
-        self.assertAlmostEqual(window["signals"]["a"]["dynamic"], math.log(2))
-        self.assertAlmostEqual(window["signals"]["b"]["dynamic"], math.log(0.5))
-        self.assertAlmostEqual(window["signals"]["b"]["referenceDaily"], 100)
-        self.assertNotIn("small", window["signals"])
-        reset = wikipedia_window(pageviews, "2026-10-30", "2026-10-30")
-        self.assertEqual(reset["signals"]["a"]["dynamic"], 0)
-        self.assertEqual(reset["signals"]["a"]["days"], 0)
-        signals = wikipedia_signals(pageviews, "2026-10-31", "2026-10-31T06:00:00Z", ["2026-10-22", "2026-10-22"])
-        self.assertEqual(list(signals["windows"]), ["2026-10-22"])
+        signals = wikipedia_signals(pageviews, "2026-10-31", "2026-10-31T06:00:00Z")
+        self.assertNotIn("windows", signals)
         self.assertEqual(signals["asOf"], "2026-10-30")
         self.assertIn("Jean-Luc_M%C3%A9lenchon", wikipedia_url({"id": "jlm", "name": "Jean-Luc Mélenchon"},
                                                               date(2026, 10, 1), date(2026, 10, 30)))

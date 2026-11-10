@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS, allConfigurations, fitSupport, FIELD_ID, DYNAMIC_SATURATION, HORIZON_SPREAD, horizonSpread, referenceHalfLife, barometerWindowDays } from '../model/forecast.mjs';
+import { aggregatePolls, candidateKey, forecast, listConfigurations, pollingHistory, selectPolls, settingsFrom, DEFAULT_WEIGHTS, normalizeWeights, sourceShares, SOURCE_IDS, allConfigurations, fitSupport, FIELD_ID, DYNAMIC_SATURATION, HORIZON_SPREAD, horizonSpread, referenceHalfLife, barometerWindowDays, wikipediaDynamic } from '../model/forecast.mjs';
 import { transferScore } from '../model/transfers.mjs';
 
 const effect = value => Math.exp(DYNAMIC_SATURATION * Math.tanh(value / DYNAMIC_SATURATION)) - 1;
@@ -54,13 +54,23 @@ const completeDuels = () => {
   const ids = ['a', 'b', 'c', 'd'];
   return ids.flatMap((id, i) => ids.slice(i + 1).map(other => poll(`duel-${id}-${other}`, { [id]: 52, [other]: 48 }, { round: 2 })));
 };
+// Consultations Wikipédia sur 90 jours : 1 000 par jour, puis 1 000 × e^dynamique les 7 derniers jours.
+// La moyenne passée vaut donc exactement 1 000 et la dynamique mesurée celle demandée.
+const wikipediaSignals = (data, dynamics) => ({
+  wikipedia: { asOf: data.asOf },
+  history: { ...(data.history ?? {}), wikipedia: Object.fromEntries(Object.entries(dynamics).map(([id, dynamic]) => [id,
+    Object.fromEntries(Array.from({ length: 90 }, (_, age) => [
+      new Date(Date.parse(data.asOf) - age * 86400000).toISOString().slice(0, 10),
+      age < 7 ? 1000 * Math.exp(dynamic) : 1000,
+    ]))])) },
+});
 // Au 20 octobre 2026 (180 jours du vote), la mémoire de référence est de 25 jours : la fenêtre du baromètre part du 25 septembre.
 const BAROMETER_START = '2026-09-25';
 const addSignals = data => ({ ...data,
   social: { asOf: data.asOf, windows: { [BAROMETER_START]: { anchor: BAROMETER_START, signals: { a: {score:1,coverage:4}, b: {score:-2,coverage:4}, c: {score:0,coverage:2}, d: {score:60,coverage:4} } } }, signals: { a: { barometerScore: 1, barometerCoverage: 4 }, b: { barometerScore: -2, barometerCoverage: 4 }, c: { barometerScore: 0, barometerCoverage: 2 }, d: { barometerScore: 100, barometerCoverage: 4 } } },
   market: { capturedAt: `${data.asOf}T12:00:00Z`, markets: [{ id: 'a', probability: 5 }, { id: 'b', probability: 80 }, { id: 'c', probability: 10 }, { id: 'd', probability: 5 }] },
   trends: { asOf: data.asOf, interest: { a: 100, b: 500 } },
-  wikipedia: { asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals: { a: { dynamic: 0.6 }, b: { dynamic: -0.4 }, d: { dynamic: 0.1 } } } } },
+  ...wikipediaSignals(data, { a: 0.6, b: -0.4, d: 0.1 }),
 });
 
 test('independent sliders become shares of 100 percent and polls keep at least 1', () => {
@@ -257,7 +267,7 @@ test('second-round scores come from documented duel polls only', () => {
   assert.ok(undocumented.rows.every(row => row.runoff === null));
 });
 
-test('Wikipedia dynamics since the last poll act like the barometer', () => {
+test('Wikipedia dynamics over the memory of the polls act like the barometer', () => {
   const data = addSignals(dataset(firstRound));
   const result = forecast(data, key, { weights: { polls: 80, wikipedia: 20 }, simulations: 1000 });
   const row = id => result.rows.find(item => item.id === id);
@@ -271,6 +281,20 @@ test('Wikipedia dynamics since the last poll act like the barometer', () => {
   assert.equal(result.adjustmentLimits.wikipediaScale, 1);
   data.wikipedia.asOf = '2026-10-10';
   assert.equal(forecast(data, key, { simulations: 1000 }).sourceMix.wikipedia.available, false);
+});
+
+test('Wikipedia compares the last week with a past average halved every half-life', () => {
+  const series = {};
+  for (let age = 0; age < 90; age++) {
+    const day = new Date(Date.parse('2026-10-20') - age * 86400000).toISOString().slice(0, 10);
+    series[day] = age < 7 ? 2000 : age < 30 ? 1000 : 4000;
+  }
+  const short = wikipediaDynamic(series, '2026-10-20', 7);
+  const long = wikipediaDynamic(series, '2026-10-20', 60);
+  assert.ok(Math.abs(short.currentDaily - 2000) < 1e-9);
+  assert.ok(short.dynamic > long.dynamic, 'une demi-vie courte oublie plus vite les anciens jours à 4 000');
+  assert.ok(short.referenceDaily > 1000 && short.referenceDaily < 4000);
+  assert.equal(wikipediaDynamic({ '2026-10-20': 50 }, '2026-10-20', 22), null);
 });
 
 test('the qualification and place markets reweight the simulations they describe', () => {
@@ -441,8 +465,6 @@ test('uncertainty is measured: more surveys tighten it, and only irregular sourc
   assert.ok(Math.abs(off.base - off.polls) < 1e-9);
 });
 
-const wikipediaWindow = (data, signals) => ({ asOf: data.asOf, windows: { '2026-10-19': { anchor: '2026-10-19', signals } } });
-
 test('every polled duel gets the same source adjustment as a simulated duel', () => {
   // Le duel a|c n'est presque jamais simulé : c est loin derrière au premier tour.
   const data = dataset([
@@ -450,7 +472,7 @@ test('every polled duel gets the same source adjustment as a simulated duel', ()
     poll('duel-ab', { a: 60, b: 40 }, { round: 2 }),
     poll('duel-ac', { a: 60, c: 40 }, { round: 2 }),
   ]);
-  data.wikipedia = wikipediaWindow(data, { a: { dynamic: -0.5 }, b: { dynamic: 0.4 }, c: { dynamic: 0.8 } });
+  Object.assign(data, wikipediaSignals(data, { a: -0.5, b: 0.4, c: 0.8 }));
   const run = weights => forecast(data, 'a|b|c|d', { weights, simulations: 4000 });
   const polled = (result, key) => result.polledDuels.find(duel => duel.key === key);
 
@@ -472,7 +494,7 @@ test('every polled duel gets the same source adjustment as a simulated duel', ()
 
 test('strong dynamics can overturn a polled duel', () => {
   const data = dataset([poll('p1', { a: 45, b: 35, c: 20 }), poll('duel', { a: 51, b: 49 }, { round: 2 })]);
-  data.wikipedia = wikipediaWindow(data, { a: { dynamic: -1 }, b: { dynamic: 1 } });
+  Object.assign(data, wikipediaSignals(data, { a: -1, b: 1 }));
   const run = weights => forecast(data, 'a|b|c', { weights, simulations: 4000 }).pairs.find(pair => pair.key === 'a|b').projection;
   assert.ok(run({ polls: 100 }).scores.a > 50);
   assert.ok(run({ polls: 100, wikipedia: 100 }).scores.a < 50);

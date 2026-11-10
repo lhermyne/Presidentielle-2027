@@ -194,13 +194,11 @@ def main():
             candidate["photo"] = f"portraits/{candidate['id']}.png"
     pageviews, wikipedia_status = collect_wikipedia(candidates, as_of, captured_at, args.offline)
     statuses.append(wikipedia_status)
-    anchors = [p["fieldEnd"] for p in poll_data["polls"] if p["round"] == 1 and
-               0 <= (date_check.date() - datetime.fromisoformat(p["fieldEnd"]).date()).days <= 120]
     result = {"schemaVersion": 1, "generatedAt": captured_at, "asOf": as_of,
               "candidates": candidates, "polls": poll_data["polls"],
               "social": social_signals(histories, as_of, barometer_anchors(as_of)), "market": market_data, "marketEvents": market_events,
               "trends": trend_signals(trends_data, candidates, as_of, trends_status.get("fetchedAt")),
-              "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt"), anchors),
+              "wikipedia": wikipedia_signals(pageviews, as_of, wikipedia_status.get("fetchedAt")),
               "history": {"polymarket": fill_history(market_history(archived_market_snapshots(as_of, market_data), as_of),
                                                      long_series(MARKET_HISTORY), _history_dates(as_of)[0], as_of),
                           "barometer": barometer_daily(histories, as_of), "wikipedia": recent_series(pageviews, as_of)},

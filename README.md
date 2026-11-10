@@ -190,8 +190,11 @@ manquante n’entraîne aucune correction propre. Être premier en dynamique n�
 
 Wikipédia : API publique Wikimedia Pageviews, consultations humaines quotidiennes de
 l’article en français de chaque personnalité. Seule l’évolution compte :
-`log(moyenne 7 derniers jours / moyenne des 21 précédents)`, au moins 30 vues/jour en
-référence, série de moins de trois jours. Comme le baromètre, c’est un bonus ou malus
+`log(médiane des 7 derniers jours / moyenne passée)`, la moyenne passée (géométrique, sur 90 jours)
+donnant à chaque jour un poids divisé par 2 à chaque demi-vie des sondages (22 jours le 10 novembre 2026).
+Au moins 30 vues/jour en référence, relevé de moins de trois jours. Le modèle calcule ce signal à partir
+de l'historique quotidien (`wikipediaDynamic`) : il suit le curseur de mémoire du laboratoire.
+Choix fondé sur `backtest/wikipedia_fenetres.py` (2017, 2022, 2026). Comme le baromètre, c’est un bonus ou malus
 relatif : `évolution × 0,1 × multiplicateur` (×1 par défaut), avec compression douce des très gros pics.
 Une consultation n’est pas une intention de vote.
 
