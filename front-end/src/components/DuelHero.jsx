@@ -35,7 +35,7 @@ function HeroDuel({ pair, finalists }) {
         <Finalist row={right} score={projection?.scores[right.id]} side="right" />
       </div>
       {projection
-        ? <DuelBar left={left} right={right} score={projection.scores[left.id]} lower={projection.lower[left.id]} upper={projection.upper[left.id]} />
+        ? <DuelBar left={left} right={right} score={projection.scores[left.id]} lower={projection.lower[left.id]} upper={projection.upper[left.id]} showRange />
         : <p className="hero-missing">Ce duel n’a pas été sondé et aucun report de voix n’est mesuré : aucun score n’est projeté.</p>}
       <p className="hero-chance">Ce duel ressort dans {percent(pair.probability)} des simulations.</p>
     </>
